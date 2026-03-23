@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interface Pokémon Customizada</title>
     <style>
-        /* Configurações de Fundo */
         body {
             margin: 0;
             padding: 0;
@@ -15,10 +14,9 @@
             height: 100vh;
             background: linear-gradient(135deg, #ff1c1c 50%, #f0f0f0 50%);
             font-family: 'Arial', sans-serif;
-            cursor: pointer; /* Adicionado para mostrar que a tela é clicável */
+            cursor: pointer;
         }
 
-        /* Container da Pokébola */
         .pokeball {
             position: relative;
             width: 200px;
@@ -31,7 +29,6 @@
             animation: shake 1.25s cubic-bezier(.36,.07,.19,.97) infinite;
         }
 
-        /* Parte Vermelha (Topo) */
         .pokeball::before {
             content: "";
             position: absolute;
@@ -43,7 +40,6 @@
             border-bottom: 10px solid #333;
         }
 
-        /* Botão Central */
         .pokeball::after {
             content: "";
             position: absolute;
@@ -58,7 +54,6 @@
             box-shadow: 0 0 0 5px #fff;
         }
 
-        /* Animação de Balanço */
         @keyframes shake {
             0% { transform: translate(0, 0) rotate(0); }
             20% { transform: translate(-10px, 0) rotate(-20deg); }
@@ -68,7 +63,6 @@
             100% { transform: translate(0, 0) rotate(0); }
         }
 
-        /* Card de Informação */
         .pokedex-card {
             position: absolute;
             bottom: 50px;
@@ -78,7 +72,7 @@
             border-bottom: 5px solid #333;
             text-align: center;
             min-width: 250px;
-            pointer-events: none; /* Garante que o clique passe pelo card e atinja o body */
+            pointer-events: none;
         }
 
         h1 {
@@ -108,8 +102,27 @@
         <div class="type-tag">Treinador Pokémon</div>
     </div>
 
+    <!-- Áudio do Pokémon Center (toca automaticamente ao carregar) -->
+    <audio id="pokemonSound" preload="auto" autoplay loop volume="0.25">
+        <source src="https://downloads.khinsider.com/game-soundtracks/album/pokemon-diamond-and-pearl-super-music-collection/1-16.%20Pok%C3%A9mon%20Center%20%28Day%29.mp3" type="audio/mpeg">
+        Seu navegador não suporta áudio.
+    </audio>
+
     <script>
-        // Adiciona um ouvinte de clique em toda a página (body)
+        // Tenta tocar o som (alguns navegadores bloqueiam autoplay sem interação)
+        const audio = document.getElementById('pokemonSound');
+        
+        // Tenta tocar imediatamente
+        audio.play().catch(() => {
+            console.log("Autoplay bloqueado — aguardando interação");
+            // Se falhar, toca no primeiro clique
+            document.body.addEventListener('click', function playOnClick() {
+                audio.play();
+                document.body.removeEventListener('click', playOnClick);
+            }, { once: true });
+        });
+
+        // Redireciona ao clicar em qualquer lugar (mantém o comportamento original)
         document.body.addEventListener('click', function() {
             window.location.href = "https://www.pokemon.com/br";
         });
