@@ -3,315 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exploração Espacial 3D - Sistema Solar Realista</title>
+    <title>TON 618 - O Maior Buraco Negro Conhecido</title>
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; overflow:hidden; }
         body {
-            height: 100vh;
-            overflow: hidden;
-            background: #000;
-            perspective: 1800px;
-            cursor: grab;
-            font-family: 'Segoe UI', sans-serif;
+            height:100vh;
+            background:#000;
+            perspective:2200px;
+            cursor:grab;
+            font-family:Arial,sans-serif;
         }
 
-        .universe {
-            position: absolute;
-            inset: 0;
-            transform-style: preserve-3d;
-            animation: slowRotate 420s linear infinite;
+        .scene {
+            position:absolute;
+            inset:0;
+            transform-style:preserve-3d;
+            transform:rotateX(12deg);
+            animation:sceneRotate 480s linear infinite;
         }
 
-        @keyframes slowRotate {
-            from { transform: rotateY(0deg) rotateX(8deg); }
-            to   { transform: rotateY(360deg) rotateX(8deg); }
+        @keyframes sceneRotate {
+            to { transform:rotateX(12deg) rotateY(360deg); }
         }
 
-        /* ==================== ESTRELAS REALISTAS (múltiplas camadas) ==================== */
-        .stars, .stars2, .stars3 {
-            position: absolute;
-            inset: 0;
-            background: transparent;
-            pointer-events: none;
+        /* Fundo cósmico profundo */
+        .cosmos {
+            position:absolute;
+            inset:0;
+            background:radial-gradient(circle at 50% 50%, #0a0015 0%, #000 80%);
+            pointer-events:none;
         }
+
         .stars {
-            background: radial-gradient(white 1px, transparent 1px) 0 0 / 90px 90px,
-                        radial-gradient(white 0.8px, transparent 0.8px) 40px 40px / 70px 70px;
-            opacity: 0.85;
-            animation: starsDrift 240s linear infinite;
-        }
-        .stars2 {
-            background: radial-gradient(white 1.2px, transparent 1px) 0 0 / 140px 140px;
-            opacity: 0.65;
-            animation: starsDrift 380s linear infinite reverse;
-        }
-        .stars3 {
-            background: radial-gradient(white 0.7px, transparent 0.7px) 0 0 / 50px 50px;
-            opacity: 0.45;
-            animation: starsDrift 520s linear infinite;
-        }
-        @keyframes starsDrift {
-            to { transform: translateZ(-3500px); }
+            position:absolute;
+            inset:0;
+            background:
+                radial-gradient(white 1px,transparent 1px) 0 0/100px 100px,
+                radial-gradient(white 0.8px,transparent 0.8px) 50px 50px/80px 80px;
+            opacity:0.7;
+            animation:drift 300s linear infinite;
         }
 
-        /* ==================== NEBULOSA REALISTA (múltiplas camadas) ==================== */
+        @keyframes drift { to { transform:translateZ(-4000px); } }
+
+        /* Nebulosa ao redor */
         .nebula {
-            position: absolute;
-            inset: 0;
-            background: 
-                radial-gradient(circle at 15% 25%, rgba(120,40,255,0.18) 0%, transparent 45%),
-                radial-gradient(circle at 85% 65%, rgba(0,220,255,0.16) 0%, transparent 55%),
-                radial-gradient(circle at 45% 80%, rgba(255,80,180,0.12) 0%, transparent 60%);
-            filter: blur(40px);
-            animation: nebulaBreath 55s ease-in-out infinite alternate;
-            pointer-events: none;
-        }
-        @keyframes nebulaBreath {
-            0%   { opacity: 0.55; transform: scale(0.95); }
-            100% { opacity: 0.95; transform: scale(1.08); }
+            position:absolute;
+            inset:0;
+            background:
+                radial-gradient(circle at 40% 60%, rgba(180,60,255,0.22) 0%,transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(0,180,255,0.18) 0%,transparent 55%);
+            filter:blur(60px);
+            animation:pulse 45s ease-in-out infinite alternate;
         }
 
-        /* ==================== SOL COM FLARES ==================== */
-        .sun {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 220px;
-            height: 220px;
-            background: radial-gradient(circle, #fff 15%, #ffeb3b 35%, #ff9800 65%, #f44336 100%);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            box-shadow: 
-                0 0 80px #fff,
-                0 0 180px #ffeb3b,
-                0 0 320px #ff9800,
-                0 0 520px #f44336;
-            z-index: 10;
-            animation: sunPulse 8s ease-in-out infinite alternate;
-        }
-        @keyframes sunPulse {
-            0%   { box-shadow: 0 0 80px #fff, 0 0 180px #ffeb3b, 0 0 320px #ff9800; }
-            100% { box-shadow: 0 0 110px #fff, 0 0 240px #ffeb3b, 0 0 420px #ff9800, 0 0 620px #f44336; }
+        @keyframes pulse { 0%{opacity:0.6;transform:scale(0.98);} 100%{opacity:1;transform:scale(1.06);} }
+
+        /* TON 618 - Disco de acreção + event horizon */
+        .ton618 {
+            position:absolute;
+            top:50%;
+            left:50%;
+            width:900px;
+            height:900px;
+            transform:translate(-50%,-50%) rotateX(15deg);
+            transform-style:preserve-3d;
+            z-index:10;
         }
 
-        /* ==================== PLANETAS COM DETALHES REALISTAS ==================== */
-        .orbit {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform-style: preserve-3d;
-            transform: translate(-50%, -50%);
+        .event-horizon {
+            position:absolute;
+            inset:0;
+            background:#000;
+            border-radius:50%;
+            box-shadow:0 0 180px #000, inset 0 0 120px #000;
+            transform:rotateX(0deg);
         }
 
-        .planet {
-            position: absolute;
-            border-radius: 50%;
-            transform-style: preserve-3d;
-            box-shadow: 0 0 35px rgba(255,255,255,0.35);
-            animation: selfRotate 25s linear infinite;
+        .accretion-disk {
+            position:absolute;
+            inset:-20%;
+            background:conic-gradient(
+                from 0deg at 50% 50%,
+                transparent 0deg,
+                #ff6600 30deg,
+                #ffaa00 90deg,
+                #ffff00 150deg,
+                #ffaa00 210deg,
+                #ff6600 270deg,
+                transparent 360deg
+            );
+            border-radius:50%;
+            filter:blur(18px);
+            opacity:0.92;
+            animation:spinDisk 18s linear infinite;
+            box-shadow:0 0 280px #ff8800, 0 0 520px #ff4400;
         }
 
-        /* Mercúrio */
-        .mercury  { width:22px; height:22px; background:#aaa; animation-duration: 9s; }
-        /* Vênus */
-        .venus    { width:42px; height:42px; background:#e0c090; animation-duration: 28s; }
-        /* Terra + nuvens + lua */
-        .earth    { width:48px; height:48px; background:linear-gradient(#0b66cc,#00aaff,#228b22); position:relative; }
-        .earth::after {
-            content:''; position:absolute; inset:0; background:radial-gradient(transparent 40%, rgba(255,255,255,0.35) 70%);
-            border-radius:50%; animation: clouds 120s linear infinite;
-        }
-        /* Lua orbitando Terra */
-        .moon {
-            position:absolute; width:14px; height:14px; background:#ddd; border-radius:50%;
-            top:50%; left:50%; transform:translate(-50%,-50%) translateX(38px);
-            box-shadow:0 0 12px #fff; animation: moonOrbit 28s linear infinite;
+        @keyframes spinDisk {
+            to { transform:rotate(360deg); }
         }
 
-        /* Marte */
-        .mars     { width:32px; height:32px; background:#c1440e; animation-duration: 65s; }
-        /* Júpiter com faixas */
-        .jupiter  { width:110px; height:110px; background:repeating-linear-gradient(45deg,#d4a373,#d4a373 12px,#b58a5a 12px,#b58a5a 24px); animation-duration: 180s; }
-        /* Saturno com anéis */
-        .saturn   { width:98px; height:98px; background:#e0d0a0; animation-duration: 280s; }
-        .saturn::after {
-            content:''; position:absolute; inset:-26px; border:12px solid #d0c090; border-radius:50%;
-            transform:rotateX(72deg); box-shadow:0 0 40px #d0c090;
+        .disk-glow {
+            position:absolute;
+            inset:-40%;
+            background:radial-gradient(circle,#ffaa00 10%,transparent 60%);
+            border-radius:50%;
+            filter:blur(120px);
+            animation:glowPulse 6s ease-in-out infinite alternate;
+            opacity:0.8;
         }
 
-        /* Urano */
-        .uranus   { width:68px; height:68px; background:#9cf; animation-duration: 420s; }
-        /* Netuno */
-        .neptune  { width:66px; height:66px; background:#4488ff; animation-duration: 520s; }
-        /* Plutão (anão) */
-        .pluto    { width:18px; height:18px; background:#c8b8a0; animation-duration: 720s; }
-
-        @keyframes selfRotate {
-            from { transform: rotateY(0deg); }
-            to   { transform: rotateY(360deg); }
-        }
-        @keyframes moonOrbit {
-            from { transform: translate(-50%,-50%) rotate(0deg) translateX(38px) rotate(0deg); }
-            to   { transform: translate(-50%,-50%) rotate(360deg) translateX(38px) rotate(-360deg); }
-        }
-        @keyframes clouds { to { transform: rotate(360deg); } }
-
-        /* Distâncias reais aproximadas */
-        .mercury  { --dist: 160px; }
-        .venus    { --dist: 240px; }
-        .earth    { --dist: 330px; }
-        .mars     { --dist: 420px; }
-        .jupiter  { --dist: 620px; }
-        .saturn   { --dist: 820px; }
-        .uranus   { --dist: 1020px; }
-        .neptune  { --dist: 1180px; }
-        .pluto    { --dist: 1350px; }
-
-        /* ==================== COMETA COM CAUDA REALISTA ==================== */
-        .comet {
-            position: absolute;
-            width: 18px; height: 18px;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 30px #fff, 0 0 60px #a0f0ff;
-            top: 30%;
-            animation: cometFly 18s linear forwards;
-            z-index: 8;
-            opacity: 0;
-        }
-        .comet::after {
-            content: '';
-            position: absolute;
-            left: -120px; top: 50%;
-            width: 140px; height: 6px;
-            background: linear-gradient(90deg, transparent, #a0f0ff, #fff);
-            filter: blur(8px);
-            transform: translateY(-50%) rotate(-35deg);
+        @keyframes glowPulse {
+            0%{opacity:0.7;transform:scale(1);}
+            100%{opacity:1.1;transform:scale(1.15);}
         }
 
-        /* ==================== ESTRELAS CADENTES ==================== */
-        .shooting-star {
-            position: absolute;
-            width: 4px; height: 4px;
-            background: white;
-            box-shadow: 0 0 20px #fff, 0 0 40px #a0f0ff;
-            animation: shoot 2.2s linear forwards;
-            opacity: 0;
+        /* Jets polares (quasar) */
+        .jet {
+            position:absolute;
+            top:50%;
+            left:50%;
+            width:80px;
+            height:1800px;
+            background:linear-gradient(to top, transparent, #a0f0ff, #ffffff, #a0f0ff, transparent);
+            filter:blur(40px);
+            transform:translate(-50%,-50%);
+            opacity:0.45;
+            animation:jetPulse 12s ease-in-out infinite alternate;
         }
 
-        @keyframes shoot {
-            0%   { transform: translate(0,0) rotate(35deg); opacity: 0; }
-            10%  { opacity: 1; }
-            100% { transform: translate(800px, -600px) rotate(35deg); opacity: 0; }
+        .jet-upper { transform:translate(-50%,-50%) rotate(180deg); }
+        .jet-lower { transform:translate(-50%,-50%) rotate(0deg); }
+
+        @keyframes jetPulse {
+            0%{opacity:0.4;height:1600px;}
+            100%{opacity:0.75;height:2200px;}
         }
 
-        /* HUD informativo */
+        /* Partículas caindo no disco */
+        .particle {
+            position:absolute;
+            background:#ffcc88;
+            border-radius:50%;
+            box-shadow:0 0 20px #ff8800;
+            animation:fallIn 8s linear infinite;
+            opacity:0;
+        }
+
+        @keyframes fallIn {
+            0%  {transform:translate(0,-800px) scale(0.2);opacity:0;}
+            20% {opacity:1;}
+            100%{transform:translate(0,0) scale(0);opacity:0;}
+        }
+
+        /* Info HUD */
         .hud {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            background: rgba(0,0,0,0.65);
-            padding: 18px 28px;
-            border-radius: 14px;
-            color: #a0f0ff;
-            font-size: 1.05rem;
-            text-shadow: 0 0 10px #00ffff;
-            pointer-events: none;
-            z-index: 30;
-            border: 2px solid #00ffff;
+            position:absolute;
+            bottom:30px;
+            left:50%;
+            transform:translateX(-50%);
+            background:rgba(0,0,0,0.7);
+            padding:15px 40px;
+            border-radius:12px;
+            color:#a0ffff;
+            font-size:1.3rem;
+            text-shadow:0 0 12px #00ffff;
+            border:2px solid #00ffff;
+            pointer-events:none;
+            z-index:20;
         }
     </style>
 </head>
 <body>
 
-    <div class="universe">
-        <!-- Estrelas -->
+    <div class="cosmos">
         <div class="stars"></div>
-        <div class="stars2"></div>
-        <div class="stars3"></div>
-
-        <!-- Nebulosas -->
         <div class="nebula"></div>
-
-        <!-- Sol -->
-        <div class="sun"></div>
-
-        <!-- Órbitas -->
-        <div class="orbit">
-            <div class="planet mercury"  style="--dist:160px"></div>
-            <div class="planet venus"    style="--dist:240px"></div>
-            
-            <!-- Terra -->
-            <div class="planet earth"    style="--dist:330px">
-                <div class="moon"></div>
-            </div>
-            
-            <div class="planet mars"     style="--dist:420px"></div>
-            <div class="planet jupiter"  style="--dist:620px"></div>
-            <div class="planet saturn"   style="--dist:820px"></div>
-            <div class="planet uranus"   style="--dist:1020px"></div>
-            <div class="planet neptune"  style="--dist:1180px"></div>
-            <div class="planet pluto"    style="--dist:1350px"></div>
-        </div>
     </div>
 
-    <!-- HUD -->
+    <div class="ton618">
+        <div class="event-horizon"></div>
+        <div class="accretion-disk"></div>
+        <div class="disk-glow"></div>
+
+        <div class="jet jet-upper"></div>
+        <div class="jet jet-lower"></div>
+    </div>
+
     <div class="hud">
-        Sistema Solar em Tempo Real<br>
-        <span style="color:#ffeb3b">Mova o mouse</span> para explorar • <span style="color:#ffeb3b">Clique</span> para iniciar som
+        TON 618 • ~66 bilhões de massas solares • Quasar mais massivo conhecido • 10+ bilhões de anos-luz
     </div>
 
-    <!-- Áudio espacial imersivo -->
-    <audio id="spaceSound" loop preload="auto" volume="0.28">
+    <!-- Som ambiente cósmico (opcional) -->
+    <audio id="bgm" loop preload="auto" volume="0.3">
         <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8d9f8e6d8e.mp3?filename=cosmos-galaxy-stars-universe-milky-way-planet-ambient-music-208619.mp3" type="audio/mpeg">
     </audio>
 
     <script>
-        const audio = document.getElementById('spaceSound');
-        audio.play().catch(() => {
-            document.addEventListener('click', () => audio.play(), { once: true });
-        });
+        // Inicia som com clique (navegadores bloqueiam autoplay)
+        const audio = document.getElementById('bgm');
+        document.body.addEventListener('click', () => audio.play(), {once:true});
 
-        // Mouse controla a câmera 3D (efeito de voo espacial)
-        let rotX = 8, rotY = 0;
-        document.addEventListener('mousemove', e => {
-            rotY = (e.clientX / window.innerWidth - 0.5) * 55;
-            rotX = 8 + (e.clientY / window.innerHeight - 0.5) * 28;
-            document.querySelector('.universe').style.transform = 
-                `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
-        });
-
-        // Cometa aleatório (passa de tempos em tempos)
-        function launchComet() {
-            const comet = document.createElement('div');
-            comet.className = 'comet';
-            comet.style.left = Math.random() * 40 + '%';
-            comet.style.top  = Math.random() * 50 + '%';
-            comet.style.animationDuration = (14 + Math.random() * 12) + 's';
-            document.body.appendChild(comet);
-            
-            setTimeout(() => comet.remove(), 35000);
+        // Partículas caindo no disco (efeito foda)
+        const ton = document.querySelector('.ton618');
+        function createParticle() {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.width = `${Math.random()*6 + 3}px`;
+            p.style.height = p.style.width;
+            p.style.left = `${50 + (Math.random()-0.5)*180}%`;
+            p.style.top = `${Math.random()*-100 - 200}%`;
+            p.style.animationDelay = `${Math.random()*4}s`;
+            p.style.animationDuration = `${5 + Math.random()*6}s`;
+            ton.appendChild(p);
+            setTimeout(() => p.remove(), 15000);
         }
-        setInterval(() => { if (Math.random() > 0.6) launchComet(); }, 11000);
+        setInterval(createParticle, 180);
 
-        // Estrelas cadentes impressionantes
-        function createShootingStar() {
-            const star = document.createElement('div');
-            star.className = 'shooting-star';
-            star.style.left = Math.random() * 70 + '%';
-            star.style.top  = Math.random() * 60 + '%';
-            star.style.animationDuration = (1.8 + Math.random() * 1.5) + 's';
-            document.body.appendChild(star);
-            setTimeout(() => star.remove(), 4000);
-        }
-        setInterval(() => {
-            if (Math.random() > 0.45) createShootingStar();
-        }, 800);
-
-        // Primeiras estrelas cadentes e cometas ao carregar
-        setTimeout(() => {
-            for (let i = 0; i < 6; i++) setTimeout(createShootingStar, i * 220);
-        }, 800);
+        // Primeiras partículas
+        for(let i=0; i<25; i++) setTimeout(createParticle, i*300);
     </script>
 
 </body>
