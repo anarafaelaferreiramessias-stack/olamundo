@@ -3,159 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro Moderno</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    
+    <title>Interface Pokémon Customizada</title>
     <style>
-        * {
+        /* Configurações de Fundo */
+        body {
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background: #f0f2f5;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            background: linear-gradient(135deg, #ff1c1c 50%, #f0f0f0 50%);
+            font-family: 'Arial', sans-serif;
         }
 
-        .container {
+        /* Container da Pokébola */
+        .pokeball {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            border: 10px solid #333;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: inset -10px 10px 0 10px rgba(0,0,0,0.1), 0 0 20px rgba(0,0,0,0.2);
+            animation: shake 1.25s cubic-bezier(.36,.07,.19,.97) infinite;
+        }
+
+        /* Parte Vermelha (Topo) */
+        .pokeball::before {
+            content: "";
+            position: absolute;
+            background: #ff1c1c;
             width: 100%;
-            max-width: 400px;
+            height: 50%;
+            border-bottom: 10px solid #333;
+        }
+
+        /* Botão Central */
+        .pokeball::after {
+            content: "";
+            position: absolute;
+            top: calc(50% - 30px);
+            left: calc(50% - 30px);
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border: 10px solid #333;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 0 5px #fff;
+        }
+
+        /* Animação de Balanço */
+        @keyframes shake {
+            0% { transform: translate(0, 0) rotate(0); }
+            20% { transform: translate(-10px, 0) rotate(-20deg); }
+            30% { transform: translate(10px, 0) rotate(20deg); }
+            50% { transform: translate(-10px, 0) rotate(-10deg); }
+            60% { transform: translate(10px, 0) rotate(10deg); }
+            100% { transform: translate(0, 0) rotate(0); }
+        }
+
+        /* Card de Informação */
+        .pokedex-card {
+            position: absolute;
+            bottom: 50px;
+            background: rgba(255, 255, 255, 0.9);
             padding: 20px;
-        }
-
-        .form-box {
-            background: #fff;
-            padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        h2 {
+            border-bottom: 5px solid #333;
             text-align: center;
-            color: #1a1a1a;
-            margin-bottom: 10px;
+            min-width: 250px;
         }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 30px;
+        h1 {
+            color: #333;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: #444;
-        }
-
-        .input-field {
-            display: flex;
-            align-items: center;
-            background: #f9f9f9;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            padding: 0 15px;
-            transition: 0.3s;
-        }
-
-        .input-field:focus-within {
-            border-color: #4A90E2;
-            background: #fff;
-        }
-
-        .input-field i {
-            color: #999;
-            margin-right: 10px;
-        }
-
-        .input-field input {
-            border: none;
-            background: transparent;
-            padding: 12px 0;
-            width: 100%;
-            outline: none;
-            font-size: 0.95rem;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 15px;
-            background: #4A90E2;
+        .type-tag {
+            display: inline-block;
+            background: #4dad5b;
             color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
+            padding: 5px 15px;
+            border-radius: 20px;
             margin-top: 10px;
-        }
-
-        .btn-submit:hover {
-            background: #357ABD;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 25px;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .footer-text a {
-            color: #4A90E2;
-            text-decoration: none;
-            font-weight: 600;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="form-box">
-            <form class="form-cadastro" id="registrationForm">
-                <h2>Criar Conta</h2>
-                <p class="subtitle">Junte-se a nós e comece sua jornada.</p>
 
-                <div class="input-group">
-                    <label for="nome">Nome Completo</label>
-                    <div class="input-field">
-                        <i class="fa-regular fa-user"></i>
-                        <input type="text" id="nome" placeholder="Ex: João Silva" required>
-                    </div>
-                </div>
+    <div class="pokeball"></div>
 
-                <div class="input-group">
-                    <label for="email">E-mail</label>
-                    <div class="input-field">
-                        <i class="fa-regular fa-envelope"></i>
-                        <input type="email" id="email" placeholder="exemplo@dominio.com" required>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="senha">Senha</label>
-                    <div class="input-field">
-                        <i class="fa-solid fa-lock"></i>
-                        <input type="password" id="senha" placeholder="Sua senha" required>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-submit">Criar Conta</button>
-                <p class="footer-text">Já tem conta? <a href="#">Faça login</a></p>
-            </form>
-        </div>
+    <div class="pokedex-card">
+        <h1>Gotta Catch 'Em All!</h1>
+        <div class="type-tag">Treinador Pokémon</div>
     </div>
+
 </body>
 </html>
