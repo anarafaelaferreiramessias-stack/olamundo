@@ -2,50 +2,31 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Ultra Edition</title>
+    <title>Minecraft 2026 - Infinite World</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; background: #000; }
-        
-        /* MENU */
-        #menu {
-            position: absolute; width: 100%; height: 100%; z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
-        }
-        .btn { 
-            padding: 15px 100px; background: #444; border: 3px solid #000; color: #fff; 
-            font-family: 'Courier New'; font-size: 1.5rem; cursor: pointer; box-shadow: inset -4px -4px 0 #222;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Courier New', monospace; background: #87CEEB; }
+        #menu { position: absolute; width: 100%; height: 100%; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); color: white; }
+        .btn { padding: 15px 60px; background: #555; border: 3px solid #000; color: #fff; font-size: 20px; cursor: pointer; box-shadow: inset -4px -4px 0 #222; }
         .btn:hover { background: #55a832; }
-
-        /* HUD */
-        #hotbar {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            display: none; gap: 4px; padding: 4px; background: rgba(0,0,0,0.5); border: 2px solid #888;
-        }
-        .slot { width: 44px; height: 44px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; }
-        .slot.selected { border: 2px solid #fff; background: rgba(255,255,255,0.2); }
-        .count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 14px; text-shadow: 1px 1px #000; }
-        
-        #crosshair { 
-            position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; 
-            transform: translate(-50%, -50%); display: none; pointer-events: none;
-        }
-        #crosshair::before { content: ''; position: absolute; top: 8px; left: 0; width: 18px; height: 2px; background: white; mix-blend-mode: difference; }
-        #crosshair::after { content: ''; position: absolute; top: 0; left: 8px; width: 2px; height: 18px; background: white; mix-blend-mode: difference; }
+        #hotbar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 4px; padding: 4px; background: rgba(0,0,0,0.5); border: 2px solid #888; }
+        .slot { width: 44px; height: 44px; border: 2px solid #444; background: rgba(255,255,255,0.1); }
+        .slot.selected { border: 2px solid #fff; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
+        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
+        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1 style="color: white; font-family: 'Courier New'; text-shadow: 4px 4px #000; margin-bottom: 40px;">MINECRAFT</h1>
+        <h1 style="text-shadow: 4px 4px #000; font-size: 4rem;">MINECRAFT INFINITE</h1>
         <button class="btn" onclick="start()">NEW GAME</button>
     </div>
 
     <div id="hotbar">
-        <div class="slot selected"><div style="width:25px; height:25px; background: #5d4037; border: 1px solid #000;"></div><div id="inv-count" class="count">0</div></div>
-        <div class="slot"></div><div class="slot"></div><div class="slot"></div>
+        <div class="slot selected"></div><div class="slot"></div><div class="slot"></div>
     </div>
     <div id="crosshair"></div>
 
@@ -54,22 +35,28 @@
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let prevTime = performance.now();
-        let blocks = [], inventory = 0;
+        let chunks = {}, blocks = [];
+        const CHUNK_SIZE = 16;
+        const RENDER_DISTANCE = 1;
 
-        // GERADOR DE TEXTURA PIXELADA REALISTA
-        function createMCTexture(type) {
+        // Gerador de Texturas Pixel-Perfect
+        function getMCTexture(type) {
             const canvas = document.createElement('canvas');
             canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
-            
-            for(let i=0; i<16; i++) {
-                for(let j=0; j<16; j++) {
-                    let noise = Math.random() * 20;
-                    if(type === 'grass') ctx.fillStyle = `rgb(${72+noise}, ${126+noise}, ${37+noise})`;
-                    else if(type === 'dirt') ctx.fillStyle = `rgb(${93+noise}, ${64+noise}, ${55+noise})`;
-                    else if(type === 'wood') ctx.fillStyle = `rgb(${100+noise}, ${70+noise}, ${40+noise})`;
-                    else ctx.fillStyle = `rgb(${45+noise}, ${71+noise}, ${30+noise})`;
-                    ctx.fillRect(i, j, 1, 1);
+            for(let x=0; x<16; x++) {
+                for(let y=0; y<16; y++) {
+                    let r, g, b;
+                    let n = Math.random() * 15;
+                    if(type === 'top') { r=72+n; g=126+n; b=37+n; }
+                    else if(type === 'side') { 
+                        if(y < 4) { r=72+n; g=126+n; b=37+n; }
+                        else { r=93+n; g=64+n; b=55+n; }
+                    }
+                    else if(type === 'wood') { r=100+n; g=70+n; b=40+n; }
+                    else if(type === 'leaf') { r=45+n; g=71+n; b=30+n; }
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x, y, 1, 1);
                 }
             }
             const tex = new THREE.CanvasTexture(canvas);
@@ -77,10 +64,18 @@
             return tex;
         }
 
-        const grassTex = createMCTexture('grass');
-        const dirtTex = createMCTexture('dirt');
-        const woodTex = createMCTexture('wood');
-        const leafTex = createMCTexture('leaf');
+        const materials = {
+            grass: [
+                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // right
+                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // left
+                new THREE.MeshLambertMaterial({map: getMCTexture('top')}),  // top
+                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // bottom (dirt)
+                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // front
+                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // back
+            ],
+            wood: new THREE.MeshLambertMaterial({map: getMCTexture('wood')}),
+            leaf: new THREE.MeshLambertMaterial({map: getMCTexture('leaf'), transparent: true, opacity: 0.9})
+        };
 
         function start() {
             document.getElementById('menu').style.display = 'none';
@@ -92,99 +87,90 @@
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x78a7ff);
-            scene.fog = new THREE.Fog(0x78a7ff, 5, 50);
+            scene.fog = new THREE.Fog(0x78a7ff, 5, 40);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 5);
+            camera.position.set(0, 5, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // Luz suave igual ao jogo
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
             const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-            sun.position.set(10, 20, 10);
+            sun.position.set(10, 50, 10);
             scene.add(sun);
 
-            // Gerar Terreno Voxel
-            for(let x = -15; x <= 15; x++) {
-                for(let z = -15; z <= 15; z++) {
-                    // Chão de grama
-                    createBlock(x, 0, z, grassTex);
-                    // Árvores
-                    if(Math.random() > 0.94 && (Math.abs(x) > 3 || Math.abs(z) > 3)) {
-                        spawnTree(x, 0, z);
-                    }
-                }
-            }
-
-            // Mão do Steve
-            const handGeo = new THREE.BoxGeometry(0.25, 0.25, 0.9);
-            const handMat = new THREE.MeshLambertMaterial({color: 0xdbac82});
-            hand = new THREE.Mesh(handGeo, handMat);
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.8), new THREE.MeshLambertMaterial({color: 0xdbac82}));
             scene.add(hand);
 
             raycaster = new THREE.Raycaster();
             setupControls();
+            updateWorld();
             animate();
         }
 
-        function createBlock(x, y, z, tex) {
-            const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: tex}));
+        function createBlock(x, y, z, mat) {
+            const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
             block.position.set(x, y, z);
             scene.add(block);
             blocks.push(block);
         }
 
-        function spawnTree(x, y, z) {
-            // Tronco
-            for(let h = 1; h <= 4; h++) createBlock(x, y + h, z, woodTex);
-            // Copo de folhas
-            for(let ly = 4; ly <= 6; ly++) {
-                for(let lx = -1; lx <= 1; lx++) {
-                    for(let lz = -1; lz <= 1; lz++) {
-                        if(ly === 6 && (lx !== 0 || lz !== 0)) continue;
-                        createBlock(x + lx, y + ly, z + lz, leafTex);
+        function spawnTree(x, z) {
+            for(let h=1; h<=4; h++) createBlock(x, h, z, materials.wood);
+            for(let ly=4; ly<=5; ly++) {
+                for(let lx=-1; lx<=1; lx++) {
+                    for(let lz=-1; lz<=1; lz++) createBlock(x+lx, ly, z+lz, materials.leaf);
+                }
+            }
+        }
+
+        function updateWorld() {
+            const pX = Math.floor(camera.position.x / CHUNK_SIZE);
+            const pZ = Math.floor(camera.position.z / CHUNK_SIZE);
+
+            for(let x = pX - RENDER_DISTANCE; x <= pX + RENDER_DISTANCE; x++) {
+                for(let z = pZ - RENDER_DISTANCE; z <= pZ + RENDER_DISTANCE; z++) {
+                    const key = `${x},${z}`;
+                    if(!chunks[key]) {
+                        // Gerar Chunk
+                        for(let bx=0; bx<CHUNK_SIZE; bx++) {
+                            for(let bz=0; bz<CHUNK_SIZE; bz++) {
+                                let realX = x * CHUNK_SIZE + bx;
+                                let realZ = z * CHUNK_SIZE + bz;
+                                createBlock(realX, 0, realZ, materials.grass);
+                                if(Math.random() > 0.98) spawnTree(realX, realZ);
+                            }
+                        }
+                        chunks[key] = true;
                     }
                 }
             }
         }
 
         function setupControls() {
-            document.addEventListener('mousedown', (e) => {
+            document.addEventListener('mousedown', () => {
                 if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock();
                 else {
-                    // Animação de soco
-                    hand.position.z += 0.2; 
-                    
+                    hand.position.z += 0.3; // Soco
                     raycaster.setFromCamera(new THREE.Vector2(), camera);
                     const hits = raycaster.intersectObjects(blocks);
-                    if (hits.length > 0 && hits[0].distance < 4.5) {
-                        if (e.button === 0) { // Quebrar
-                            scene.remove(hits[0].object);
-                            blocks = blocks.filter(b => b !== hits[0].object);
-                            inventory++;
-                            document.getElementById('inv-count').innerText = inventory;
-                        } else if (e.button === 2 && inventory > 0) { // Colocar
-                            const pos = hits[0].object.position.clone().add(hits[0].face.normal);
-                            createBlock(pos.x, Math.round(pos.y), pos.z, woodTex);
-                            inventory--;
-                            document.getElementById('inv-count').innerText = inventory;
-                        }
+                    if(hits[0] && hits[0].distance < 5) {
+                        scene.remove(hits[0].object);
+                        blocks = blocks.filter(b => b !== hits[0].object);
                     }
                 }
             });
-
-            document.addEventListener('keydown', (e) => {
+            window.onkeydown = (e) => {
                 if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
                 if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
-                if(e.code === 'Space' && canJump) { velocity.y += 4.5; canJump = false; }
-            });
-            document.addEventListener('keyup', (e) => {
+                if(e.code === 'Space' && canJump) { velocity.y += 4; canJump = false; }
+            };
+            window.onkeyup = (e) => {
                 if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
                 if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
-            });
+            };
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement === renderer.domElement) {
                     camera.rotation.y -= e.movementX * 0.002;
@@ -214,20 +200,18 @@
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
 
-            // Colisão com o solo
-            if (camera.position.y < 2.2) { 
-                velocity.y = 0; 
-                camera.position.y = 2.2; 
-                canJump = true; 
-            }
+            if (camera.position.y < 2.2) { velocity.y = 0; camera.position.y = 2.2; canJump = true; }
 
-            // Animação da mão (bobbing)
+            // View Bobbing (Balanço ao andar)
+            const bob = (moveF || moveB || moveL || moveR) ? Math.sin(time * 0.01) * 0.05 : 0;
+            camera.position.y += bob;
+
+            // Update mão
             hand.position.copy(camera.position);
             hand.quaternion.copy(camera.quaternion);
-            const bob = Math.sin(time * 0.008) * 0.02;
-            hand.translateX(0.5); 
-            hand.translateY(-0.4 + bob); 
-            hand.translateZ(-0.7);
+            hand.translateX(0.5); hand.translateY(-0.4 + bob); hand.translateZ(-0.8);
+
+            updateWorld(); // Carrega novos pedaços do mundo
 
             camera.rotation.order = 'YXZ';
             prevTime = time;
