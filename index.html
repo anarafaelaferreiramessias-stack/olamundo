@@ -3,173 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TON 618 - O Maior Buraco Negro Conhecido</title>
+    <title>Buraco Negro Realista - Estilo NASA</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; overflow:hidden; }
         body {
             height:100vh;
             background:#000;
-            perspective:2200px;
-            cursor:grab;
-            font-family:Arial,sans-serif;
+            perspective:2800px;
+            cursor:move;
         }
 
         .scene {
             position:absolute;
             inset:0;
             transform-style:preserve-3d;
-            transform:rotateX(12deg);
-            animation:sceneRotate 480s linear infinite;
+            transform:rotateX(18deg);
+            animation:sceneSpin 600s linear infinite;
         }
 
-        @keyframes sceneRotate {
-            to { transform:rotateX(12deg) rotateY(360deg); }
+        @keyframes sceneSpin {
+            to { transform:rotateX(18deg) rotateY(360deg); }
         }
 
-        /* Fundo cósmico profundo */
+        /* Fundo NASA-style: estrelas + nebulosa */
         .cosmos {
             position:absolute;
             inset:0;
-            background:radial-gradient(circle at 50% 50%, #0a0015 0%, #000 80%);
-            pointer-events:none;
+            background:radial-gradient(circle at 50% 50%, #0a001f 0%, #000 90%);
         }
 
         .stars {
             position:absolute;
             inset:0;
             background:
-                radial-gradient(white 1px,transparent 1px) 0 0/100px 100px,
-                radial-gradient(white 0.8px,transparent 0.8px) 50px 50px/80px 80px;
-            opacity:0.7;
-            animation:drift 300s linear infinite;
+                radial-gradient(white 1px,transparent 1px) 0 0/120px 120px,
+                radial-gradient(white 0.9px,transparent 0.9px) 60px 60px/90px 90px;
+            opacity:0.75;
+            animation:starsDrift 400s linear infinite;
         }
 
-        @keyframes drift { to { transform:translateZ(-4000px); } }
+        @keyframes starsDrift { to { transform:translateZ(-5000px); } }
 
-        /* Nebulosa ao redor */
         .nebula {
             position:absolute;
             inset:0;
             background:
-                radial-gradient(circle at 40% 60%, rgba(180,60,255,0.22) 0%,transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(0,180,255,0.18) 0%,transparent 55%);
-            filter:blur(60px);
-            animation:pulse 45s ease-in-out infinite alternate;
+                radial-gradient(circle at 30% 70%, rgba(100,0,255,0.25) 0%,transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0,200,255,0.18) 0%,transparent 60%);
+            filter:blur(80px);
+            animation:nebulaBreathe 60s ease-in-out infinite alternate;
         }
 
-        @keyframes pulse { 0%{opacity:0.6;transform:scale(0.98);} 100%{opacity:1;transform:scale(1.06);} }
+        @keyframes nebulaBreathe {
+            0% { opacity:0.5; transform:scale(0.95); }
+            100% { opacity:0.9; transform:scale(1.1); }
+        }
 
-        /* TON 618 - Disco de acreção + event horizon */
-        .ton618 {
+        /* Buraco Negro principal - grande e central */
+        .blackhole {
             position:absolute;
             top:50%;
             left:50%;
-            width:900px;
-            height:900px;
-            transform:translate(-50%,-50%) rotateX(15deg);
+            width:1100px;
+            height:1100px;
+            transform:translate(-50%,-50%) rotateX(12deg);
             transform-style:preserve-3d;
             z-index:10;
         }
 
-        .event-horizon {
+        .horizon {
             position:absolute;
             inset:0;
             background:#000;
             border-radius:50%;
-            box-shadow:0 0 180px #000, inset 0 0 120px #000;
-            transform:rotateX(0deg);
+            box-shadow:0 0 300px #000, inset 0 0 200px #000;
         }
 
-        .accretion-disk {
+        /* Disco de acreção girando (efeito NASA: quente, assimétrico, Doppler-like) */
+        .disk {
             position:absolute;
-            inset:-20%;
+            inset:-15%;
             background:conic-gradient(
-                from 0deg at 50% 50%,
-                transparent 0deg,
-                #ff6600 30deg,
-                #ffaa00 90deg,
-                #ffff00 150deg,
-                #ffaa00 210deg,
-                #ff6600 270deg,
-                transparent 360deg
+                from 45deg at 50% 50%,
+                transparent 0deg 40deg,
+                #ff5500 40deg 100deg,
+                #ffaa00 100deg 160deg,
+                #ffff00 160deg 220deg,
+                #ffaa00 220deg 280deg,
+                #ff5500 280deg 320deg,
+                transparent 320deg 360deg
             );
             border-radius:50%;
-            filter:blur(18px);
-            opacity:0.92;
-            animation:spinDisk 18s linear infinite;
-            box-shadow:0 0 280px #ff8800, 0 0 520px #ff4400;
+            filter:blur(25px);
+            opacity:0.95;
+            animation:diskSpin 12s linear infinite;
+            box-shadow:0 0 400px #ff8800, 0 0 700px #ff4400, 0 0 1000px #ff2200;
         }
 
-        @keyframes spinDisk {
-            to { transform:rotate(360deg); }
-        }
+        @keyframes diskSpin { to { transform:rotate(360deg); } }
 
-        .disk-glow {
+        /* Photon ring (anel de luz orbitando - marca NASA) */
+        .photon-ring {
             position:absolute;
-            inset:-40%;
-            background:radial-gradient(circle,#ffaa00 10%,transparent 60%);
+            inset:-5%;
+            border:18px solid #ffdd88;
             border-radius:50%;
-            filter:blur(120px);
-            animation:glowPulse 6s ease-in-out infinite alternate;
-            opacity:0.8;
+            box-shadow:0 0 80px #ffdd88, inset 0 0 40px #ffaa00;
+            filter:blur(12px);
+            opacity:0.85;
+            animation:ringGlow 8s ease-in-out infinite alternate;
         }
 
-        @keyframes glowPulse {
-            0%{opacity:0.7;transform:scale(1);}
-            100%{opacity:1.1;transform:scale(1.15);}
+        @keyframes ringGlow {
+            0% { opacity:0.7; transform:scale(1.02); }
+            100% { opacity:1; transform:scale(1.08); }
         }
 
-        /* Jets polares (quasar) */
-        .jet {
+        /* Glow externo do disco (luz distorcida) */
+        .glow {
             position:absolute;
-            top:50%;
-            left:50%;
-            width:80px;
-            height:1800px;
-            background:linear-gradient(to top, transparent, #a0f0ff, #ffffff, #a0f0ff, transparent);
-            filter:blur(40px);
-            transform:translate(-50%,-50%);
-            opacity:0.45;
-            animation:jetPulse 12s ease-in-out infinite alternate;
+            inset:-50%;
+            background:radial-gradient(circle,#ffaa44 10%,transparent 65%);
+            border-radius:50%;
+            filter:blur(180px);
+            animation:glowBeat 7s ease-in-out infinite alternate;
+            opacity:0.75;
         }
 
-        .jet-upper { transform:translate(-50%,-50%) rotate(180deg); }
-        .jet-lower { transform:translate(-50%,-50%) rotate(0deg); }
-
-        @keyframes jetPulse {
-            0%{opacity:0.4;height:1600px;}
-            100%{opacity:0.75;height:2200px;}
+        @keyframes glowBeat {
+            0% { opacity:0.6; transform:scale(0.9); }
+            100% { opacity:1.2; transform:scale(1.15); }
         }
 
-        /* Partículas caindo no disco */
+        /* Partículas caindo no horizonte (matéria sendo sugada) */
         .particle {
             position:absolute;
-            background:#ffcc88;
+            background:#ffcc99;
             border-radius:50%;
-            box-shadow:0 0 20px #ff8800;
-            animation:fallIn 8s linear infinite;
+            box-shadow:0 0 25px #ff8800;
+            animation:spiralIn 10s linear infinite;
             opacity:0;
         }
 
-        @keyframes fallIn {
-            0%  {transform:translate(0,-800px) scale(0.2);opacity:0;}
-            20% {opacity:1;}
-            100%{transform:translate(0,0) scale(0);opacity:0;}
+        @keyframes spiralIn {
+            0% { transform:translate(0,-1200px) rotate(0deg) scale(0.3); opacity:0; }
+            15% { opacity:1; }
+            100% { transform:translate(0,0) rotate(720deg) scale(0); opacity:0; }
         }
 
-        /* Info HUD */
+        /* HUD NASA-style */
         .hud {
             position:absolute;
-            bottom:30px;
+            bottom:40px;
             left:50%;
             transform:translateX(-50%);
-            background:rgba(0,0,0,0.7);
-            padding:15px 40px;
-            border-radius:12px;
-            color:#a0ffff;
-            font-size:1.3rem;
-            text-shadow:0 0 12px #00ffff;
-            border:2px solid #00ffff;
+            background:rgba(0,0,0,0.75);
+            padding:20px 50px;
+            border-radius:15px;
+            color:#aaffff;
+            font-size:1.4rem;
+            text-shadow:0 0 15px #00ffff;
+            border:3px solid #00ffff;
             pointer-events:none;
             z-index:20;
         }
@@ -182,47 +176,50 @@
         <div class="nebula"></div>
     </div>
 
-    <div class="ton618">
-        <div class="event-horizon"></div>
-        <div class="accretion-disk"></div>
-        <div class="disk-glow"></div>
-
-        <div class="jet jet-upper"></div>
-        <div class="jet jet-lower"></div>
+    <div class="blackhole">
+        <div class="horizon"></div>
+        <div class="disk"></div>
+        <div class="photon-ring"></div>
+        <div class="glow"></div>
     </div>
 
     <div class="hud">
-        TON 618 • ~66 bilhões de massas solares • Quasar mais massivo conhecido • 10+ bilhões de anos-luz
+        Buraco Negro Supermassivo • Disco de Acreção Girando • Simulação NASA-Style • Gravidade Extrema
     </div>
 
-    <!-- Som ambiente cósmico (opcional) -->
-    <audio id="bgm" loop preload="auto" volume="0.3">
+    <!-- Som cósmico épico (inicia com clique) -->
+    <audio id="space" loop preload="auto" volume="0.3">
         <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8d9f8e6d8e.mp3?filename=cosmos-galaxy-stars-universe-milky-way-planet-ambient-music-208619.mp3" type="audio/mpeg">
     </audio>
 
     <script>
-        // Inicia som com clique (navegadores bloqueiam autoplay)
-        const audio = document.getElementById('bgm');
+        const audio = document.getElementById('space');
         document.body.addEventListener('click', () => audio.play(), {once:true});
 
-        // Partículas caindo no disco (efeito foda)
-        const ton = document.querySelector('.ton618');
-        function createParticle() {
+        // Controle com mouse: vire a "câmera" como na NASA
+        let rx = 18, ry = 0;
+        document.addEventListener('mousemove', e => {
+            ry = (e.clientX / window.innerWidth - 0.5) * 60;
+            rx = 18 + (e.clientY / window.innerHeight - 0.5) * 30;
+            document.querySelector('.scene').style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+        });
+
+        // Partículas de matéria caindo (efeito foda)
+        const bh = document.querySelector('.blackhole');
+        function spawnParticle() {
             const p = document.createElement('div');
             p.className = 'particle';
-            p.style.width = `${Math.random()*6 + 3}px`;
+            p.style.width = `${Math.random()*8 + 4}px`;
             p.style.height = p.style.width;
-            p.style.left = `${50 + (Math.random()-0.5)*180}%`;
-            p.style.top = `${Math.random()*-100 - 200}%`;
-            p.style.animationDelay = `${Math.random()*4}s`;
-            p.style.animationDuration = `${5 + Math.random()*6}s`;
-            ton.appendChild(p);
-            setTimeout(() => p.remove(), 15000);
+            p.style.left = `${50 + (Math.random()-0.5)*220}%`;
+            p.style.top = `${-Math.random()*150 - 100}%`;
+            p.style.animationDuration = `${6 + Math.random()*8}s`;
+            p.style.animationDelay = `${Math.random()*3}s`;
+            bh.appendChild(p);
+            setTimeout(() => p.remove(), 20000);
         }
-        setInterval(createParticle, 180);
-
-        // Primeiras partículas
-        for(let i=0; i<25; i++) setTimeout(createParticle, i*300);
+        setInterval(spawnParticle, 120);
+        for(let i=0; i<30; i++) setTimeout(spawnParticle, i*200);
     </script>
 
 </body>
