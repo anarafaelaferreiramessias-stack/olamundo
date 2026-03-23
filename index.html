@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Super Mario Bros. - It's-a me!</title>
+    <title>Olá Mundo - Mario Kart Style!</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
@@ -14,7 +14,7 @@
 
         body {
             height: 100vh;
-            background: linear-gradient(to bottom, #5c94fc 0%, #5c94fc 45%, #6b8c42 45%, #8bac0f 50%, #306230 100%);
+            background: linear-gradient(to bottom, #4a90e2 0%, #4a90e2 40%, #87cefa 40%, #d2b48c 70%, #8b4513 100%);
             font-family: 'Press Start 2P', cursive;
             color: #fff;
             cursor: pointer;
@@ -25,171 +25,176 @@
             align-items: center;
         }
 
-        /* Nuvens decorativas no céu (estilo Mario) */
-        .cloud {
+        /* Efeito de pista com linhas de velocidade */
+        .road-lines {
             position: absolute;
-            background: #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255,255,255,0.8);
-            opacity: 0.9;
+            bottom: 0;
+            width: 100%;
+            height: 60%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%,
+                transparent 20px,
+                #ffd700 20px,
+                #ffd700 40px
+            );
+            animation: moveRoad 1.2s linear infinite;
+            opacity: 0.8;
         }
 
-        .cloud1 { width: 120px; height: 60px; top: 80px; left: 150px; }
-        .cloud1::before { content: ''; position: absolute; width: 80px; height: 80px; background: #fff; border-radius: 50%; top: -40px; left: 20px; }
-        .cloud1::after { content: ''; position: absolute; width: 60px; height: 60px; background: #fff; border-radius: 50%; top: -30px; left: 70px; }
+        @keyframes moveRoad {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-80px); }
+        }
 
-        .cloud2 { width: 140px; height: 70px; top: 140px; right: 180px; }
-        .cloud2::before { content: ''; position: absolute; width: 90px; height: 90px; background: #fff; border-radius: 50%; top: -45px; left: 25px; }
-        .cloud2::after { content: ''; position: absolute; width: 70px; height: 70px; background: #fff; border-radius: 50%; top: -35px; left: 80px; }
-
-        .mushroom {
+        /* Kart simples central (CSS puro) */
+        .kart {
             position: relative;
-            width: 260px;
-            height: 260px;
-            background: #ffffff;
-            border: 16px solid #000000;
-            border-radius: 50% 50% 48% 48% / 62% 62% 38% 38%;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset -20px 20px 30px rgba(0,0,0,0.25);
-            animation: bounce-grow 2s ease-in-out infinite;
+            width: 280px;
+            height: 180px;
+            animation: bounce 1.8s ease-in-out infinite;
             z-index: 10;
         }
 
-        .mushroom::before {
-            content: "";
+        .kart-body {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 60%;
-            background: #e31e24; /* Vermelho clássico do Mario */
-            border-bottom: 16px solid #000000;
-            border-radius: 50% 50% 0 0;
-        }
-
-        .mushroom::after {
-            content: "";
-            position: absolute;
-            top: 38%;
+            bottom: 0;
             left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
+            transform: translateX(-50%);
+            width: 220px;
             height: 80px;
-            background: #ffffff;
-            border: 16px solid #000000;
-            border-radius: 50%;
-            box-shadow: 0 0 0 12px #e31e24;
-            z-index: 5;
+            background: #e31e24; /* Vermelho Mario */
+            border: 8px solid #000;
+            border-radius: 20px 60px 20px 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
         }
 
-        /* Manchas brancas no chapéu */
-        .spot {
+        .kart-top {
             position: absolute;
-            background: #ffffff;
-            border: 6px solid #000000;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 60px;
+            background: #000;
+            border: 8px solid #e31e24;
+            border-radius: 50% 50% 10px 10px;
+        }
+
+        .wheel {
+            position: absolute;
+            background: #111;
+            border: 10px solid #ffd700;
             border-radius: 50%;
-            z-index: 3;
+            box-shadow: inset 0 0 15px #000;
         }
 
-        .spot1 { width: 36px; height: 36px; top: 18%; left: 22%; }
-        .spot2 { width: 32px; height: 32px; top: 12%; left: 68%; }
-        .spot3 { width: 40px; height: 40px; top: 38%; left: 38%; }
+        .wheel-front-left { width: 70px; height: 70px; bottom: -20px; left: 20px; }
+        .wheel-front-right { width: 70px; height: 70px; bottom: -20px; right: 20px; }
+        .wheel-back-left { width: 80px; height: 80px; bottom: -30px; left: 10px; }
+        .wheel-back-right { width: 80px; height: 80px; bottom: -30px; right: 10px; }
 
-        @keyframes bounce-grow {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-60px) scale(1.08); }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(3deg); }
         }
 
-        .mario-card {
+        /* Texto Olá Mundo estilo Mario Kart */
+        .hello {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 3.2em;
+            color: #ffd700;
+            text-shadow: 6px 6px 0 #e31e24, 10px 10px 0 #000;
+            letter-spacing: 8px;
+            text-align: center;
+            z-index: 5;
+            white-space: nowrap;
+        }
+
+        .subtitle {
+            font-size: 1.4em;
+            color: #fff;
+            text-shadow: 4px 4px 0 #000;
+            margin-top: 20px;
+        }
+
+        .card {
             position: absolute;
             bottom: 80px;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 30px 50px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 25px 50px;
             border: 8px solid #e31e24;
             border-radius: 20px;
             text-align: center;
-            min-width: 380px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
             z-index: 5;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
-        h1 {
-            font-size: 2.4em;
-            color: #e31e24;
-            text-shadow: 4px 4px 0 #000, 6px 6px 0 #000;
-            letter-spacing: 6px;
-            margin-bottom: 15px;
-        }
-
-        .tag {
-            font-size: 1.3em;
+        .card p {
+            font-size: 1.1em;
             color: #ffd700;
-            text-shadow: 3px 3px 0 #000;
-            background: #000;
-            padding: 12px 30px;
-            border-radius: 40px;
-            border: 5px solid #e31e24;
-            display: inline-block;
         }
-
-        /* Som de coin (opcional, toca no clique) */
-        audio { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Nuvens decorativas -->
-    <div class="cloud cloud1"></div>
-    <div class="cloud cloud2"></div>
+    <!-- Linhas da pista em movimento -->
+    <div class="road-lines"></div>
 
-    <!-- Super Mushroom central -->
-    <div class="mushroom">
-        <div class="spot spot1"></div>
-        <div class="spot spot2"></div>
-        <div class="spot spot3"></div>
+    <!-- Kart central -->
+    <div class="kart">
+        <div class="kart-body">
+            <div class="kart-top"></div>
+        </div>
+        <div class="wheel wheel-front-left"></div>
+        <div class="wheel wheel-front-right"></div>
+        <div class="wheel wheel-back-left"></div>
+        <div class="wheel wheel-back-right"></div>
     </div>
 
-    <!-- Card de texto -->
-    <div class="mario-card">
-        <h1>It's-a me,<br>Mario!</h1>
-        <div class="tag">Mamma mia!</div>
+    <!-- Texto principal -->
+    <div class="hello">
+        Olá Mundo!
+        <div class="subtitle">Mario Kart Edition</div>
     </div>
 
-    <!-- Música de fundo: Ground Theme -->
+    <!-- Card inferior -->
+    <div class="card">
+        <p>Ready... Set... GO!</p>
+        <p>Clique para começar a corrida!</p>
+    </div>
+
+    <!-- Música de fundo: Super Mario Kart - Title Screen / Main Theme -->
     <audio id="bgm" loop preload="auto" volume="0.35">
-        <source src="http://www.mariomayhem.com/downloads/sound_tracks/Super_Mario_Bros._1/01-main-theme-overworld.mp3" type="audio/mpeg">
-        <!-- Alternativa se o acima falhar: https://vgmsite.com/soundtracks/super-mario-bros/01.%20Ground%20Theme.mp3 -->
+        <source src="https://vgmsite.com/soundtracks/super-mario-kart-gamerip/1-02.%20Title%20Screen.mp3" type="audio/mpeg">
+        <!-- Alternativa se falhar: https://downloads.khinsider.com/game-soundtracks/album/super-mario-kart-gamerip/1-02.%2520Title%2520Screen.mp3 -->
     </audio>
 
-    <!-- Som de moeda (toca no clique) -->
-    <audio id="coin" preload="auto">
+    <!-- Som de "start" ou coin no clique -->
+    <audio id="startSound" preload="auto">
         <source src="https://www.orangefreesounds.com/wp-content/uploads/2014/08/Mario-coin-sound.mp3" type="audio/mpeg">
-        <!-- Alternativa: https://themushroomkingdom.net/sounds/wav/smb/smb_coin.wav -->
+        <!-- Alternativa: https://themushroomkingdom.net/sounds/wav/smk/smk_race_start.wav (se encontrar link direto) -->
     </audio>
 
     <script>
         const bgm = document.getElementById('bgm');
-        const coin = document.getElementById('coin');
+        const startSound = document.getElementById('startSound');
 
-        // Tenta tocar a música de fundo
-        function startBGM() {
-            bgm.play().catch(() => {
-                // Se autoplay bloqueado, toca no primeiro clique
-                document.body.addEventListener('click', () => {
-                    bgm.play();
-                }, { once: true });
-            });
-        }
+        // Tenta tocar música de fundo
+        bgm.play().catch(() => {
+            document.body.addEventListener('click', () => bgm.play(), { once: true });
+        });
 
-        startBGM();
-
-        // Ao clicar: toca som de moeda + redireciona após delay
+        // Ao clicar: som + redireciona
         document.body.addEventListener('click', () => {
-            coin.currentTime = 0;
-            coin.play().catch(() => {}); // Ignora erro se som bloqueado
+            startSound.currentTime = 0;
+            startSound.play().catch(() => {});
             setTimeout(() => {
                 window.location.href = "https://www.nintendo.com/pt-br/";
-            }, 1200); // Dá tempo de ouvir o "ding" da moeda
+            }, 1500); // Delay pra curtir o som
         });
     </script>
 
