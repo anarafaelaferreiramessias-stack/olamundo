@@ -3,231 +3,142 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Minecraft • Cherry Grove • Pôr do Sol</title>
+  <title>Planeta Rodando</title>
   <style>
-    :root {
-      --block-size: 64px;
-      --sunset-orange: #ff7f4d;
-      --sunset-pink: #ff99cc;
-      --sky-purple: #a78bdb;
-      --sky-blue: #4da6ff;
-      --grass-green: #7fb87f;
-      --cherry-leaves: #ffb6c1;
-      --cherry-trunk: #a0522d;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
     body {
       height: 100vh;
+      background: radial-gradient(circle at center, #0a001f 0%, #000 100%);
       overflow: hidden;
-      background: #000;
-      image-rendering: pixelated;
-      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    /* Céu com gradiente fiel ao Minecraft sunset */
-    .sky {
+    .space {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        to bottom,
-        #1e3a8a 0%,     /* céu escuro superior */
-        #3b82f6 20%,     /* azul claro */
-        #60a5fa 35%,     /* transição */
-        #f472b6 50%,     /* rosa forte do entardecer */
-        #fb923c 70%,     /* laranja intenso */
-        #f97316 85%,     /* laranja queimado */
-        #c2410c 100%     /* vermelho alaranjado na linha do horizonte */
-      );
-      animation: skyBreath 240s ease-in-out infinite alternate;
+      background: transparent;
+      pointer-events: none;
     }
 
-    @keyframes skyBreath {
-      0%,100% { opacity: 0.98; }
-      50%     { opacity: 1; }
-    }
-
-    /* Sol quadrado Minecraft se pondo */
-    .sun {
+    .stars {
       position: absolute;
-      width: 220px;
-      height: 220px;
-      background: #ffdd44;
-      box-shadow:
-        0 0 140px #ffdd44,
-        0 0 280px #ffaa33,
-        0 0 480px #ff7733,
-        0 0 680px #ff4422;
-      border-radius: 0;
-      top: 18%;
-      left: 65%;
-      transform: translate(-50%, -50%);
-      animation: sunPath 360s linear infinite;
+      inset: 0;
+      background:
+        radial-gradient(white 1px, transparent 1px) 0 0 / 80px 80px,
+        radial-gradient(white 0.8px, transparent 0.8px) 40px 40px / 60px 60px;
+      opacity: 0.7;
+      animation: starsDrift 400s linear infinite;
     }
 
-    @keyframes sunPath {
-      0%   { top: 18%; left: 65%; opacity: 1; }
-      40%  { top: 35%; left: 50%; opacity: 0.95; }
-      80%  { top: 65%; left: 35%; opacity: 0.75; }
-      100% { top: 85%; left: 20%; opacity: 0.4; }
+    @keyframes starsDrift {
+      to { transform: translateZ(-3000px); }
     }
 
-    /* Chão / grama do bioma */
-    .ground {
+    .planet-container {
+      position: relative;
+      width: 420px;
+      height: 420px;
+      perspective: 1800px;
+    }
+
+    .planet {
       position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 38%;
-      background: var(--grass-green);
-      box-shadow: inset 0 40px 80px rgba(0,0,0,0.5);
-    }
-
-    /* Árvores de cerejeira Minecraft */
-    .tree {
-      position: absolute;
-      bottom: 38%;
-      width: 180px;
-      left: 50%;
-      transform: translateX(-50%);
+      inset: 0;
+      border-radius: 50%;
+      background: 
+        radial-gradient(circle at 30% 40%, #4a90e2 0%, #0066cc 40%, #003366 70%, #001122 100%);
+      box-shadow: 
+        inset 0 0 80px rgba(0,0,0,0.6),
+        inset 60px -40px 120px rgba(255,255,255,0.15);
       transform-style: preserve-3d;
-      animation: treeSway 18s ease-in-out infinite;
+      animation: rotatePlanet 60s linear infinite;
     }
 
-    .log {
+    /* Atmosfera glow */
+    .atmosphere {
       position: absolute;
-      bottom: 0;
-      left: 50%;
-      width: 48px;
-      height: 240px;
-      background: var(--cherry-trunk);
-      transform: translateX(-50%);
-      box-shadow:
-        inset -12px 0 #8b4513,
-        inset 12px 0 #8b4513;
-    }
-
-    .foliage {
-      position: absolute;
-      bottom: 200px;
-      left: 50%;
-      width: 240px;
-      height: 240px;
-      background: var(--cherry-leaves);
+      inset: -40px;
       border-radius: 50%;
+      background: radial-gradient(circle, rgba(100,180,255,0.35) 20%, transparent 70%);
+      filter: blur(60px);
+      animation: glowPulse 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes glowPulse {
+      0%   { opacity: 0.6; transform: scale(1.05); }
+      100% { opacity: 0.95; transform: scale(1.15); }
+    }
+
+    @keyframes rotatePlanet {
+      from { transform: rotateY(0deg) rotateX(8deg); }
+      to   { transform: rotateY(360deg) rotateX(8deg); }
+    }
+
+    /* Luz solar vindo de um lado */
+    .light {
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle at 50% 60%, rgba(255,240,180,0.4) 0%, transparent 60%);
       transform: translateX(-50%);
-      box-shadow: 0 0 60px rgba(255,182,193,0.7);
-      animation: foliageBob 9s ease-in-out infinite alternate;
-    }
-
-    .foliage::before,
-    .foliage::after {
-      content: '';
-      position: absolute;
-      background: var(--cherry-leaves);
-      border-radius: 50%;
-    }
-
-    .foliage::before { width: 180px; height: 180px; top: -70px; left: -40px; }
-    .foliage::after  { width: 160px; height: 160px; top: -50px; right: -40px; }
-
-    @keyframes treeSway {
-      0%,100% { transform: translateX(-50%) rotate(-1.8deg); }
-      50%     { transform: translateX(-50%) rotate(1.8deg); }
-    }
-
-    @keyframes foliageBob {
-      0%   { transform: translateX(-50%) translateY(0) rotate(-2deg); }
-      100% { transform: translateX(-50%) translateY(-12px) rotate(2deg); }
-    }
-
-    /* Pétalas caindo – partículas reais do bioma Cherry Grove */
-    .petal {
-      position: absolute;
-      width: 14px;
-      height: 20px;
-      background: var(--cherry-leaves);
-      border-radius: 30% 70% 40% 60%;
-      box-shadow: 0 0 12px rgba(255,105,180,0.7);
-      opacity: 0.85;
       pointer-events: none;
-      animation: petalFall linear infinite;
+      filter: blur(120px);
+      animation: lightMove 80s ease-in-out infinite alternate;
     }
 
-    @keyframes petalFall {
-      0%   { transform: translateY(-120vh) rotate(0deg) translateX(0); opacity: 0.9; }
-      100% { transform: translateY(120vh) rotate(1440deg) translateX(80vw); opacity: 0; }
+    @keyframes lightMove {
+      0%   { left: 40%; opacity: 0.7; }
+      100% { left: 60%; opacity: 1; }
     }
 
-    /* HUD minimalista estilo Minecraft */
-    .hud {
+    /* Texto opcional (remova se não quiser) */
+    .title {
       position: absolute;
-      bottom: 24px;
+      bottom: 60px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.55);
-      color: white;
-      font-size: 1.3rem;
-      padding: 10px 28px;
-      border-radius: 10px;
-      backdrop-filter: blur(4px);
+      color: rgba(255,255,255,0.8);
+      font-family: Arial, sans-serif;
+      font-size: 1.6rem;
+      text-shadow: 0 0 20px rgba(100,180,255,0.8);
       pointer-events: none;
-      text-shadow: 1px 1px 3px black;
+      z-index: 10;
     }
-
-    /* Música */
-    audio { display: none; }
   </style>
 </head>
 <body>
 
-  <div class="sky"></div>
-  <div class="sun"></div>
-
-  <div class="ground"></div>
-
-  <!-- Árvores posicionadas no horizonte -->
-  <div class="tree" style="left:18%; animation-delay:0s;"><div class="log"></div><div class="foliage"></div></div>
-  <div class="tree" style="left:38%; animation-delay:4s;"><div class="log"></div><div class="foliage"></div></div>
-  <div class="tree" style="left:62%; animation-delay:7s;"><div class="log"></div><div class="foliage"></div></div>
-  <div class="tree" style="left:82%; animation-delay:11s;"><div class="log"></div><div class="foliage"></div></div>
-
-  <!-- Container para as pétalas -->
-  <div id="petalContainer"></div>
-
-  <!-- Moog City 2 – link direto confiável -->
-  <audio id="bgm" loop preload="auto" volume="0.32">
-    <source src="https://vgmsite.com/soundtracks/minecraft-volume-beta-gamerip/06.%20Moog%20City%202.mp3" type="audio/mpeg">
-  </audio>
-
-  <div class="hud">
-    Cherry Grove Biome • Sunset • Moog City 2
+  <div class="space">
+    <div class="stars"></div>
   </div>
 
+  <div class="planet-container">
+    <div class="planet">
+      <div class="atmosphere"></div>
+    </div>
+    <div class="light"></div>
+  </div>
+
+  <!-- Texto opcional – pode apagar o div se quiser só o planeta -->
+  <div class="title">Um mundo girando no silêncio do espaço...</div>
+
   <script>
-    // Toca música (fallback para clique se autoplay bloqueado)
-    const bgm = document.getElementById('bgm');
-    bgm.play().catch(() => {
-      document.body.addEventListener('click', () => bgm.play(), {once: true});
+    // Opcional: controle com mouse (vira a câmera)
+    document.addEventListener('mousemove', e => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 40;
+      const y = (e.clientY / window.innerHeight - 0.5) * 30;
+      document.querySelector('.planet-container').style.transform = 
+        `rotateY(${x}deg) rotateX(${y}deg)`;
     });
-
-    // Gera pétalas caindo
-    const container = document.getElementById('petalContainer');
-    function spawnPetal() {
-      const petal = document.createElement('div');
-      petal.className = 'petal';
-      petal.style.left = Math.random() * 100 + 'vw';
-      petal.style.animationDuration = (12 + Math.random() * 18) + 's';
-      petal.style.animationDelay = Math.random() * 6 + 's';
-      petal.style.opacity = 0.7 + Math.random() * 0.25;
-      container.appendChild(petal);
-      setTimeout(() => petal.remove(), 45000);
-    }
-
-    setInterval(spawnPetal, 350);
-    // Primeiras pétalas para preencher a tela logo no início
-    for (let i = 0; i < 50; i++) {
-      setTimeout(spawnPetal, i * 250);
-    }
   </script>
 
 </body>
