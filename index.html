@@ -2,143 +2,156 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Foliage & Menu Update</title>
+    <title>Minecraft 2026 - Enhanced Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Courier New', Courier, monospace; background: #000; }
         
-        /* TELA INICIAL */
         #ui-overlay {
             position: absolute; width: 100%; height: 100%; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://minecraft.net/content/dam/archive/6636780829864f1699925697d8c06e8b/header.jpg') center/cover;
         }
-        .title-mc { font-size: 60px; color: white; font-weight: bold; text-shadow: 4px 4px #333; margin-bottom: 40px; letter-spacing: 5px; }
+        .title-mc { font-size: 70px; color: white; font-weight: bold; text-shadow: 5px 5px #373737; margin-bottom: 40px; }
         .btn-menu { 
-            padding: 15px 80px; background: #4e4e4e; border: 3px solid #000; color: #e0e0e0; 
-            cursor: pointer; font-size: 20px; font-weight: bold; transition: 0.2s;
+            padding: 15px 60px; background: #6c6c6c; border: 4px solid #000; color: #fff; 
+            cursor: pointer; font-size: 22px; text-transform: uppercase;
         }
-        .btn-menu:hover { background: #8dc63f; color: white; transform: scale(1.05); }
+        .btn-menu:hover { background: #3c8527; border-color: #ffffff; }
 
-        /* HUD JOGO */
+        /* HOTBAR ESTILO MC */
         #hotbar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: none; gap: 6px; padding: 6px; background: rgba(0,0,0,0.7); border: 2px solid #888;
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 2px; padding: 4px; background: rgba(0,0,0,0.5); border: 4px solid #1e1e1e;
         }
-        .slot { width: 48px; height: 48px; border: 2px solid #555; display: flex; align-items: center; justify-content: center; position: relative; }
-        .slot.selected { border: 2px solid #fff; background: rgba(255,255,255,0.2); }
-        .count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 16px; font-weight: bold; text-shadow: 1px 1px #000; }
+        .slot { 
+            width: 50px; height: 50px; background: #8b8b8b; border: 4px solid #373737; 
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .slot.selected { border: 4px solid #ffffff; background: #ababab; }
+        .count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 18px; text-shadow: 2px 2px #000; }
         
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 12px; height: 12px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
-        #mining-progress { position: absolute; top: 53%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 6px; background: #000; border: 1px solid #fff; display: none; }
-        #mining-bar { width: 0%; height: 100%; background: #ffff00; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); display: none; pointer-events: none; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
+        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
+
+        #mining-progress { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 10px; background: rgba(0,0,0,0.5); border: 2px solid #fff; display: none; }
+        #mining-bar { width: 0%; height: 100%; background: #00ff00; }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
         <div class="title-mc">MINECRAFT 2026</div>
-        <button class="btn-menu" onclick="startGame()">NEW GAME</button>
+        <button class="btn-menu" onclick="startGame()">JOGAR MUNDO NOVO</button>
     </div>
 
     <div id="mining-progress"><div id="mining-bar"></div></div>
+    
     <div id="hotbar">
         <div class="slot selected" id="s0">
-            <div style="width:24px; height:24px; background: #5d4037; border: 1px solid #000;"></div>
-            <div id="inv-wood" class="count">0</div>
+            <img src="https://i.imgur.com/8N7S7s9.png" width="35"> <div id="inv-wood" class="count">0</div>
         </div>
-        <div class="slot" id="s1"></div><div class="slot" id="s2"></div><div class="slot" id="s3"></div>
+        <div class="slot" id="s1"></div>
+        <div class="slot" id="s2"></div>
+        <div class="slot" id="s3"></div>
     </div>
     <div id="crosshair"></div>
 
     <script>
-        let scene, camera, renderer, raycaster, hand, handItem;
+        let scene, camera, renderer, raycaster, selectionBox;
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let targetRotation = new THREE.Euler(0, 0, 0, 'YXZ');
         let prevTime = performance.now();
-        let blocks = [], drops = [], clouds = []; 
-        let inventoryWood = 0, selectedSlot = 0;
+        let blocks = [], drops = []; 
+        let inventoryWood = 5; // Começa com alguns blocos para testar
+        let selectedSlot = 0;
         let isMining = false, miningTime = 0, currentTarget = null;
 
         const loader = new THREE.TextureLoader();
-        const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
-        const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-        // Nova textura para folhas (simulada com ruído e transparência)
-        const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+        
+        // Texturas Estilo Minecraft
+        const texWood = loader.load('https://i.imgur.com/8N7S7s9.png'); // Tronco
+        const texGrassSide = loader.load('https://i.imgur.com/9ccZf6v.png'); // Grama Lado
+        const texGrassTop = loader.load('https://i.imgur.com/9797m7s.png'); // Grama Topo
+        const texDirt = loader.load('https://i.imgur.com/7vGvBvX.png'); // Terra
 
         function startGame() {
             document.getElementById('ui-overlay').style.display = 'none';
             document.getElementById('hotbar').style.display = 'flex';
             document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('inv-wood').innerText = inventoryWood;
             init();
+        }
+
+        function createBlockMaterial(top, side, bottom) {
+            return [
+                new THREE.MeshLambertMaterial({ map: side }),   // Right
+                new THREE.MeshLambertMaterial({ map: side }),   // Left
+                new THREE.MeshLambertMaterial({ map: top }),    // Top
+                new THREE.MeshLambertMaterial({ map: bottom }), // Bottom
+                new THREE.MeshLambertMaterial({ map: side }),   // Front
+                new THREE.MeshLambertMaterial({ map: side })    // Back
+            ];
         }
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.Fog(0x87CEEB, 15, 80);
+            scene.background = new THREE.Color(0x74b9ff);
+            scene.fog = new THREE.Fog(0x74b9ff, 20, 100);
             
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.rotation.order = 'YXZ';
-            
-            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
-            sun.position.set(10, 50, 10);
+            camera.position.y = 5;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+            sun.position.set(20, 50, 20);
             scene.add(sun);
 
-            // Terreno
-            const groundGeo = new THREE.PlaneGeometry(300, 300, 50, 50);
-            const posAttr = groundGeo.attributes.position;
-            for (let i = 0; i < posAttr.count; i++) {
-                let x = posAttr.getX(i);
-                let z = posAttr.getY(i);
-                posAttr.setZ(i, Math.sin(x * 0.1) * Math.cos(z * 0.1) * 3);
-            }
-            groundGeo.computeVertexNormals();
-            const ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
-            ground.rotation.x = -Math.PI/2;
-            scene.add(ground);
-
-            // Nuvens
-            for(let i=0; i<10; i++) {
-                const cloud = new THREE.Mesh(new THREE.BoxGeometry(12, 1, 8), new THREE.MeshLambertMaterial({color: 0xffffff, transparent: true, opacity: 0.6}));
-                cloud.position.set(Math.random()*200-100, 35, Math.random()*200-100);
-                scene.add(cloud);
-                clouds.push(cloud);
+            // Chão (Grid de blocos de grama)
+            const grassMat = createBlockMaterial(texGrassTop, texGrassSide, texDirt);
+            for(let x = -15; x < 15; x++) {
+                for(let z = -15; z < 15; z++) {
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), grassMat);
+                    b.position.set(x, 0, z);
+                    scene.add(b);
+                    blocks.push(b);
+                }
             }
 
-            // Braço e Item Selecionado
-            hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.7), new THREE.MeshLambertMaterial({color: 0xdbac82}));
-            scene.add(hand);
-            handItem = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), new THREE.MeshLambertMaterial({map: woodTex}));
-            handItem.visible = false;
-            scene.add(handItem);
+            // Outline de Seleção
+            const selGeo = new THREE.BoxGeometry(1.01, 1.01, 1.01);
+            const selMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true, transparent: true, opacity: 0.5 });
+            selectionBox = new THREE.Mesh(selGeo, selMat);
+            scene.add(selectionBox);
 
             // Árvores
-            for(let i=0; i<25; i++) {
-                let rx = Math.random()*120-60;
-                let rz = Math.random()*120-60;
-                let ry = Math.sin(rx * 0.1) * Math.cos(rz * 0.1) * 3;
-                spawnTree(rx, ry, rz);
+            for(let i=0; i<8; i++) {
+                spawnTree(Math.floor(Math.random()*20-10), 1, Math.floor(Math.random()*20-10));
             }
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: false }); // Pixelado fica mais MC
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
             raycaster = new THREE.Raycaster();
 
-            // Controles
+            // Eventos
             document.addEventListener('mousedown', (e) => {
-                if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock();
-                else { if (e.button === 0) startMining(); if (e.button === 2) placeBlock(); }
+                if (document.pointerLockElement !== renderer.domElement) {
+                    renderer.domElement.requestPointerLock();
+                } else {
+                    if (e.button === 0) startMining();
+                    if (e.button === 2) placeBlock();
+                }
             });
             document.addEventListener('mouseup', () => stopMining());
             document.addEventListener('keydown', (e) => {
                 if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
                 if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
-                if(e.code === 'Space' && canJump) { velocity.y += 4.5; canJump = false; }
-                if(e.key >= 1 && e.key <= 4) updateSlot(parseInt(e.key)-1);
+                if(e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
             });
             document.addEventListener('keyup', (e) => {
                 if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
@@ -151,47 +164,23 @@
                     targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
                 }
             });
+
             animate();
         }
 
         function spawnTree(x, y, z) {
-            // Tronco
             for(let h=0; h<4; h++) {
-                const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
-                log.position.set(x, y + h + 0.5, z);
-                log.userData = { type: 'wood', t: 1.5 };
+                const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: texWood}));
+                log.position.set(x, y + h, z);
+                log.userData = { type: 'wood', t: 1.0 };
                 scene.add(log); blocks.push(log);
             }
-            // Folhas com Textura e Transparência
-            for(let hy=3; hy<6; hy++) {
-                for(let hx=-2; hx<=2; hx++) {
-                    for(let hz=-2; hz<=2; hz++) {
-                        if(Math.abs(hx) + Math.abs(hz) > 3) continue; // Formato mais arredondado
-                        const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({
-                            color: 0x1a4d1a, 
-                            map: leafTex,
-                            transparent: true, 
-                            opacity: 0.85
-                        }));
-                        leaf.position.set(x+hx, y+hy+0.5, z+hz);
-                        leaf.userData = { type: 'leaf', t: 0.4 };
-                        scene.add(leaf); blocks.push(leaf);
-                    }
-                }
-            }
-        }
-
-        function updateSlot(idx) {
-            document.getElementById('s'+selectedSlot).classList.remove('selected');
-            selectedSlot = idx;
-            document.getElementById('s'+selectedSlot).classList.add('selected');
-            handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
         }
 
         function startMining() {
             raycaster.setFromCamera(new THREE.Vector2(), camera);
             const hits = raycaster.intersectObjects(blocks);
-            if (hits.length > 0 && hits[0].distance < 4) {
+            if (hits.length > 0 && hits[0].distance < 5) {
                 isMining = true; currentTarget = hits[0].object; miningTime = 0;
                 document.getElementById('mining-progress').style.display = 'block';
             }
@@ -200,16 +189,22 @@
         function stopMining() { isMining = false; document.getElementById('mining-progress').style.display = 'none'; }
 
         function placeBlock() {
-            if (selectedSlot !== 0 || inventoryWood <= 0) return;
+            if (inventoryWood <= 0) return;
             raycaster.setFromCamera(new THREE.Vector2(), camera);
-            const hits = raycaster.intersectObjects([scene.children[2], ...blocks]);
+            const hits = raycaster.intersectObjects(blocks);
             if (hits.length > 0 && hits[0].distance < 5) {
                 const pos = hits[0].object.position.clone().add(hits[0].face.normal);
-                const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+                
+                // Evita colocar bloco dentro da cabeça do player
+                const pPos = new THREE.Vector3(Math.round(camera.position.x), Math.round(camera.position.y), Math.round(camera.position.z));
+                if(pos.distanceTo(pPos) < 1) return;
+
+                const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: texWood}));
                 b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
-                scene.add(b); blocks.push(b); inventoryWood--;
+                scene.add(b);
+                blocks.push(b);
+                inventoryWood--;
                 document.getElementById('inv-wood').innerText = inventoryWood;
-                handItem.visible = inventoryWood > 0;
             }
         }
 
@@ -218,12 +213,14 @@
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
-            camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.15;
-            camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.15;
+            // Suavização da câmera
+            camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
+            camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
+            // Movimentação
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
-            velocity.y -= 9.8 * delta;
+            velocity.y -= 15.0 * delta; // Gravidade
 
             direction.z = Number(moveF) - Number(moveB);
             direction.x = Number(moveR) - Number(moveL);
@@ -236,45 +233,42 @@
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
             
-            let terrainH = Math.sin(camera.position.x * 0.1) * Math.cos(camera.position.z * 0.1) * 3 + 1.8;
-            if (camera.position.y < terrainH) { velocity.y = 0; camera.position.y = terrainH; canJump = true; }
+            // Colisão simples com o chão
+            if (camera.position.y < 2) {
+                velocity.y = 0;
+                camera.position.y = 2;
+                canJump = true;
+            }
 
-            // Movimento das Nuvens
-            clouds.forEach(c => { c.position.x += 0.02; if(c.position.x > 120) c.position.x = -120; });
+            // Raycast para seleção de bloco (Highlight)
+            raycaster.setFromCamera(new THREE.Vector2(), camera);
+            const interactHits = raycaster.intersectObjects(blocks);
+            if(interactHits.length > 0 && interactHits[0].distance < 5) {
+                selectionBox.visible = true;
+                selectionBox.position.copy(interactHits[0].object.position);
+            } else {
+                selectionBox.visible = false;
+            }
 
+            // Lógica de Mineração
             if (isMining && currentTarget) {
                 miningTime += delta;
-                document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
-                hand.position.z += Math.sin(time*0.02)*0.03;
-                if (miningTime >= currentTarget.userData.t) {
-                    const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
-                    d.position.copy(currentTarget.position);
-                    scene.add(d); drops.push(d);
+                document.getElementById('mining-bar').style.width = (miningTime/1.0)*100 + '%';
+                if (miningTime >= 1.0) {
                     scene.remove(currentTarget);
                     blocks = blocks.filter(b => b !== currentTarget);
+                    inventoryWood++;
+                    document.getElementById('inv-wood').innerText = inventoryWood;
                     stopMining();
                 }
             }
 
-            drops.forEach((d, i) => {
-                d.rotation.y += 0.05;
-                if (camera.position.distanceTo(d.position) < 1.5) {
-                    inventoryWood++; document.getElementById('inv-wood').innerText = inventoryWood;
-                    if(selectedSlot === 0) handItem.visible = true;
-                    scene.remove(d); drops.splice(i, 1);
-                }
-            });
-
-            // Head Bobbing e Posicionamento
-            const bob = Math.sin(time * 0.005) * ( (moveF||moveB) ? 0.04 : 0.01);
-            hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
-            hand.translateX(0.5); hand.translateY(-0.4 + bob); hand.translateZ(-0.7);
-            handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
-            handItem.translateZ(-0.4);
-
             prevTime = time;
             renderer.render(scene, camera);
         }
+
+        // Prevenir menu de contexto do botão direito
+        document.addEventListener('contextmenu', e => e.preventDefault());
     </script>
 </body>
 </html>
