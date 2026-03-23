@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olá Mundo - Mario Kart Style!</title>
+    <title>Olá Mundo - Super Mario Kart Style</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
@@ -14,187 +14,250 @@
 
         body {
             height: 100vh;
-            background: linear-gradient(to bottom, #4a90e2 0%, #4a90e2 40%, #87cefa 40%, #d2b48c 70%, #8b4513 100%);
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 35%, #228B22 35%, #556B2F 45%, #8B4513 100%);
             font-family: 'Press Start 2P', cursive;
             color: #fff;
             cursor: pointer;
             overflow: hidden;
             position: relative;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
-        /* Efeito de pista com linhas de velocidade */
-        .road-lines {
+        /* Pista com movimento mais intenso (estilo Super Mario Kart) */
+        .road {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 60%;
+            height: 70%;
+            background: repeating-linear-gradient(
+                0deg,
+                #808080 0px,
+                #808080 40px,
+                #C0C0C0 40px,
+                #C0C0C0 80px
+            );
+            animation: scrollRoad 0.8s linear infinite;
+            border-top: 12px solid #FFD700;
+            border-bottom: 12px solid #FFD700;
+        }
+
+        .road-lines {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 60px;
+            height: 100%;
             background: repeating-linear-gradient(
                 to bottom,
-                transparent 0%,
-                transparent 20px,
-                #ffd700 20px,
-                #ffd700 40px
+                #FF0000 0px,
+                #FF0000 30px,
+                transparent 30px,
+                transparent 60px
             );
-            animation: moveRoad 1.2s linear infinite;
-            opacity: 0.8;
+            transform: translateX(-50%);
+            animation: scrollLines 0.8s linear infinite;
         }
 
-        @keyframes moveRoad {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(-80px); }
+        @keyframes scrollRoad {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 -160px; }
         }
 
-        /* Kart simples central (CSS puro) */
-        .kart {
+        @keyframes scrollLines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 -120px; }
+        }
+
+        /* Kart mais parecido com Super Mario Kart (perspectiva simples) */
+        .kart-container {
             position: relative;
-            width: 280px;
-            height: 180px;
-            animation: bounce 1.8s ease-in-out infinite;
+            width: 300px;
+            height: 200px;
+            perspective: 800px;
             z-index: 10;
+            animation: kartBounce 1.6s ease-in-out infinite;
+        }
+
+        .kart {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(15deg);
+            width: 240px;
+            height: 120px;
         }
 
         .kart-body {
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 220px;
-            height: 80px;
-            background: #e31e24; /* Vermelho Mario */
-            border: 8px solid #000;
-            border-radius: 20px 60px 20px 20px;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+            width: 100%;
+            height: 70%;
+            background: #FF0000; /* Vermelho Mario */
+            border: 10px solid #000;
+            border-radius: 30px 80px 30px 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+            position: relative;
         }
 
-        .kart-top {
+        .kart-front {
             position: absolute;
-            top: -40px;
+            top: -30px;
             left: 50%;
             transform: translateX(-50%);
             width: 140px;
-            height: 60px;
+            height: 50px;
             background: #000;
-            border: 8px solid #e31e24;
+            border: 10px solid #FF0000;
             border-radius: 50% 50% 10px 10px;
+        }
+
+        .mario-head {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: #FFB6C1;
+            border: 8px solid #000;
+            border-radius: 50%;
+        }
+
+        .mario-hat {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 40px;
+            background: #FF0000;
+            border: 8px solid #000;
+            border-radius: 50% 50% 0 0;
         }
 
         .wheel {
             position: absolute;
             background: #111;
-            border: 10px solid #ffd700;
+            border: 12px solid #FFD700;
             border-radius: 50%;
-            box-shadow: inset 0 0 15px #000;
+            box-shadow: inset 0 0 20px #000;
         }
 
-        .wheel-front-left { width: 70px; height: 70px; bottom: -20px; left: 20px; }
-        .wheel-front-right { width: 70px; height: 70px; bottom: -20px; right: 20px; }
-        .wheel-back-left { width: 80px; height: 80px; bottom: -30px; left: 10px; }
-        .wheel-back-right { width: 80px; height: 80px; bottom: -30px; right: 10px; }
+        .front-wheel { width: 70px; height: 70px; bottom: -25px; }
+        .back-wheel { width: 80px; height: 80px; bottom: -35px; }
+        .left { left: 10px; }
+        .right { right: 10px; }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-30px) rotate(3deg); }
+        @keyframes kartBounce {
+            0%, 100% { transform: translate(-50%, -50%) rotateX(15deg) translateY(0); }
+            50% { transform: translate(-50%, -50%) rotateX(15deg) translateY(-40px); }
         }
 
-        /* Texto Olá Mundo estilo Mario Kart */
-        .hello {
+        /* Texto Olá Mundo como título de corrida */
+        .title {
             position: absolute;
-            top: 15%;
+            top: 10%;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 3.2em;
-            color: #ffd700;
-            text-shadow: 6px 6px 0 #e31e24, 10px 10px 0 #000;
-            letter-spacing: 8px;
+            font-size: 3.8em;
+            color: #FFD700;
+            text-shadow: 8px 8px 0 #000, 12px 12px 0 #FF0000;
+            letter-spacing: 10px;
             text-align: center;
-            z-index: 5;
+            z-index: 15;
             white-space: nowrap;
         }
 
         .subtitle {
-            font-size: 1.4em;
-            color: #fff;
-            text-shadow: 4px 4px 0 #000;
+            font-size: 1.6em;
+            color: #FFFFFF;
+            text-shadow: 5px 5px 0 #000;
             margin-top: 20px;
         }
 
-        .card {
+        .info-card {
             position: absolute;
-            bottom: 80px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 25px 50px;
-            border: 8px solid #e31e24;
-            border-radius: 20px;
+            bottom: 15%;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 30px 60px;
+            border: 10px solid #FFD700;
+            border-radius: 25px;
             text-align: center;
-            z-index: 5;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            z-index: 10;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
         }
 
-        .card p {
-            font-size: 1.1em;
-            color: #ffd700;
+        .info-card p {
+            font-size: 1.2em;
+            color: #FFD700;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
 
-    <!-- Linhas da pista em movimento -->
-    <div class="road-lines"></div>
-
-    <!-- Kart central -->
-    <div class="kart">
-        <div class="kart-body">
-            <div class="kart-top"></div>
-        </div>
-        <div class="wheel wheel-front-left"></div>
-        <div class="wheel wheel-front-right"></div>
-        <div class="wheel wheel-back-left"></div>
-        <div class="wheel wheel-back-right"></div>
+    <!-- Pista em movimento -->
+    <div class="road">
+        <div class="road-lines"></div>
     </div>
 
-    <!-- Texto principal -->
-    <div class="hello">
+    <!-- Kart com Mario -->
+    <div class="kart-container">
+        <div class="kart">
+            <div class="kart-body">
+                <div class="kart-front">
+                    <div class="mario-head">
+                        <div class="mario-hat"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="wheel front-wheel left"></div>
+            <div class="wheel front-wheel right"></div>
+            <div class="wheel back-wheel left"></div>
+            <div class="wheel back-wheel right"></div>
+        </div>
+    </div>
+
+    <!-- Título -->
+    <div class="title">
         Olá Mundo!
-        <div class="subtitle">Mario Kart Edition</div>
+        <div class="subtitle">Super Mario Kart</div>
     </div>
 
     <!-- Card inferior -->
-    <div class="card">
-        <p>Ready... Set... GO!</p>
-        <p>Clique para começar a corrida!</p>
+    <div class="info-card">
+        <p>Ready... 3... 2... 1...</p>
+        <p>Clique para GO! → Nintendo</p>
     </div>
 
-    <!-- Música de fundo: Super Mario Kart - Title Screen / Main Theme -->
-    <audio id="bgm" loop preload="auto" volume="0.35">
+    <!-- Música: Super Mario Kart - Title Screen -->
+    <audio id="bgm" loop preload="auto" volume="0.4">
         <source src="https://vgmsite.com/soundtracks/super-mario-kart-gamerip/1-02.%20Title%20Screen.mp3" type="audio/mpeg">
-        <!-- Alternativa se falhar: https://downloads.khinsider.com/game-soundtracks/album/super-mario-kart-gamerip/1-02.%2520Title%2520Screen.mp3 -->
+        Seu navegador não suporta áudio.
     </audio>
 
-    <!-- Som de "start" ou coin no clique -->
+    <!-- Som de start race aproximado (coin/start genérico Mario) -->
     <audio id="startSound" preload="auto">
         <source src="https://www.orangefreesounds.com/wp-content/uploads/2014/08/Mario-coin-sound.mp3" type="audio/mpeg">
-        <!-- Alternativa: https://themushroomkingdom.net/sounds/wav/smk/smk_race_start.wav (se encontrar link direto) -->
     </audio>
 
     <script>
         const bgm = document.getElementById('bgm');
         const startSound = document.getElementById('startSound');
 
-        // Tenta tocar música de fundo
+        // Tenta autoplay da música
         bgm.play().catch(() => {
             document.body.addEventListener('click', () => bgm.play(), { once: true });
         });
 
-        // Ao clicar: som + redireciona
+        // Clique: som de start + delay + redireciona
         document.body.addEventListener('click', () => {
             startSound.currentTime = 0;
             startSound.play().catch(() => {});
             setTimeout(() => {
                 window.location.href = "https://www.nintendo.com/pt-br/";
-            }, 1500); // Delay pra curtir o som
+            }, 1800); // Dá tempo pra sentir a "largada"
         });
     </script>
 
