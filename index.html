@@ -15,6 +15,7 @@
             height: 100vh;
             background: linear-gradient(135deg, #ff1c1c 50%, #f0f0f0 50%);
             font-family: 'Arial', sans-serif;
+            cursor: pointer; /* Adicionado para mostrar que é clicável */
         }
 
         /* Container da Pokébola */
@@ -75,6 +76,7 @@
             border-bottom: 5px solid #333;
             text-align: center;
             min-width: 250px;
+            pointer-events: none; /* Garante que o clique passe pelo card para o body */
         }
 
         h1 {
@@ -95,7 +97,7 @@
         }
     </style>
 </head>
-<body>
+<body onclick="redirecionar()">
 
     <div class="pokeball"></div>
 
@@ -103,6 +105,12 @@
         <h1>Gotta Catch 'Em All!</h1>
         <div class="type-tag">Treinador Pokémon</div>
     </div>
+
+    <script>
+        function redirecionar() {
+            window.location.href = "https://www.pokemon.com/br";
+        }
+    </script>
 
 </body>
 </html>
