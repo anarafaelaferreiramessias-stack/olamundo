@@ -4,30 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Super Mario Bros. - It's-a me!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            background: linear-gradient(to bottom, #5c94fc 0%, #5c94fc 45%, #6b8c42 45%, #8bac0f 50%, #306230 100%);
+            font-family: 'Press Start 2P', cursive;
+            color: #fff;
+            cursor: pointer;
+            overflow: hidden;
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background: linear-gradient(to bottom, #5c94fc 40%, #a0c8f8 40%, #60a060 100%);
-            font-family: 'Comic Sans MS', 'Arial', sans-serif; /* Fonte mais "jogo antigo" */
-            cursor: pointer;
-            overflow: hidden;
         }
+
+        /* Nuvens decorativas no céu (estilo Mario) */
+        .cloud {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255,255,255,0.8);
+            opacity: 0.9;
+        }
+
+        .cloud1 { width: 120px; height: 60px; top: 80px; left: 150px; }
+        .cloud1::before { content: ''; position: absolute; width: 80px; height: 80px; background: #fff; border-radius: 50%; top: -40px; left: 20px; }
+        .cloud1::after { content: ''; position: absolute; width: 60px; height: 60px; background: #fff; border-radius: 50%; top: -30px; left: 70px; }
+
+        .cloud2 { width: 140px; height: 70px; top: 140px; right: 180px; }
+        .cloud2::before { content: ''; position: absolute; width: 90px; height: 90px; background: #fff; border-radius: 50%; top: -45px; left: 25px; }
+        .cloud2::after { content: ''; position: absolute; width: 70px; height: 70px; background: #fff; border-radius: 50%; top: -35px; left: 80px; }
 
         .mushroom {
             position: relative;
-            width: 240px;
-            height: 240px;
+            width: 260px;
+            height: 260px;
             background: #ffffff;
-            border: 14px solid #000000;
-            border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+            border: 16px solid #000000;
+            border-radius: 50% 50% 48% 48% / 62% 62% 38% 38%;
             overflow: hidden;
-            box-shadow: inset -15px 15px 20px rgba(0,0,0,0.2), 0 15px 30px rgba(0,0,0,0.4);
-            animation: bounce 1.8s ease-in-out infinite;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset -20px 20px 30px rgba(0,0,0,0.25);
+            animation: bounce-grow 2s ease-in-out infinite;
+            z-index: 10;
         }
 
         .mushroom::before {
@@ -36,124 +61,135 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 58%;
-            background: #e60012; /* Vermelho clássico Mario */
-            border-bottom: 14px solid #000000;
+            height: 60%;
+            background: #e31e24; /* Vermelho clássico do Mario */
+            border-bottom: 16px solid #000000;
             border-radius: 50% 50% 0 0;
         }
 
         .mushroom::after {
             content: "";
             position: absolute;
-            top: 35%;
+            top: 38%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             background: #ffffff;
-            border: 14px solid #000000;
+            border: 16px solid #000000;
             border-radius: 50%;
-            box-shadow: 0 0 0 10px #e60012;
+            box-shadow: 0 0 0 12px #e31e24;
             z-index: 5;
         }
 
-        /* Pontos brancos no chapéu (como no jogo) */
-        .mushroom span {
+        /* Manchas brancas no chapéu */
+        .spot {
             position: absolute;
             background: #ffffff;
-            border: 4px solid #000000;
+            border: 6px solid #000000;
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
             z-index: 3;
         }
 
-        .mushroom .spot1 { top: 20%; left: 25%; }
-        .mushroom .spot2 { top: 15%; left: 65%; }
-        .mushroom .spot3 { top: 40%; left: 40%; }
+        .spot1 { width: 36px; height: 36px; top: 18%; left: 22%; }
+        .spot2 { width: 32px; height: 32px; top: 12%; left: 68%; }
+        .spot3 { width: 40px; height: 40px; top: 38%; left: 38%; }
 
-        @keyframes bounce {
+        @keyframes bounce-grow {
             0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-40px) scale(1.05); }
+            50% { transform: translateY(-60px) scale(1.08); }
         }
 
         .mario-card {
             position: absolute;
-            bottom: 70px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px 40px;
-            border-radius: 25px;
-            border: 6px solid #e60012;
-            border-bottom: 12px solid #000000;
+            bottom: 80px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 30px 50px;
+            border: 8px solid #e31e24;
+            border-radius: 20px;
             text-align: center;
-            min-width: 320px;
-            pointer-events: none;
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+            min-width: 380px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.6);
+            z-index: 5;
         }
 
         h1 {
-            color: #e60012;
-            margin: 0;
-            font-size: 2.8em;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-            font-weight: bold;
-            text-shadow: 3px 3px 0 #000000;
+            font-size: 2.4em;
+            color: #e31e24;
+            text-shadow: 4px 4px 0 #000, 6px 6px 0 #000;
+            letter-spacing: 6px;
+            margin-bottom: 15px;
         }
 
-        .power-tag {
-            display: inline-block;
-            background: #000000;
-            color: #ffffff;
-            padding: 10px 25px;
-            border-radius: 30px;
-            margin-top: 15px;
-            font-weight: bold;
+        .tag {
             font-size: 1.3em;
-            border: 4px solid #e60012;
+            color: #ffd700;
+            text-shadow: 3px 3px 0 #000;
+            background: #000;
+            padding: 12px 30px;
+            border-radius: 40px;
+            border: 5px solid #e31e24;
+            display: inline-block;
         }
+
+        /* Som de coin (opcional, toca no clique) */
+        audio { display: none; }
     </style>
 </head>
 <body>
 
+    <!-- Nuvens decorativas -->
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+
+    <!-- Super Mushroom central -->
     <div class="mushroom">
-        <span class="spot1"></span>
-        <span class="spot2"></span>
-        <span class="spot3"></span>
+        <div class="spot spot1"></div>
+        <div class="spot spot2"></div>
+        <div class="spot spot3"></div>
     </div>
 
+    <!-- Card de texto -->
     <div class="mario-card">
-        <h1>It's-a me, Mario!</h1>
-        <div class="power-tag">Mamma mia!</div>
+        <h1>It's-a me,<br>Mario!</h1>
+        <div class="tag">Mamma mia!</div>
     </div>
 
-    <!-- Super Mario Bros. - Ground Theme (Overworld principal) -->
-    <audio id="marioSound" preload="auto" loop volume="0.32">
-        <source src="https://vgmsite.com/soundtracks/super-mario-bros.-gamerip-1985/01.%20Ground%20Theme.mp3" type="audio/mpeg">
-        Seu navegador não suporta áudio.
+    <!-- Música de fundo: Ground Theme -->
+    <audio id="bgm" loop preload="auto" volume="0.35">
+        <source src="http://www.mariomayhem.com/downloads/sound_tracks/Super_Mario_Bros._1/01-main-theme-overworld.mp3" type="audio/mpeg">
+        <!-- Alternativa se o acima falhar: https://vgmsite.com/soundtracks/super-mario-bros/01.%20Ground%20Theme.mp3 -->
+    </audio>
+
+    <!-- Som de moeda (toca no clique) -->
+    <audio id="coin" preload="auto">
+        <source src="https://www.orangefreesounds.com/wp-content/uploads/2014/08/Mario-coin-sound.mp3" type="audio/mpeg">
+        <!-- Alternativa: https://themushroomkingdom.net/sounds/wav/smb/smb_coin.wav -->
     </audio>
 
     <script>
-        const audio = document.getElementById('marioSound');
+        const bgm = document.getElementById('bgm');
+        const coin = document.getElementById('coin');
 
-        function tryPlayAudio() {
-            audio.play().then(() => {
-                console.log("Super Mario Bros. tocando!");
-            }).catch(() => {
-                console.log("Autoplay bloqueado — inicia no clique");
-                document.body.addEventListener('click', function playOnClick() {
-                    audio.play();
-                    document.body.removeEventListener('click', playOnClick);
+        // Tenta tocar a música de fundo
+        function startBGM() {
+            bgm.play().catch(() => {
+                // Se autoplay bloqueado, toca no primeiro clique
+                document.body.addEventListener('click', () => {
+                    bgm.play();
                 }, { once: true });
             });
         }
 
-        tryPlayAudio();
+        startBGM();
 
-        document.body.addEventListener('click', function() {
+        // Ao clicar: toca som de moeda + redireciona após delay
+        document.body.addEventListener('click', () => {
+            coin.currentTime = 0;
+            coin.play().catch(() => {}); // Ignora erro se som bloqueado
             setTimeout(() => {
                 window.location.href = "https://www.nintendo.com/pt-br/";
-            }, 2000); // Delay maior pra aproveitar o tema clássico
+            }, 1200); // Dá tempo de ouvir o "ding" da moeda
         });
     </script>
 
