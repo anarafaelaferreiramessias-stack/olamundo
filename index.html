@@ -2,187 +2,191 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft 2026 - Menu</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <title>Minecraft 2026 - Engine Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* Reset básico e fontes */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+        canvas { display: block; }
 
-        /* Fundo Panorâmico com Shaders */
-        .panorama {
-            position: fixed;
+        /* Interface do Menu */
+        #menu {
+            position: absolute;
             width: 100%;
             height: 100%;
-            /* Substitua por uma URL de imagem de Minecraft com shaders realistas */
-            background: url('https://i.imgur.com/your-realistic-minecraft-shader-image.jpg') no-repeat center center / cover; /* Substitua esta URL */
-            /* Exemplo de uma imagem de fundo com shaders (você pode substituir por outra melhor): */
-            /* background: url('https://wallpapercave.com/wp/wp6884878.jpg') no-repeat center center / cover; */
-            filter: brightness(0.7); /* Suaviza a imagem para a UI se destacar */
-            animation: fadeInBackground 2s ease-out forwards;
-        }
-
-        @keyframes fadeInBackground {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Overlay principal */
-        .menu-container {
-            position: relative;
-            z-index: 10;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.2); /* Um leve escurecimento para contraste */
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                        url('https://wallpaperaccess.com/full/4113075.jpg') center/cover;
+            z-index: 10;
+            transition: opacity 0.8s ease;
         }
 
-        /* Logo modernizado */
-        .logo-wrapper {
-            margin-bottom: 60px;
-            position: relative;
-            animation: bounceIn 1s ease-out;
-        }
+        .logo { width: 500px; margin-bottom: 40px; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5)); }
 
-        .logo {
-            width: 600px;
-            max-width: 90vw;
-            filter: drop-shadow(0px 8px 15px rgba(0,0,0,0.6));
-            transition: transform 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: scale(1.05);
-        }
-
-        .splash-text {
-            position: absolute;
-            right: -30px;
-            bottom: -20px;
-            color: #FFECB3; /* Amarelo mais suave */
-            font-weight: 700;
-            font-size: 24px;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.7);
-            transform: rotate(-15deg);
-            animation: splashPulse 1.5s ease-in-out infinite alternate;
-        }
-
-        @keyframes splashPulse {
-            from { transform: rotate(-15deg) scale(1); opacity: 0.8; }
-            to { transform: rotate(-15deg) scale(1.05); opacity: 1; }
-        }
-
-        /* Botões Estilo 2026 */
-        .button-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 450px;
-            max-width: 80vw;
-        }
-
-        .mc-button {
-            background: linear-gradient(145deg, #3a3a3a, #5a5a5a);
-            border: none;
-            border-radius: 8px; /* Bordas arredondadas */
-            color: #E0E0E0;
-            padding: 15px 20px;
-            text-decoration: none;
-            font-size: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: all 0.3s ease;
-            overflow: hidden;
-        }
-
-        .mc-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            transition: all 0.5s ease;
-        }
-
-        .mc-button:hover {
-            background: linear-gradient(145deg, #6aa32a, #8dc63f); /* Verde mais vibrante */
-            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
-            transform: translateY(-2px);
+        .btn {
+            width: 300px;
+            padding: 15px;
+            margin: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
+            font-size: 20px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
 
-        .mc-button:hover::before {
-            left: 100%;
-        }
+        .btn:hover { background: #8dc63f; border-color: #fff; transform: scale(1.05); }
 
-        .small-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        /* Rodapé com ano 2026 */
-        .footer-info {
+        /* Instruções de Jogo */
+        #instructions {
             position: absolute;
             bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 40px;
-            color: #F0F0F0;
-            font-size: 16px;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-            animation: fadeInUp 1s ease-out forwards;
-            animation-delay: 0.5s;
-        }
-
-        /* Animações de entrada */
-        @keyframes bounceIn {
-            0% { transform: scale(0.8); opacity: 0; }
-            60% { transform: scale(1.05); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes fadeInUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            display: none;
+            pointer-events: none;
+            text-shadow: 2px 2px 4px #000;
         }
     </style>
 </head>
 <body>
 
-    <div class="panorama"></div>
+    <div id="menu">
+        <img src="https://minecraft.wiki/images/Minecraft_Logo.png" class="logo">
+        <button class="btn" onclick="startGame()">New Game</button>
+        <button class="btn" style="opacity: 0.5;">Settings</button>
+    </div>
 
-    <div class="menu-container">
-        <div class="logo-wrapper">
-            <img class="logo" src="https://minecraft.wiki/images/Minecraft_Logo.png" alt="Minecraft Logo">
-            <div class="splash-text">Enhanced Edition!</div>
-        </div>
+    <div id="instructions">W, A, S, D para mover | Espaço para pular | Mouse para olhar</div>
 
-        <div class="button-list">
-            <button class="mc-button">New Game</button>
-            <button class="mc-button">Load World</button>
-            <button class="mc-button" style="color: #BBBBBB;">Realms & Multiplayer</button>
+    <script>
+        let scene, camera, renderer, controls;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let prevTime = performance.now();
+
+        function startGame() {
+            document.getElementById('menu').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('menu').style.display = 'none';
+                document.getElementById('instructions').style.display = 'block';
+                init3D();
+            }, 800);
+        }
+
+        function init3D() {
+            // Cena e Câmera
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb); // Céu azul
+            scene.fog = new THREE.Fog(0x87ceeb, 0, 50);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 1.6; // Altura dos olhos
+
+            // Iluminação "Shader Realista"
+            const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+            scene.add(light);
             
-            <div class="small-buttons">
-                <button class="mc-button">Settings</button>
-                <button class="mc-button">Exit</button>
-            </div>
-        </div>
-    </div>
+            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
 
-    <div class="footer-info">
-        <span>Minecraft 2026</span>
-        <span>Redefined Experience.</span>
-    </div>
+            // Chão (Grama Pixelada)
+            const floorGeo = new THREE.PlaneGeometry(2000, 2000);
+            const floorMat = new THREE.MeshPhongMaterial({ color: 0x4e9431 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
 
+            // Adicionar alguns "Blocos" para referência
+            for(let i = 0; i < 50; i++) {
+                const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+                const boxMat = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+                const box = new THREE.Mesh(boxGeo, boxMat);
+                box.position.set(Math.random()*40-20, 0.5, Math.random()*40-20);
+                scene.add(box);
+            }
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Controles de trava de mouse
+            document.addEventListener('click', () => {
+                renderer.domElement.requestPointerLock();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveForward = true; break;
+                    case 'KeyA': moveLeft = true; break;
+                    case 'KeyS': moveBackward = true; break;
+                    case 'KeyD': moveRight = true; break;
+                    case 'Space': if (canJump) velocity.y += 5; canJump = false; break;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveForward = false; break;
+                    case 'KeyA': moveLeft = false; break;
+                    case 'KeyS': moveBackward = false; break;
+                    case 'KeyD': moveRight = false; break;
+                }
+            });
+
+            // Movimento da Câmera com o Mouse
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement === renderer.domElement) {
+                    camera.rotation.y -= e.movementX * 0.002;
+                    camera.rotation.x -= e.movementY * 0.002;
+                    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+                }
+            });
+            camera.rotation.order = "YXZ";
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            // Gravidade e Atrito
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            velocity.y -= 9.8 * delta; // Gravidade
+
+            direction.z = Number(moveForward) - Number(moveBackward);
+            direction.x = Number(moveRight) - Number(moveLeft);
+            direction.normalize();
+
+            if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+            if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+            camera.translateX(-velocity.x * delta);
+            camera.translateZ(velocity.z * delta);
+            camera.position.y += velocity.y * delta;
+
+            if (camera.position.y < 1.6) {
+                velocity.y = 0;
+                camera.position.y = 1.6;
+                canJump = true;
+            }
+
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+    </script>
 </body>
 </html>
