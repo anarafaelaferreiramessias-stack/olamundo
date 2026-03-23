@@ -102,29 +102,38 @@
         <div class="type-tag">Treinador Pokémon</div>
     </div>
 
-    <!-- Áudio do Pokémon Center (toca automaticamente ao carregar) -->
-    <audio id="pokemonSound" preload="auto" autoplay loop volume="0.25">
-        <source src="https://downloads.khinsider.com/game-soundtracks/album/pokemon-diamond-and-pearl-super-music-collection/1-16.%20Pok%C3%A9mon%20Center%20%28Day%29.mp3" type="audio/mpeg">
+    <!-- Áudio do Pokémon Center Theme (toca ao carregar ou no clique) -->
+    <audio id="pokemonSound" preload="auto" loop volume="0.3">
+        <source src="https://www.televisiontunes.com/uploads/audio/Pokemon%20-%20Anime%20Sound%20Collection%20-%20Pokemon%20Holiday%20-%20Pokemon%20Center%20Theme.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio.
     </audio>
 
     <script>
-        // Tenta tocar o som (alguns navegadores bloqueiam autoplay sem interação)
         const audio = document.getElementById('pokemonSound');
-        
-        // Tenta tocar imediatamente
-        audio.play().catch(() => {
-            console.log("Autoplay bloqueado — aguardando interação");
-            // Se falhar, toca no primeiro clique
-            document.body.addEventListener('click', function playOnClick() {
-                audio.play();
-                document.body.removeEventListener('click', playOnClick);
-            }, { once: true });
-        });
 
-        // Redireciona ao clicar em qualquer lugar (mantém o comportamento original)
+        // Tenta autoplay (muitos navegadores bloqueiam sem interação)
+        function tryPlay() {
+            audio.play().then(() => {
+                console.log("Música tocando!");
+            }).catch(() => {
+                console.log("Autoplay bloqueado — vai tocar no clique");
+                // Toca no primeiro clique (antes do redirecionamento)
+                document.body.addEventListener('click', function playOnce() {
+                    audio.play();
+                    document.body.removeEventListener('click', playOnce);
+                }, { once: true });
+            });
+        }
+
+        // Tenta tocar logo ao carregar
+        tryPlay();
+
+        // Redireciona ao clicar (mantém o original)
         document.body.addEventListener('click', function() {
-            window.location.href = "https://www.pokemon.com/br";
+            // Dá um tempinho pro som começar antes de redirecionar (opcional)
+            setTimeout(() => {
+                window.location.href = "https://www.pokemon.com/br";
+            }, 800); // 0.8s de delay pra ouvir um pouquinho
         });
     </script>
 
