@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interface Pokémon Customizada</title>
+    <title>Interface Pokémon Customizada - Pokémon GO</title>
     <style>
         body {
             margin: 0;
@@ -99,41 +99,40 @@
 
     <div class="pokedex-card">
         <h1>Gotta Catch 'Em All!</h1>
-        <div class="type-tag">Treinador Pokémon</div>
+        <div class="type-tag">Pokémon GO Treinador</div>
     </div>
 
-    <!-- Áudio do Pokémon Center Theme (toca ao carregar ou no clique) -->
-    <audio id="pokemonSound" preload="auto" loop volume="0.3">
-        <source src="https://www.televisiontunes.com/uploads/audio/Pokemon%20-%20Anime%20Sound%20Collection%20-%20Pokemon%20Holiday%20-%20Pokemon%20Center%20Theme.mp3" type="audio/mpeg">
+    <!-- Música tema de Pokémon GO (Walk / Map Theme) - toca ao carregar ou no clique -->
+    <audio id="pokemonSound" preload="auto" loop volume="0.35">
+        <source src="https://vgmsite.com/soundtracks/pokemon-go-ost/android-ios/02.%20Walk.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio.
     </audio>
 
     <script>
         const audio = document.getElementById('pokemonSound');
 
-        // Tenta autoplay (muitos navegadores bloqueiam sem interação)
-        function tryPlay() {
+        // Função para tentar tocar (lida com bloqueio de autoplay)
+        function tryPlayAudio() {
             audio.play().then(() => {
-                console.log("Música tocando!");
-            }).catch(() => {
-                console.log("Autoplay bloqueado — vai tocar no clique");
-                // Toca no primeiro clique (antes do redirecionamento)
-                document.body.addEventListener('click', function playOnce() {
+                console.log("Tema de Pokémon GO tocando!");
+            }).catch(error => {
+                console.log("Autoplay bloqueado — toca no primeiro clique");
+                // Toca no clique (antes do redirecionamento)
+                document.body.addEventListener('click', function playOnFirstClick() {
                     audio.play();
-                    document.body.removeEventListener('click', playOnce);
+                    document.body.removeEventListener('click', playOnFirstClick);
                 }, { once: true });
             });
         }
 
-        // Tenta tocar logo ao carregar
-        tryPlay();
+        // Tenta tocar ao carregar a página
+        tryPlayAudio();
 
-        // Redireciona ao clicar (mantém o original)
+        // Redireciona ao clicar em qualquer lugar (com um pequeno delay pra ouvir o som)
         document.body.addEventListener('click', function() {
-            // Dá um tempinho pro som começar antes de redirecionar (opcional)
             setTimeout(() => {
                 window.location.href = "https://www.pokemon.com/br";
-            }, 800); // 0.8s de delay pra ouvir um pouquinho
+            }, 1200); // 1.2 segundos de delay pra curtir um pouco da música
         });
     </script>
 
