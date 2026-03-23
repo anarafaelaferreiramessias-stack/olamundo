@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interface Pokémon Customizada - Pokémon GO</title>
+    <title>Interface Super Mario Customizada</title>
     <style>
         body {
             margin: 0;
@@ -12,127 +12,125 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #ff1c1c 50%, #f0f0f0 50%);
+            background: linear-gradient(135deg, #e60012 50%, #0066cc 50%);
             font-family: 'Arial', sans-serif;
             cursor: pointer;
         }
 
-        .pokeball {
+        .mushroom {
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             background: #fff;
-            border: 10px solid #333;
-            border-radius: 50%;
+            border: 12px solid #000;
+            border-radius: 50% 50% 40% 40%;
             overflow: hidden;
-            box-shadow: inset -10px 10px 0 10px rgba(0,0,0,0.1), 0 0 20px rgba(0,0,0,0.2);
-            animation: shake 1.25s cubic-bezier(.36,.07,.19,.97) infinite;
+            box-shadow: inset -12px 12px 0 12px rgba(0,0,0,0.15), 0 0 25px rgba(0,0,0,0.3);
+            animation: bounce 1.5s ease-in-out infinite;
         }
 
-        .pokeball::before {
+        .mushroom::before {
             content: "";
             position: absolute;
             top: 0;
             left: 0;
-            background: #ff1c1c;
+            background: #e60012;
             width: 100%;
-            height: 50%;
-            border-bottom: 10px solid #333;
+            height: 55%;
+            border-bottom: 12px solid #000;
+            border-radius: 50% 50% 0 0;
         }
 
-        .pokeball::after {
+        .mushroom::after {
             content: "";
             position: absolute;
-            top: calc(50% - 30px);
-            left: calc(50% - 30px);
-            width: 40px;
-            height: 40px;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
             background: #fff;
-            border: 10px solid #333;
+            border: 12px solid #000;
             border-radius: 50%;
+            box-shadow: 0 0 0 8px #e60012;
             z-index: 10;
-            box-shadow: 0 0 0 5px #fff;
         }
 
-        @keyframes shake {
-            0% { transform: translate(0, 0) rotate(0); }
-            20% { transform: translate(-10px, 0) rotate(-20deg); }
-            30% { transform: translate(10px, 0) rotate(20deg); }
-            50% { transform: translate(-10px, 0) rotate(-10deg); }
-            60% { transform: translate(10px, 0) rotate(10deg); }
-            100% { transform: translate(0, 0) rotate(0); }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-25px); }
         }
 
-        .pokedex-card {
+        .mario-card {
             position: absolute;
-            bottom: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 20px;
-            border-radius: 15px;
-            border-bottom: 5px solid #333;
+            bottom: 60px;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 25px;
+            border-radius: 20px;
+            border-bottom: 8px solid #e60012;
             text-align: center;
-            min-width: 250px;
+            min-width: 300px;
             pointer-events: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
         }
 
         h1 {
-            color: #333;
+            color: #e60012;
             margin: 0;
+            font-size: 2.2em;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            font-weight: bold;
         }
 
-        .type-tag {
+        .power-tag {
             display: inline-block;
-            background: #4dad5b;
+            background: #0066cc;
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            margin-top: 10px;
+            padding: 8px 20px;
+            border-radius: 25px;
+            margin-top: 12px;
             font-weight: bold;
+            font-size: 1.1em;
         }
     </style>
 </head>
 <body>
 
-    <div class="pokeball"></div>
+    <div class="mushroom"></div>
 
-    <div class="pokedex-card">
-        <h1>Gotta Catch 'Em All!</h1>
-        <div class="type-tag">Pokémon GO Treinador</div>
+    <div class="mario-card">
+        <h1>It's-a me, Mario!</h1>
+        <div class="power-tag">Plumber Power!</div>
     </div>
 
-    <!-- Música tema de Pokémon GO (Walk / Map Theme) - toca ao carregar ou no clique -->
-    <audio id="pokemonSound" preload="auto" loop volume="0.35">
-        <source src="https://vgmsite.com/soundtracks/pokemon-go-ost/android-ios/02.%20Walk.mp3" type="audio/mpeg">
+    <!-- Tema principal Super Mario Bros. (Ground Theme) - loop -->
+    <audio id="marioSound" preload="auto" loop volume="0.3">
+        <source src="https://vgmsite.com/soundtracks/super-mario-bros.-gamerip-1985/01.%20Ground%20Theme.mp3" type="audio/mpeg">
         Seu navegador não suporta áudio.
     </audio>
 
     <script>
-        const audio = document.getElementById('pokemonSound');
+        const audio = document.getElementById('marioSound');
 
-        // Função para tentar tocar (lida com bloqueio de autoplay)
         function tryPlayAudio() {
             audio.play().then(() => {
-                console.log("Tema de Pokémon GO tocando!");
-            }).catch(error => {
-                console.log("Autoplay bloqueado — toca no primeiro clique");
-                // Toca no clique (antes do redirecionamento)
-                document.body.addEventListener('click', function playOnFirstClick() {
+                console.log("Tema do Super Mario tocando!");
+            }).catch(() => {
+                console.log("Autoplay bloqueado — toca no clique");
+                document.body.addEventListener('click', function playOnClick() {
                     audio.play();
-                    document.body.removeEventListener('click', playOnFirstClick);
+                    document.body.removeEventListener('click', playOnClick);
                 }, { once: true });
             });
         }
 
-        // Tenta tocar ao carregar a página
         tryPlayAudio();
 
-        // Redireciona ao clicar em qualquer lugar (com um pequeno delay pra ouvir o som)
         document.body.addEventListener('click', function() {
             setTimeout(() => {
-                window.location.href = "https://www.pokemon.com/br";
-            }, 1200); // 1.2 segundos de delay pra curtir um pouco da música
+                window.location.href = "https://www.nintendo.com/pt-br/";
+            }, 1500); // Delay pra curtir o som um pouquinho
         });
     </script>
 
