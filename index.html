@@ -2,180 +2,197 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Infinite World</title>
+    <title>Minecraft 2026 - Nature Update</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Courier New', monospace; background: #87CEEB; }
-        #menu { position: absolute; width: 100%; height: 100%; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); color: white; }
-        .btn { padding: 15px 60px; background: #555; border: 3px solid #000; color: #fff; font-size: 20px; cursor: pointer; box-shadow: inset -4px -4px 0 #222; }
-        .btn:hover { background: #55a832; }
-        #hotbar { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); display: none; gap: 4px; padding: 4px; background: rgba(0,0,0,0.5); border: 2px solid #888; }
-        .slot { width: 44px; height: 44px; border: 2px solid #444; background: rgba(255,255,255,0.1); }
-        .slot.selected { border: 2px solid #fff; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
-        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
-        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+        
+        /* MENU INICIAL */
+        #menu-container {
+            position: absolute; width: 100%; height: 100%; z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
+        }
+        .mc-title { font-size: 5rem; color: white; text-shadow: 5px 5px #222; margin-bottom: 2rem; font-weight: 900; }
+        .play-button { 
+            padding: 20px 60px; background: #555; border: 4px solid #000; color: #fff; 
+            font-size: 24px; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #222;
+        }
+        .play-button:hover { background: #8dc63f; transform: translateY(-2px); box-shadow: 0 7px 0 #111; }
+
+        /* HUD */
+        #hotbar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 8px; padding: 8px; background: rgba(0,0,0,0.8); border: 3px solid #666;
+        }
+        .slot { width: 50px; height: 50px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; position: relative; }
+        .slot.selected { border-color: #fff; background: rgba(255,255,255,0.2); }
+        .count { position: absolute; bottom: 2px; right: 5px; color: #fff; font-size: 16px; text-shadow: 2px 2px #000; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
     </style>
 </head>
 <body>
 
-    <div id="menu">
-        <h1 style="text-shadow: 4px 4px #000; font-size: 4rem;">MINECRAFT INFINITE</h1>
-        <button class="btn" onclick="start()">NEW GAME</button>
+    <div id="menu-container">
+        <div class="mc-title">MINECRAFT 2026</div>
+        <button class="play-button" onclick="initGame()">NEW GAME</button>
     </div>
 
     <div id="hotbar">
-        <div class="slot selected"></div><div class="slot"></div><div class="slot"></div>
+        <div class="slot selected" id="s0">
+            <div style="width:25px; height:25px; background: #6d4c41;"></div>
+            <div id="inv-wood" class="count">0</div>
+        </div>
+        <div class="slot" id="s1"></div><div class="slot" id="s2"></div><div class="slot" id="s3"></div>
     </div>
     <div id="crosshair"></div>
 
     <script>
-        let scene, camera, renderer, raycaster, hand;
+        let scene, camera, renderer, raycaster, hand, handItem;
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
+        let targetRotation = new THREE.Euler(0, 0, 0, 'YXZ');
         let prevTime = performance.now();
-        let chunks = {}, blocks = [];
-        const CHUNK_SIZE = 16;
-        const RENDER_DISTANCE = 1;
+        let blocks = [], drops = []; 
+        let inventoryWood = 0, selectedSlot = 0;
 
-        // Gerador de Texturas Pixel-Perfect
-        function getMCTexture(type) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 16; canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            for(let x=0; x<16; x++) {
-                for(let y=0; y<16; y++) {
-                    let r, g, b;
-                    let n = Math.random() * 15;
-                    if(type === 'top') { r=72+n; g=126+n; b=37+n; }
-                    else if(type === 'side') { 
-                        if(y < 4) { r=72+n; g=126+n; b=37+n; }
-                        else { r=93+n; g=64+n; b=55+n; }
-                    }
-                    else if(type === 'wood') { r=100+n; g=70+n; b=40+n; }
-                    else if(type === 'leaf') { r=45+n; g=71+n; b=30+n; }
-                    ctx.fillStyle = `rgb(${r},${g},${b})`;
-                    ctx.fillRect(x, y, 1, 1);
-                }
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.magFilter = THREE.NearestFilter;
-            return tex;
-        }
+        const loader = new THREE.TextureLoader();
+        const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
+        const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-        const materials = {
-            grass: [
-                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // right
-                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // left
-                new THREE.MeshLambertMaterial({map: getMCTexture('top')}),  // top
-                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // bottom (dirt)
-                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // front
-                new THREE.MeshLambertMaterial({map: getMCTexture('side')}), // back
-            ],
-            wood: new THREE.MeshLambertMaterial({map: getMCTexture('wood')}),
-            leaf: new THREE.MeshLambertMaterial({map: getMCTexture('leaf'), transparent: true, opacity: 0.9})
-        };
-
-        function start() {
-            document.getElementById('menu').style.display = 'none';
+        function initGame() {
+            document.getElementById('menu-container').style.display = 'none';
             document.getElementById('hotbar').style.display = 'flex';
             document.getElementById('crosshair').style.display = 'block';
-            init();
-        }
-
-        function init() {
+            
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x78a7ff);
-            scene.fog = new THREE.Fog(0x78a7ff, 5, 40);
+            // Skybox simples (Céu com degradê)
+            scene.background = new THREE.Color(0x6eb1ff);
+            scene.fog = new THREE.Fog(0x6eb1ff, 10, 70);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 0);
+            camera.rotation.order = 'YXZ';
 
-            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-            sun.position.set(10, 50, 10);
+            // Luzes
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+            sun.position.set(10, 20, 10);
             scene.add(sun);
 
-            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.8), new THREE.MeshLambertMaterial({color: 0xdbac82}));
+            // Chão com Relevo
+            const groundGeo = new THREE.PlaneGeometry(200, 200, 40, 40);
+            const pos = groundGeo.attributes.position;
+            for(let i=0; i<pos.count; i++) {
+                let x = pos.getX(i), y = pos.getY(i);
+                pos.setZ(i, Math.sin(x*0.1) * Math.cos(y*0.1) * 3);
+            }
+            groundGeo.computeVertexNormals();
+            const ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
+            ground.rotation.x = -Math.PI/2;
+            scene.add(ground);
+
+            // ADICIONANDO GRAMAS (Vegetação)
+            const grassBlockGeo = new THREE.PlaneGeometry(0.5, 0.5);
+            const grassMat = new THREE.MeshLambertMaterial({color: 0x4caf50, side: THREE.DoubleSide, transparent: true, opacity: 0.8});
+            for(let i=0; i<600; i++) {
+                const gx = Math.random()*100-50;
+                const gz = Math.random()*100-50;
+                const gy = Math.sin(gx*0.1) * Math.cos(gz*0.1) * 3;
+                
+                const g = new THREE.Mesh(grassBlockGeo, grassMat);
+                g.position.set(gx, gy + 0.25, gz);
+                g.rotation.y = Math.random() * Math.PI;
+                scene.add(g);
+            }
+
+            // Mão
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
             scene.add(hand);
+
+            // Árvores
+            for(let i=0; i<20; i++) {
+                let tx = Math.random()*80-40;
+                let tz = Math.random()*80-40;
+                let ty = Math.sin(tx*0.1) * Math.cos(tz*0.1) * 3;
+                spawnTree(tx, ty, tz);
+            }
 
             raycaster = new THREE.Raycaster();
             setupControls();
-            updateWorld();
             animate();
         }
 
-        function createBlock(x, y, z, mat) {
-            const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
-            block.position.set(x, y, z);
-            scene.add(block);
-            blocks.push(block);
-        }
-
-        function spawnTree(x, z) {
-            for(let h=1; h<=4; h++) createBlock(x, h, z, materials.wood);
-            for(let ly=4; ly<=5; ly++) {
-                for(let lx=-1; lx<=1; lx++) {
-                    for(let lz=-1; lz<=1; lz++) createBlock(x+lx, ly, z+lz, materials.leaf);
-                }
+        function spawnTree(x, y, z) {
+            // Tronco
+            for(let h=0; h<4; h++) {
+                const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+                log.position.set(x, y + h + 0.5, z);
+                log.userData = { type: 'wood', t: 1.2 };
+                scene.add(log); blocks.push(log);
             }
-        }
-
-        function updateWorld() {
-            const pX = Math.floor(camera.position.x / CHUNK_SIZE);
-            const pZ = Math.floor(camera.position.z / CHUNK_SIZE);
-
-            for(let x = pX - RENDER_DISTANCE; x <= pX + RENDER_DISTANCE; x++) {
-                for(let z = pZ - RENDER_DISTANCE; z <= pZ + RENDER_DISTANCE; z++) {
-                    const key = `${x},${z}`;
-                    if(!chunks[key]) {
-                        // Gerar Chunk
-                        for(let bx=0; bx<CHUNK_SIZE; bx++) {
-                            for(let bz=0; bz<CHUNK_SIZE; bz++) {
-                                let realX = x * CHUNK_SIZE + bx;
-                                let realZ = z * CHUNK_SIZE + bz;
-                                createBlock(realX, 0, realZ, materials.grass);
-                                if(Math.random() > 0.98) spawnTree(realX, realZ);
-                            }
-                        }
-                        chunks[key] = true;
+            // Folhas (Texturizadas por cor e transparência)
+            for(let ly=3; ly<6; ly++) {
+                for(let lx=-1; lx<=1; lx++) {
+                    for(let lz=-1; lz<=1; lz++) {
+                        const leaf = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshLambertMaterial({color: 0x1b5e20, transparent: true, opacity: 0.9}));
+                        leaf.position.set(x+lx, y+ly+0.5, z+lz);
+                        leaf.userData = { type: 'leaf', t: 0.3 };
+                        scene.add(leaf); blocks.push(leaf);
                     }
                 }
             }
         }
 
         function setupControls() {
-            document.addEventListener('mousedown', () => {
+            document.addEventListener('mousedown', (e) => {
                 if (document.pointerLockElement !== renderer.domElement) renderer.domElement.requestPointerLock();
                 else {
-                    hand.position.z += 0.3; // Soco
-                    raycaster.setFromCamera(new THREE.Vector2(), camera);
-                    const hits = raycaster.intersectObjects(blocks);
-                    if(hits[0] && hits[0].distance < 5) {
-                        scene.remove(hits[0].object);
-                        blocks = blocks.filter(b => b !== hits[0].object);
+                    if (e.button === 0) { // Quebrar
+                        raycaster.setFromCamera(new THREE.Vector2(), camera);
+                        const hits = raycaster.intersectObjects(blocks);
+                        if(hits[0] && hits[0].distance < 4) {
+                            const obj = hits[0].object;
+                            scene.remove(obj);
+                            blocks = blocks.filter(b => b !== obj);
+                            inventoryWood++;
+                            document.getElementById('inv-wood').innerText = inventoryWood;
+                        }
+                    }
+                    if (e.button === 2) { // Construir
+                        if(inventoryWood > 0 && selectedSlot === 0) {
+                            raycaster.setFromCamera(new THREE.Vector2(), camera);
+                            const hits = raycaster.intersectObjects([scene.children[2], ...blocks]);
+                            if(hits[0]) {
+                                const pos = hits[0].object.position.clone().add(hits[0].face.normal);
+                                const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+                                b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+                                scene.add(b); blocks.push(b);
+                                inventoryWood--;
+                                document.getElementById('inv-wood').innerText = inventoryWood;
+                            }
+                        }
                     }
                 }
             });
-            window.onkeydown = (e) => {
+
+            document.addEventListener('keydown', (e) => {
                 if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
                 if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
                 if(e.code === 'Space' && canJump) { velocity.y += 4; canJump = false; }
-            };
-            window.onkeyup = (e) => {
+            });
+            document.addEventListener('keyup', (e) => {
                 if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
                 if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
-            };
+            });
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement === renderer.domElement) {
-                    camera.rotation.y -= e.movementX * 0.002;
-                    camera.rotation.x -= e.movementY * 0.002;
-                    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+                    targetRotation.y -= e.movementX * 0.002;
+                    targetRotation.x -= e.movementY * 0.002;
+                    targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
                 }
             });
         }
@@ -184,6 +201,9 @@
             requestAnimationFrame(animate);
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
+
+            camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
+            camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
@@ -200,20 +220,13 @@
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
 
-            if (camera.position.y < 2.2) { velocity.y = 0; camera.position.y = 2.2; canJump = true; }
+            let groundH = Math.sin(camera.position.x*0.1) * Math.cos(camera.position.z*0.1) * 3 + 1.8;
+            if (camera.position.y < groundH) { velocity.y = 0; camera.position.y = groundH; canJump = true; }
 
-            // View Bobbing (Balanço ao andar)
-            const bob = (moveF || moveB || moveL || moveR) ? Math.sin(time * 0.01) * 0.05 : 0;
-            camera.position.y += bob;
+            // Movimento da mão
+            hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
+            hand.translateX(0.5); hand.translateY(-0.4 + Math.sin(time*0.005)*0.02); hand.translateZ(-0.7);
 
-            // Update mão
-            hand.position.copy(camera.position);
-            hand.quaternion.copy(camera.quaternion);
-            hand.translateX(0.5); hand.translateY(-0.4 + bob); hand.translateZ(-0.8);
-
-            updateWorld(); // Carrega novos pedaços do mundo
-
-            camera.rotation.order = 'YXZ';
             prevTime = time;
             renderer.render(scene, camera);
         }
