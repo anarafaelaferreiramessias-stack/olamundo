@@ -2,48 +2,43 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Build & Survival</title>
+    <title>Minecraft 2026 - Survival Alpha</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Montserrat', sans-serif; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; background: #000; }
         
-        /* MENU INICIAL */
-        #menu-container {
+        /* MENU */
+        #menu {
             position: absolute; width: 100%; height: 100%; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
-            transition: opacity 0.8s;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
+            transition: 0.5s;
         }
-        .btn-mc {
-            width: 300px; padding: 15px; margin: 10px; background: #4e4e4e; border: 3px solid #000;
-            color: white; font-size: 18px; cursor: pointer; transition: 0.2s;
-        }
-        .btn-mc:hover { background: #8dc63f; transform: scale(1.05); }
+        .btn { padding: 15px 40px; background: #4e4e4e; border: 3px solid #000; color: white; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #8dc63f; }
 
-        /* HUD DO JOGO */
-        #hud {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 15px 30px;
-            border-radius: 5px; border: 2px solid #555; display: none; z-index: 50; text-align: center;
+        /* HUD & INVENTÁRIO */
+        #hotbar {
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: 364px; height: 44px; background: rgba(0,0,0,0.5); border: 2px solid #fff;
+            display: none; display: flex; align-items: center; justify-content: center; gap: 5px;
         }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 16px; height: 16px;
-            border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%);
-            display: none; z-index: 50; pointer-events: none;
-        }
+        .slot { width: 36px; height: 36px; background: rgba(255,255,255,0.2); border: 2px solid #888; color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .slot-count { position: absolute; bottom: 2px; right: 2px; font-weight: bold; color: #fff; text-shadow: 1px 1px #000; }
+        
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="menu-container">
-        <img src="https://minecraft.wiki/images/Minecraft_Logo.png" style="width: 500px; margin-bottom: 40px;">
-        <button class="btn-mc" onclick="start()">NEW GAME</button>
+    <div id="menu">
+        <img src="https://minecraft.wiki/images/Minecraft_Logo.png" style="width: 400px; margin-bottom: 20px;">
+        <button class="btn" onclick="start()">JOGAR 2026</button>
     </div>
 
-    <div id="hud">
-        <span style="font-size: 24px;">📦 MADEIRA: <span id="count">0</span></span><br>
-        <small>Esq: Quebrar | Dir: Colocar Bloco | W,A,S,D: Andar</small>
+    <div id="hotbar">
+        <div class="slot"><div id="inv-wood" class="slot-count">0</div></div>
+        <div class="slot"></div><div class="slot"></div><div class="slot"></div><div class="slot"></div>
     </div>
     <div id="crosshair"></div>
 
@@ -52,68 +47,55 @@
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let prevTime = performance.now();
-        let objects = []; // Árvores e blocos colocados
-        let inventory = 0;
+        let blocks = [], drops = []; 
+        let inventoryWood = 0;
 
         const loader = new THREE.TextureLoader();
         const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
-        const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
         function start() {
-            document.getElementById('menu-container').style.opacity = '0';
+            document.getElementById('menu').style.opacity = '0';
             setTimeout(() => {
-                document.getElementById('menu-container').style.display = 'none';
-                document.getElementById('hud').style.display = 'block';
+                document.getElementById('menu').style.display = 'none';
+                document.getElementById('hotbar').style.display = 'flex';
                 document.getElementById('crosshair').style.display = 'block';
                 init();
-            }, 800);
+            }, 500);
         }
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x74b9ff);
-            scene.fog = new THREE.Fog(0x74b9ff, 10, 80);
-
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             
             scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
-            sun.position.set(10, 20, 10);
-            scene.add(sun);
-
-            // CHÃO
-            grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
-            grassTex.repeat.set(100, 100);
-            const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshLambertMaterial({map: grassTex}));
-            ground.rotation.x = -Math.PI/2;
-            scene.add(ground);
-
-            // MÃO QUADRADA
-            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 1), new THREE.MeshLambertMaterial({color: 0xdbac82}));
-            scene.add(hand);
-
-            // FLORESTA DENSA (100 árvores)
-            for(let i = 0; i < 100; i++) {
-                createTree(Math.random()*160-80, Math.random()*160-80);
-            }
-
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
+            // Chão
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshLambertMaterial({color: 0x3d611c}));
+            ground.rotation.x = -Math.PI/2;
+            scene.add(ground);
+
+            // Mão
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.8), new THREE.MeshLambertMaterial({color: 0xdbac82}));
+            scene.add(hand);
+
+            // Criar Árvores (Bloco por Bloco)
+            for(let i=0; i<30; i++) spawnTree(Math.random()*100-50, Math.random()*100-50);
+
             raycaster = new THREE.Raycaster();
 
-            // EVENTOS
             document.addEventListener('mousedown', (e) => {
                 if (document.pointerLockElement !== renderer.domElement) {
                     renderer.domElement.requestPointerLock();
                 } else {
-                    if (e.button === 0) performAction('break');
-                    if (e.button === 2) performAction('build');
+                    if (e.button === 0) breakBlock();
+                    if (e.button === 2) placeBlock();
                 }
             });
 
-            document.addEventListener('contextmenu', e => e.preventDefault()); // Desativa menu do Windows
             document.addEventListener('keydown', (e) => handleKeys(e.code, true));
             document.addEventListener('keyup', (e) => handleKeys(e.code, false));
             document.addEventListener('mousemove', (e) => {
@@ -127,50 +109,50 @@
             animate();
         }
 
-        function createTree(x, z) {
-            const trunk = new THREE.Mesh(new THREE.BoxGeometry(1, 4, 1), new THREE.MeshLambertMaterial({map: woodTex}));
-            trunk.position.set(x, 2, z);
-            trunk.userData = { type: 'wood' };
-            scene.add(trunk);
-            objects.push(trunk);
-
-            const leaves = new THREE.Mesh(new THREE.BoxGeometry(3, 2, 3), new THREE.MeshLambertMaterial({color: 0x228b22}));
-            leaves.position.set(x, 4.5, z);
-            scene.add(leaves);
-        }
-
-        function handleKeys(code, val) {
-            if(code === 'KeyW') moveF = val; if(code === 'KeyS') moveB = val;
-            if(code === 'KeyA') moveL = val; if(code === 'KeyD') moveR = val;
-            if(code === 'Space' && val && canJump) { velocity.y += 4; canJump = false; }
-        }
-
-        function performAction(type) {
-            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
-            const intersects = raycaster.intersectObjects(objects);
-
-            if (type === 'break' && intersects.length > 0) {
-                const target = intersects[0].object;
-                inventory++;
-                document.getElementById('count').innerText = inventory;
-                scene.remove(target);
-                objects = objects.filter(o => o !== target);
-            } 
-            else if (type === 'build' && inventory > 0) {
-                // Coloca um bloco na frente do jogador
-                const block = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
-                const buildPos = new THREE.Vector3();
-                camera.getWorldDirection(buildPos);
-                buildPos.multiplyScalar(3).add(camera.position); // Coloca a 3 metros
-                block.position.set(Math.round(buildPos.x), Math.round(buildPos.y), Math.round(buildPos.z));
-                
-                scene.add(block);
-                objects.push(block);
-                inventory--;
-                document.getElementById('count').innerText = inventory;
+        function spawnTree(x, z) {
+            for(let h=0; h<4; h++) {
+                const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+                log.position.set(x, h + 0.5, z);
+                scene.add(log);
+                blocks.push(log);
             }
-            // Animação de soco
-            hand.position.z += 0.3;
+        }
+
+        function breakBlock() {
+            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            const intersects = raycaster.intersectObjects(blocks);
+            if (intersects.length > 0) {
+                const target = intersects[0].object;
+                createDrop(target.position.clone()); // Cria o item no chão
+                scene.remove(target);
+                blocks = blocks.filter(b => b !== target);
+                hand.position.z += 0.2; // Animação soco
+            }
+        }
+
+        function createDrop(pos) {
+            const drop = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+            drop.position.set(pos.x, 0.3, pos.z);
+            scene.add(drop);
+            drops.push(drop);
+        }
+
+        function placeBlock() {
+            if (inventoryWood <= 0) return;
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            const pos = camera.position.clone().add(dir.multiplyScalar(3));
+            const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+            b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+            scene.add(b);
+            blocks.push(b);
+            inventoryWood--;
+            document.getElementById('inv-wood').innerText = inventoryWood;
+        }
+
+        function handleKeys(c, v) {
+            if(c==='KeyW') moveF=v; if(c==='KeyS') moveB=v; if(c==='KeyA') moveL=v; if(c==='KeyD') moveR=v;
+            if(c==='Space' && v && canJump) { velocity.y += 4; canJump = false; }
         }
 
         function animate() {
@@ -178,7 +160,6 @@
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
-            // VELOCIDADE REDUZIDA (Ajuste de 150 para 80)
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
             velocity.y -= 9.8 * delta;
@@ -187,23 +168,31 @@
             direction.x = Number(moveR) - Number(moveL);
             direction.normalize();
 
-            if (moveF || moveB) velocity.z -= direction.z * 80.0 * delta; // Mais lento
-            if (moveL || moveR) velocity.x -= direction.x * 80.0 * delta; // Mais lento
+            if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta; // Lento como pedido
+            if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
 
             camera.translateX(-velocity.x * delta);
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
 
-            if (camera.position.y < 2) { velocity.y = 0; camera.position.y = 2; canJump = true; }
+            if (camera.position.y < 1.6) { velocity.y = 0; camera.position.y = 1.6; canJump = true; }
 
-            // POSIÇÃO DA MÃO
-            const isMoving = moveF || moveB || moveL || moveR;
-            const wave = Math.sin(time * 0.005) * 0.03;
+            // Lógica de Coleta (Drops)
+            drops.forEach((drop, index) => {
+                drop.rotation.y += 0.02; // Item girando
+                const dist = camera.position.distanceTo(drop.position);
+                if (dist < 1.5) { // Se o jogador encostar
+                    inventoryWood++;
+                    document.getElementById('inv-wood').innerText = inventoryWood;
+                    scene.remove(drop);
+                    drops.splice(index, 1);
+                }
+            });
+
+            // Mão
             hand.position.copy(camera.position);
             hand.quaternion.copy(camera.quaternion);
-            hand.translateX(0.5); 
-            hand.translateY(-0.4 + (isMoving ? wave : 0));
-            hand.translateZ(-0.8);
+            hand.translateX(0.5); hand.translateY(-0.4); hand.translateZ(-0.8);
 
             prevTime = time;
             renderer.render(scene, camera);
