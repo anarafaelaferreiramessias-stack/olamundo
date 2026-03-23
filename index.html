@@ -2,54 +2,72 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Smooth Edition</title>
+    <title>Minecraft 2026 - Hotbar System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; background: #000; }
+        
+        /* MENU */
         #menu {
             position: absolute; width: 100%; height: 100%; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
             transition: 0.8s;
         }
         .btn { padding: 15px 60px; background: #3c3c3c; border: 4px solid #000; color: #fff; cursor: pointer; font-size: 20px; font-weight: bold; }
-        .btn:hover { background: #8dc63f; outline: 2px solid #fff; }
+        .btn:hover { background: #8dc63f; }
 
-        #hotbar {
+        /* HOTBAR ESTILO MINECRAFT */
+        #hotbar-container {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 364px; height: 44px; background: rgba(0,0,0,0.6); border: 2px solid #fff;
-            display: none; align-items: center; justify-content: center;
+            display: none; gap: 4px; padding: 4px; background: rgba(0,0,0,0.5); border: 2px solid #888;
         }
-        .slot { width: 40px; height: 40px; border: 2px solid #888; display: flex; align-items: center; justify-content: center; position: relative; }
-        .count { position: absolute; bottom: 2px; right: 2px; color: #fff; font-size: 14px; text-shadow: 1px 1px #000; }
+        .slot {
+            width: 40px; height: 40px; background: rgba(255,255,255,0.1);
+            border: 2px solid #444; display: flex; align-items: center; justify-content: center;
+            position: relative; transition: 0.1s;
+        }
+        .slot.selected { border: 2px solid #fff; background: rgba(255,255,255,0.3); box-shadow: 0 0 10px #fff; }
+        .count { position: absolute; bottom: 1px; right: 2px; color: #fff; font-size: 12px; font-weight: bold; text-shadow: 1px 1px #000; }
+        .item-icon { width: 25px; height: 25px; display: none; background-size: cover; }
 
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; opacity: 0.7; }
-        
-        #mining-progress {
-            position: absolute; top: 53%; left: 50%; transform: translate(-50%, -50%);
-            width: 60px; height: 4px; background: rgba(0,0,0,0.8); display: none;
-        }
-        #mining-bar { width: 0%; height: 100%; background: #00ff00; transition: width 0.1s; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 18px; height: 18px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; opacity: 0.6; }
+        #mining-progress { position: absolute; top: 53%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 4px; background: rgba(0,0,0,0.8); display: none; }
+        #mining-bar { width: 0%; height: 100%; background: #00ff00; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <img src="https://minecraft.wiki/images/Minecraft_Logo.png" style="width: 450px; margin-bottom: 30px;">
-        <button class="btn" onclick="start()">START WORLD</button>
+        <img src="https://minecraft.wiki/images/Minecraft_Logo.png" style="width: 400px; margin-bottom: 30px;">
+        <button class="btn" onclick="start()">ENTRAR NO JOGO</button>
     </div>
 
     <div id="mining-progress"><div id="mining-bar"></div></div>
-    <div id="hotbar"><div class="slot"><div id="inv-wood" class="count">0</div></div></div>
+
+    <div id="hotbar-container">
+        <div class="slot selected" id="slot-0">
+            <div id="icon-wood" class="item-icon" style="background-image: url('https://threejs.org/examples/textures/crate.gif'); display: block; opacity: 0.3;"></div>
+            <div id="inv-wood" class="count">0</div>
+        </div>
+        <div class="slot" id="slot-1"></div>
+        <div class="slot" id="slot-2"></div>
+        <div class="slot" id="slot-3"></div>
+        <div class="slot" id="slot-4"></div>
+        <div class="slot" id="slot-5"></div>
+        <div class="slot" id="slot-6"></div>
+    </div>
+
     <div id="crosshair"></div>
 
     <script>
-        let scene, camera, renderer, raycaster, hand;
+        let scene, camera, renderer, raycaster, hand, handItem;
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let prevTime = performance.now();
         let blocks = [], drops = []; 
         let inventoryWood = 0;
+        let selectedSlot = 0;
 
         let isMining = false, miningTime = 0, currentTarget = null;
 
@@ -60,40 +78,40 @@
             document.getElementById('menu').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('menu').style.display = 'none';
-                document.getElementById('hotbar').style.display = 'flex';
+                document.getElementById('hotbar-container').style.display = 'flex';
                 document.getElementById('crosshair').style.display = 'block';
                 init();
-            }, 800);
+            }, 600);
         }
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x74b9ff);
-            scene.fog = new THREE.Fog(0x74b9ff, 15, 90);
-
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             
             scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
-            sun.position.set(5, 10, 7.5);
-            scene.add(sun);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
 
             const ground = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), new THREE.MeshLambertMaterial({color: 0x2d4c1e}));
             ground.rotation.x = -Math.PI/2;
             scene.add(ground);
 
-            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.8), new THREE.MeshLambertMaterial({color: 0xdbac82}));
+            // Braço
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.25, 0.7), new THREE.MeshLambertMaterial({color: 0xdbac82}));
             scene.add(hand);
 
-            // Gerar Árvores com Folhas
-            for(let i=0; i<50; i++) spawnFullTree(Math.random()*140-70, Math.random()*140-70);
+            // Item na mão (Mini bloco)
+            handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+            handItem.visible = false;
+            scene.add(handItem);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
+            for(let i=0; i<40; i++) spawnTree(Math.random()*100-50, Math.random()*100-50);
 
             raycaster = new THREE.Raycaster();
 
+            // EVENTOS
             document.addEventListener('mousedown', (e) => {
                 if (document.pointerLockElement !== renderer.domElement) {
                     renderer.domElement.requestPointerLock();
@@ -103,10 +121,15 @@
                 }
             });
             document.addEventListener('mouseup', () => stopMining());
-            document.addEventListener('keydown', (e) => handleKeys(e.code, true));
+            document.addEventListener('keydown', (e) => {
+                handleKeys(e.code, true);
+                // Troca de Slot (1-7)
+                if (e.key >= 1 && e.key <= 7) {
+                    updateSlot(parseInt(e.key) - 1);
+                }
+            });
             document.addEventListener('keyup', (e) => handleKeys(e.code, false));
             
-            // Mouse com sensibilidade ajustada
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement === renderer.domElement) {
                     camera.rotation.y -= e.movementX * 0.0015;
@@ -118,27 +141,21 @@
             animate();
         }
 
-        function spawnFullTree(x, z) {
-            // Tronco (3 blocos)
-            for(let h=0; h<3; h++) {
+        function updateSlot(index) {
+            document.getElementById(`slot-${selectedSlot}`).classList.remove('selected');
+            selectedSlot = index;
+            document.getElementById(`slot-${selectedSlot}`).classList.add('selected');
+            
+            // Se selecionar o slot 1 e tiver madeira, mostra o bloco na mão
+            handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
+        }
+
+        function spawnTree(x, z) {
+            for(let h=0; h<4; h++) {
                 const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
                 log.position.set(x, h + 0.5, z);
-                log.userData = { type: 'wood', time: 1.5 };
                 scene.add(log);
                 blocks.push(log);
-            }
-            // Folhas (Copa quadrada 3x3x2)
-            for(let ly=3; ly<5; ly++) {
-                for(let lx=-1; lx<=1; lx++) {
-                    for(let lz=-1; lz<=1; lz++) {
-                        if(lx==0 && lz==0 && ly==3) continue; // Pula onde está o tronco
-                        const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({color: 0x3a5f0b, transparent: true, opacity: 0.9}));
-                        leaf.position.set(x + lx, ly + 0.5, z + lz);
-                        leaf.userData = { type: 'leaf', time: 0.4 };
-                        scene.add(leaf);
-                        blocks.push(leaf);
-                    }
-                }
             }
         }
 
@@ -155,19 +172,15 @@
 
         function stopMining() {
             isMining = false;
-            miningTime = 0;
             document.getElementById('mining-progress').style.display = 'none';
         }
 
-        function handleKeys(c, v) {
-            if(c==='KeyW') moveF=v; if(c==='KeyS') moveB=v; if(c==='KeyA') moveL=v; if(c==='KeyD') moveR=v;
-            if(c==='Space' && v && canJump) { velocity.y += 4.2; canJump = false; }
-        }
-
         function placeBlock() {
-            if (inventoryWood <= 0) return;
+            // Só constrói se o slot de madeira (0) estiver selecionado e tiver estoque
+            if (selectedSlot !== 0 || inventoryWood <= 0) return;
+
             raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
-            const intersects = raycaster.intersectObjects([scene.children[2], ...blocks]); // Chão + Blocos
+            const intersects = raycaster.intersectObjects([scene.children[0], ...blocks]);
             if (intersects.length > 0) {
                 const p = intersects[0].point.add(intersects[0].face.normal.multiplyScalar(0.5));
                 const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
@@ -175,8 +188,19 @@
                 scene.add(b);
                 blocks.push(b);
                 inventoryWood--;
-                document.getElementById('inv-wood').innerText = inventoryWood;
+                updateInventoryUI();
             }
+        }
+
+        function updateInventoryUI() {
+            document.getElementById('inv-wood').innerText = inventoryWood;
+            document.getElementById('icon-wood').style.opacity = inventoryWood > 0 ? "1" : "0.3";
+            handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
+        }
+
+        function handleKeys(c, v) {
+            if(c==='KeyW') moveF=v; if(c==='KeyS') moveB=v; if(c==='KeyA') moveL=v; if(c==='KeyD') moveR=v;
+            if(c==='Space' && v && canJump) { velocity.y += 4.2; canJump = false; }
         }
 
         function animate() {
@@ -184,7 +208,6 @@
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
-            // Movimento suave
             velocity.x -= velocity.x * 8.0 * delta;
             velocity.z -= velocity.z * 8.0 * delta;
             velocity.y -= 9.8 * delta;
@@ -199,21 +222,18 @@
             camera.translateX(-velocity.x * delta);
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
-
             if (camera.position.y < 1.7) { velocity.y = 0; camera.position.y = 1.7; canJump = true; }
 
             // Mineração
             if (isMining && currentTarget) {
                 miningTime += delta;
-                let needed = currentTarget.userData.time;
-                document.getElementById('mining-bar').style.width = (miningTime/needed)*100 + '%';
-                hand.position.z += Math.sin(time*0.02)*0.03; // Swing
-                
-                if (miningTime >= needed) {
-                    const drop = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({color: currentTarget.userData.type==='wood'?0x8b4513:0x3a5f0b}));
-                    drop.position.copy(currentTarget.position);
-                    scene.add(drop);
-                    drops.push(drop);
+                document.getElementById('mining-bar').style.width = (miningTime/1.5)*100 + '%';
+                hand.position.z += Math.sin(time*0.02)*0.03;
+                if (miningTime >= 1.5) {
+                    const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+                    d.position.copy(currentTarget.position);
+                    scene.add(d);
+                    drops.push(d);
                     scene.remove(currentTarget);
                     blocks = blocks.filter(b => b !== currentTarget);
                     stopMining();
@@ -225,18 +245,22 @@
                 d.rotation.y += 0.05;
                 if (camera.position.distanceTo(d.position) < 1.5) {
                     inventoryWood++;
-                    document.getElementById('inv-wood').innerText = inventoryWood;
+                    updateInventoryUI();
                     scene.remove(d);
                     drops.splice(i, 1);
                 }
             });
 
-            // Head Bobbing & Hand position
-            const bob = Math.sin(time * 0.006) * ( (moveF||moveB||moveL||moveR) ? 0.04 : 0.01);
+            // Braço e Item na Mão
+            const bob = Math.sin(time * 0.006) * ( (moveF||moveB) ? 0.03 : 0.01);
             hand.position.copy(camera.position);
             hand.quaternion.copy(camera.quaternion);
-            hand.translateX(0.5); hand.translateY(-0.4 + bob); hand.translateZ(-0.8);
-            
+            hand.translateX(0.5); hand.translateY(-0.4 + bob); hand.translateZ(-0.7);
+
+            handItem.position.copy(hand.position);
+            handItem.quaternion.copy(hand.quaternion);
+            handItem.translateZ(-0.4); // Coloca o bloco na ponta da mão
+
             camera.rotation.order = "YXZ";
             prevTime = time;
             renderer.render(scene, camera);
