@@ -15,7 +15,7 @@
             height: 100vh;
             background: linear-gradient(135deg, #ff1c1c 50%, #f0f0f0 50%);
             font-family: 'Arial', sans-serif;
-            cursor: pointer; /* Adicionado para mostrar que é clicável */
+            cursor: pointer; /* Adicionado para mostrar que a tela é clicável */
         }
 
         /* Container da Pokébola */
@@ -35,6 +35,8 @@
         .pokeball::before {
             content: "";
             position: absolute;
+            top: 0;
+            left: 0;
             background: #ff1c1c;
             width: 100%;
             height: 50%;
@@ -76,7 +78,7 @@
             border-bottom: 5px solid #333;
             text-align: center;
             min-width: 250px;
-            pointer-events: none; /* Garante que o clique passe pelo card para o body */
+            pointer-events: none; /* Garante que o clique passe pelo card e atinja o body */
         }
 
         h1 {
@@ -97,7 +99,7 @@
         }
     </style>
 </head>
-<body onclick="redirecionar()">
+<body>
 
     <div class="pokeball"></div>
 
@@ -107,9 +109,10 @@
     </div>
 
     <script>
-        function redirecionar() {
+        // Adiciona um ouvinte de clique em toda a página (body)
+        document.body.addEventListener('click', function() {
             window.location.href = "https://www.pokemon.com/br";
-        }
+        });
     </script>
 
 </body>
