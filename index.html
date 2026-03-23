@@ -3,224 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buraco Negro Realista - Estilo NASA</title>
+    <title>☆･ﾟ: * ANA's Neocities Corner ･ﾟ:*☆</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>">
     <style>
-        * { margin:0; padding:0; box-sizing:border-box; overflow:hidden; }
-        body {
-            height:100vh;
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body {
+            height:100%;
+            background:#000 url('https://64.media.tumblr.com/9c0d8f8b5e6d8e6d8e6d8e6d8e6d8e6d/tumblr_inline_p2k0zqKXwK1r3w3w3.gif') repeat;
+            color:#0f0;
+            font-family:'VT323', monospace;
+            font-size:18px;
+            image-rendering:pixelated;
+            cursor:url('https://cur.cursors-4u.net/nature/nat-10/nat923.cur'), auto;
+        }
+
+        marquee {
+            font-size:28px;
+            color:#ff00ff;
+            text-shadow:0 0 10px #ff00ff;
+            background:rgba(0,0,0,0.6);
+            padding:8px;
+            border-bottom:4px double #00ffff;
+        }
+
+        .container {
+            max-width:960px;
+            margin:0 auto;
+            padding:20px;
+            background:rgba(0,0,0,0.7);
+            border:6px double #00ff00;
+            box-shadow:0 0 40px #00ff00;
+            margin-top:20px;
+        }
+
+        h1 {
+            font-family:'Press Start 2P', cursive;
+            font-size:2.8em;
+            color:#ffff00;
+            text-align:center;
+            text-shadow:4px 4px 0 #000, 6px 6px 0 #ff00ff;
+            margin:20px 0;
+            animation:glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow:4px 4px 0 #000, 6px 6px 0 #ff00ff; }
+            to   { text-shadow:8px 8px 0 #000, 12px 12px 0 #00ffff; }
+        }
+
+        .blink {
+            animation:blink 1.2s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity:0; }
+        }
+
+        .section {
+            margin:30px 0;
+            padding:20px;
+            border:4px dashed #ff00ff;
+            background:rgba(10,10,30,0.8);
+        }
+
+        .section h2 {
+            color:#00ffff;
+            font-size:2em;
+            border-bottom:3px solid #00ffff;
+            padding-bottom:8px;
+            margin-bottom:15px;
+        }
+
+        a {
+            color:#ffff00;
+            text-decoration:none;
+            border-bottom:2px dotted #ffff00;
+        }
+
+        a:hover {
+            color:#ff00ff;
             background:#000;
-            perspective:2800px;
-            cursor:move;
+            border-bottom:2px solid #ff00ff;
         }
 
-        .scene {
-            position:absolute;
-            inset:0;
-            transform-style:preserve-3d;
-            transform:rotateX(18deg);
-            animation:sceneSpin 600s linear infinite;
+        img.pixel {
+            image-rendering:pixelated;
+            border:4px solid #00ff00;
+            box-shadow:0 0 20px #00ff00;
         }
 
-        @keyframes sceneSpin {
-            to { transform:rotateX(18deg) rotateY(360deg); }
+        .counter {
+            text-align:center;
+            font-size:1.4em;
+            color:#ff8800;
+            margin:20px 0;
         }
 
-        /* Fundo NASA-style: estrelas + nebulosa */
-        .cosmos {
-            position:absolute;
-            inset:0;
-            background:radial-gradient(circle at 50% 50%, #0a001f 0%, #000 90%);
-        }
-
-        .stars {
-            position:absolute;
-            inset:0;
-            background:
-                radial-gradient(white 1px,transparent 1px) 0 0/120px 120px,
-                radial-gradient(white 0.9px,transparent 0.9px) 60px 60px/90px 90px;
-            opacity:0.75;
-            animation:starsDrift 400s linear infinite;
-        }
-
-        @keyframes starsDrift { to { transform:translateZ(-5000px); } }
-
-        .nebula {
-            position:absolute;
-            inset:0;
-            background:
-                radial-gradient(circle at 30% 70%, rgba(100,0,255,0.25) 0%,transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(0,200,255,0.18) 0%,transparent 60%);
-            filter:blur(80px);
-            animation:nebulaBreathe 60s ease-in-out infinite alternate;
-        }
-
-        @keyframes nebulaBreathe {
-            0% { opacity:0.5; transform:scale(0.95); }
-            100% { opacity:0.9; transform:scale(1.1); }
-        }
-
-        /* Buraco Negro principal - grande e central */
-        .blackhole {
-            position:absolute;
-            top:50%;
-            left:50%;
-            width:1100px;
-            height:1100px;
-            transform:translate(-50%,-50%) rotateX(12deg);
-            transform-style:preserve-3d;
-            z-index:10;
-        }
-
-        .horizon {
-            position:absolute;
-            inset:0;
+        .visitor-counter {
             background:#000;
-            border-radius:50%;
-            box-shadow:0 0 300px #000, inset 0 0 200px #000;
+            padding:10px 20px;
+            border:3px ridge #ffff00;
+            display:inline-block;
+            margin:10px;
         }
 
-        /* Disco de acreção girando (efeito NASA: quente, assimétrico, Doppler-like) */
-        .disk {
-            position:absolute;
-            inset:-15%;
-            background:conic-gradient(
-                from 45deg at 50% 50%,
-                transparent 0deg 40deg,
-                #ff5500 40deg 100deg,
-                #ffaa00 100deg 160deg,
-                #ffff00 160deg 220deg,
-                #ffaa00 220deg 280deg,
-                #ff5500 280deg 320deg,
-                transparent 320deg 360deg
-            );
-            border-radius:50%;
-            filter:blur(25px);
-            opacity:0.95;
-            animation:diskSpin 12s linear infinite;
-            box-shadow:0 0 400px #ff8800, 0 0 700px #ff4400, 0 0 1000px #ff2200;
+        .webring {
+            text-align:center;
+            margin:40px 0;
+            font-size:1.2em;
         }
 
-        @keyframes diskSpin { to { transform:rotate(360deg); } }
-
-        /* Photon ring (anel de luz orbitando - marca NASA) */
-        .photon-ring {
-            position:absolute;
-            inset:-5%;
-            border:18px solid #ffdd88;
-            border-radius:50%;
-            box-shadow:0 0 80px #ffdd88, inset 0 0 40px #ffaa00;
-            filter:blur(12px);
-            opacity:0.85;
-            animation:ringGlow 8s ease-in-out infinite alternate;
-        }
-
-        @keyframes ringGlow {
-            0% { opacity:0.7; transform:scale(1.02); }
-            100% { opacity:1; transform:scale(1.08); }
-        }
-
-        /* Glow externo do disco (luz distorcida) */
-        .glow {
-            position:absolute;
-            inset:-50%;
-            background:radial-gradient(circle,#ffaa44 10%,transparent 65%);
-            border-radius:50%;
-            filter:blur(180px);
-            animation:glowBeat 7s ease-in-out infinite alternate;
-            opacity:0.75;
-        }
-
-        @keyframes glowBeat {
-            0% { opacity:0.6; transform:scale(0.9); }
-            100% { opacity:1.2; transform:scale(1.15); }
-        }
-
-        /* Partículas caindo no horizonte (matéria sendo sugada) */
-        .particle {
-            position:absolute;
-            background:#ffcc99;
-            border-radius:50%;
-            box-shadow:0 0 25px #ff8800;
-            animation:spiralIn 10s linear infinite;
-            opacity:0;
-        }
-
-        @keyframes spiralIn {
-            0% { transform:translate(0,-1200px) rotate(0deg) scale(0.3); opacity:0; }
-            15% { opacity:1; }
-            100% { transform:translate(0,0) rotate(720deg) scale(0); opacity:0; }
-        }
-
-        /* HUD NASA-style */
-        .hud {
-            position:absolute;
-            bottom:40px;
-            left:50%;
-            transform:translateX(-50%);
-            background:rgba(0,0,0,0.75);
-            padding:20px 50px;
-            border-radius:15px;
-            color:#aaffff;
-            font-size:1.4rem;
-            text-shadow:0 0 15px #00ffff;
-            border:3px solid #00ffff;
-            pointer-events:none;
-            z-index:20;
+        .webring a {
+            margin:0 15px;
+            font-size:1.3em;
         }
     </style>
 </head>
 <body>
 
-    <div class="cosmos">
-        <div class="stars"></div>
-        <div class="nebula"></div>
+<marquee behavior="scroll" direction="left" scrollamount="8">
+    ★☆･ﾟ Welcome to my 90s-inspired corner of the web! ･ﾟ☆★ Click everywhere! MIDI music coming soon™ ★☆･ﾟ
+</marquee>
+
+<div class="container">
+
+    <h1 class="blink">ANA's Cosmic Zone ૮₍ ˶•⤙•˶ ₎ა</h1>
+
+    <div class="section">
+        <h2>☆ About Me ☆</h2>
+        <p>Oi! Eu sou a ANA de Curitiba! 19 anos, amo anime, vaporwave, gatinhos pixelados e navegar na internet antiga.</p>
+        <p>Meu signo é ♓ Peixes • Meu hobbie favorito é fazer layouts horríveis que parecem bons em 2003</p>
+        <center>
+            <img class="pixel" src="https://64.media.tumblr.com/0f8d8e6d8e6d8e6d8e6d8e6d8e6d8e6d/tumblr_inline_p2k0zqKXwK1r3w3w3.gif" alt="dancing cat gif" width="180">
+        </center>
     </div>
 
-    <div class="blackhole">
-        <div class="horizon"></div>
-        <div class="disk"></div>
-        <div class="photon-ring"></div>
-        <div class="glow"></div>
+    <div class="section">
+        <h2>☆ Links Legais ☆</h2>
+        <ul style="list-style:none; line-height:2;">
+            <li>→ <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank">Melhor música do universo (clica aqui)</a></li>
+            <li>→ <a href="https://neocities.org">Neocities - minha casa na web</a></li>
+            <li>→ <a href="https://www.deviantart.com">Minha arte cringe de 2008</a></li>
+            <li>→ <a href="https://www.gaiaonline.com">Gaia Online ainda existe???</a></li>
+        </ul>
     </div>
 
-    <div class="hud">
-        Buraco Negro Supermassivo • Disco de Acreção Girando • Simulação NASA-Style • Gravidade Extrema
+    <div class="counter">
+        <div class="visitor-counter">
+            Você é o visitante número:
+            <span style="color:#ff00ff;font-size:1.6em;">00000<span class="blink">9</span>420</span>
+        </div>
+        <br>
+        <small>desde 23 de março de 2026 às 14:10</small>
     </div>
 
-    <!-- Som cósmico épico (inicia com clique) -->
-    <audio id="space" loop preload="auto" volume="0.3">
-        <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_8d9f8e6d8e.mp3?filename=cosmos-galaxy-stars-universe-milky-way-planet-ambient-music-208619.mp3" type="audio/mpeg">
-    </audio>
+    <div class="webring">
+        <h2>~~~ Web Ring ~~~</h2>
+        <a href="https://example.com/prev">[« Anterior]</a>
+        <a href="https://neocities.org/browse">[Random Page]</a>
+        <a href="https://example.com/next">[Próximo »]</a>
+    </div>
 
-    <script>
-        const audio = document.getElementById('space');
-        document.body.addEventListener('click', () => audio.play(), {once:true});
+</div>
 
-        // Controle com mouse: vire a "câmera" como na NASA
-        let rx = 18, ry = 0;
-        document.addEventListener('mousemove', e => {
-            ry = (e.clientX / window.innerWidth - 0.5) * 60;
-            rx = 18 + (e.clientY / window.innerHeight - 0.5) * 30;
-            document.querySelector('.scene').style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-        });
+<center style="margin:40px 0;color:#00ffff;font-size:1.1em;">
+    <p>Feito com ♡ e muito glitter digital • Última atualização: 23/03/2026</p>
+    <p><marquee direction="right" scrollamount="6">Under Construction since forever ૮₍ ˶•⤙•˶ ₎ა</marquee></p>
+</center>
 
-        // Partículas de matéria caindo (efeito foda)
-        const bh = document.querySelector('.blackhole');
-        function spawnParticle() {
-            const p = document.createElement('div');
-            p.className = 'particle';
-            p.style.width = `${Math.random()*8 + 4}px`;
-            p.style.height = p.style.width;
-            p.style.left = `${50 + (Math.random()-0.5)*220}%`;
-            p.style.top = `${-Math.random()*150 - 100}%`;
-            p.style.animationDuration = `${6 + Math.random()*8}s`;
-            p.style.animationDelay = `${Math.random()*3}s`;
-            bh.appendChild(p);
-            setTimeout(() => p.remove(), 20000);
-        }
-        setInterval(spawnParticle, 120);
-        for(let i=0; i<30; i++) setTimeout(spawnParticle, i*200);
-    </script>
+<script>
+// Cursor piscante fake no título (só pra zuar)
+setInterval(() => {
+    document.title = document.title === "☆･ﾟ: * ANA's Neocities Corner ･ﾟ:*☆" 
+        ? "_ ANA's Neocities Corner _" 
+        : "☆･ﾟ: * ANA's Neocities Corner ･ﾟ:*☆";
+}, 800);
+</script>
 
 </body>
 </html>
