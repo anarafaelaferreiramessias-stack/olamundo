@@ -2,239 +2,187 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Voxel Engine Prototype v3.0 - Advanced Computer Graphics</title>
+    <title>SYSTEM_OVERRIDE_01</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Consolas', monospace; }
-        #boot-screen {
-            position: absolute; width: 100%; height: 100%; z-index: 1000;
-            background: #000; color: #0f0; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: left;
-        }
-        .loading-text { font-size: 14px; line-height: 1.5; width: 600px; }
-        #cursor { width: 10px; height: 20px; background: #0f0; display: inline-block; animation: blink 0.8s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
         
-        #hud {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: none;
+        /* TELA DE HACKER */
+        #hacker-terminal {
+            position: absolute; width: 100%; height: 100%; background: #000; color: #0f0;
+            padding: 20px; box-sizing: border-box; font-size: 14px; z-index: 1000;
+            display: block; overflow-y: hidden;
         }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%; width: 16px; height: 16px;
-            margin: -8px 0 0 -8px; border: 2px solid rgba(255,255,255,0.8); border-radius: 50%;
-            mix-blend-mode: difference;
-        }
-        #hotbar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 4px; background: rgba(0,0,0,0.6); padding: 4px; border: 2px solid #333;
-        }
-        .slot {
-            width: 48px; height: 48px; border: 2px solid #555; display: flex;
-            align-items: center; justify-content: center; font-size: 12px; color: #fff;
-        }
-        .active-slot { border-color: #fff; background: rgba(255,255,255,0.2); }
+        .line { margin-bottom: 5px; opacity: 0; animation: fadeIn 0.2s forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        #input-area { margin-top: 20px; display: flex; color: #0f0; }
+        #cmd-input { background: transparent; border: none; color: #0f0; outline: none; font-family: inherit; font-size: inherit; width: 100%; }
+
+        /* O JOGO (ESCONDIDO) */
+        #game-container { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; border: 2px solid white; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; mix-blend-mode: difference; }
     </style>
 </head>
 <body>
 
-    <div id="boot-screen">
-        <div class="loading-text" id="log"></div>
-        <div id="cursor"></div>
-        <button id="start-btn" style="display:none; margin-top:20px; padding:10px 30px; background:#0f0; border:none; cursor:pointer; font-weight:bold;">INITIALIZE ENGINE</button>
-    </div>
-
-    <div id="hud">
-        <div id="crosshair"></div>
-        <div id="hotbar">
-            <div class="slot active-slot" id="s1">GRASS</div>
-            <div class="slot" id="s2">DIRT</div>
-            <div class="slot" id="s3">WOOD</div>
-            <div class="slot" id="s4">LEAF</div>
+    <div id="hacker-terminal">
+        <div id="log-container"></div>
+        <div id="input-area">
+            <span>root@internal_server:~$ </span>
+            <input type="text" id="cmd-input" autofocus autocomplete="off">
         </div>
     </div>
 
+    <div id="game-container">
+        <div id="crosshair"></div>
+    </div>
+
     <script>
-        /**
-         * MINECRAFT VOXEL ENGINE - ACADEMIC VERSION
-         * DESENVOLVIDO PARA SIMULAÇÃO DE AMBIENTES 3D PROCEDURAIS
-         */
+        const logContainer = document.getElementById('log-container');
+        const cmdInput = document.getElementById('cmd-input');
+        const secretKey = "admin2026"; // <-- SUA CHAVE SECRETA AQUI
 
-        const logElement = document.getElementById('log');
-        const logs = [
-            "> Initializing Voxel Engine 3.0...",
-            "> Loading WebGL 2.0 Context...",
-            "> Generating Procedural Noise Maps...",
-            "> Allocating Vertex Buffer Objects...",
-            "> Building Octree for Collision Detection...",
-            "> Ready for simulation."
+        const fakeLogs = [
+            "INITIALIZING KERNEL EXPLOIT...",
+            "BYPASSING FIREWALL LAYER 7...",
+            "DECRYPTING SHA-256 PACKETS...",
+            "ESTABLISHING SECURE TUNNEL TO 192.168.1.254...",
+            "ACCESSING VIRTUAL MACHINE INSTANCE...",
+            "WARNING: UNAUTHORIZED ACCESS DETECTED",
+            "EXECUTING STEALTH PROTOCOL...",
+            "SYSTEM STATUS: STABLE",
+            "AWAITING COMMAND..."
         ];
 
-        let i = 0;
-        const interval = setInterval(() => {
-            logElement.innerHTML += logs[i] + "<br>";
-            i++;
-            if (i >= logs.length) {
-                clearInterval(interval);
-                document.getElementById('start-btn').style.display = "block";
+        // Simula o texto de hacker aparecendo
+        let logIndex = 0;
+        function printLogs() {
+            if (logIndex < fakeLogs.length) {
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.textContent = `[${new Date().toLocaleTimeString()}] ${fakeLogs[logIndex]}`;
+                logContainer.appendChild(line);
+                logIndex++;
+                setTimeout(printLogs, 600);
             }
-        }, 400);
-
-        document.getElementById('start-btn').onclick = () => {
-            document.getElementById('boot-screen').style.display = "none";
-            document.getElementById('hud').style.display = "block";
-            startSim();
-        };
-
-        // --- CORE ENGINE ---
-        let scene, camera, renderer, raycaster, hand;
-        let blocks = [], keys = {}, velocity = new THREE.Vector3();
-        let currentMaterial = 0;
-
-        const MATERIALS = [
-            createTex('#5a8d3c', '#4a7532'), // Grass
-            createTex('#79553a', '#60432e'), // Dirt
-            createTex('#6a4e32', '#4d3926'), // Wood
-            createTex('#3a5e24', '#2d4a1c'), // Leaf
-        ];
-
-        function createTex(c1, c2) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 16; canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = c1; ctx.fillRect(0,0,16,16);
-            for(let i=0; i<64; i++){
-                ctx.fillStyle = Math.random() > 0.5 ? c1 : c2;
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
-            }
-            const t = new THREE.CanvasTexture(canvas);
-            t.magFilter = THREE.NearestFilter;
-            return new THREE.MeshLambertMaterial({ map: t });
         }
+        printLogs();
 
-        function startSim() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
-            scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+        // Escuta o comando secreto
+        cmdInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = cmdInput.value.toLowerCase();
+                
+                if (val === secretKey) {
+                    // SEGREDO REVELADO: Inicia o jogo
+                    document.getElementById('hacker-terminal').style.background = '#fff'; // Flash de luz
+                    setTimeout(() => {
+                        document.getElementById('hacker-terminal').style.display = 'none';
+                        document.getElementById('game-container').style.display = 'block';
+                        initMinecraft(); // Inicia o motor do jogo
+                    }, 100);
+                } else {
+                    // Se errar, mostra erro de comando
+                    const err = document.createElement('div');
+                    err.className = 'line';
+                    err.style.color = 'red';
+                    err.textContent = `ERROR: Command '${val}' not recognized. Access Denied.`;
+                    logContainer.appendChild(err);
+                    cmdInput.value = '';
+                }
+            }
+        });
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10);
-
-            renderer = new THREE.WebGLRenderer({ antialias: false });
+        // --- MOTOR DO JOGO (MINECRAFT) ---
+        function initMinecraft() {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            document.body.appendChild(renderer.domElement);
+            document.getElementById('game-container').appendChild(renderer.domElement);
 
-            raycaster = new THREE.Raycaster();
+            // Iluminação
+            const light = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(light);
 
-            // Lighting
-            const amb = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(amb);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.4);
-            sun.position.set(100, 100, 50);
-            scene.add(sun);
+            // Texturas Procedurais
+            function createTex(color) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 16; canvas.height = 16;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = color; ctx.fillRect(0,0,16,16);
+                for(let i=0; i<32; i++) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                    ctx.fillRect(Math.random()*16, Math.random()*16, 1, 1);
+                }
+                const t = new THREE.CanvasTexture(canvas);
+                t.magFilter = THREE.NearestFilter;
+                return t;
+            }
 
-            // Create Hand/Arm
-            const handGeo = new THREE.BoxGeometry(0.3, 0.3, 0.8);
-            const handMat = new THREE.MeshLambertMaterial({ color: 0xdbac82 });
-            hand = new THREE.Mesh(handGeo, handMat);
-            scene.add(hand);
+            const grassMat = new THREE.MeshLambertMaterial({ map: createTex('#5d9948') });
+            const woodMat = new THREE.MeshLambertMaterial({ map: createTex('#6a4e32') });
 
-            // Generate Terrain
-            for(let x=-15; x<15; x++) {
-                for(let z=-15; z<15; z++) {
-                    addBlock(x, 0, z, MATERIALS[0]);
-                    if(Math.random() > 0.98) createTree(x, 1, z);
+            // Chão
+            const blocks = [];
+            for(let x=-10; x<10; x++) {
+                for(let z=-10; z<10; z++) {
+                    const b = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), grassMat);
+                    b.position.set(x, 0, z);
+                    scene.add(b);
+                    blocks.push(b);
                 }
             }
 
-            // Listeners
-            window.addEventListener('keydown', e => {
-                keys[e.code] = true;
-                if(e.key >= 1 && e.key <= 4) switchSlot(e.key - 1);
-            });
-            window.addEventListener('keyup', e => keys[e.code] = false);
-            window.addEventListener('mousemove', e => {
+            // Árvores
+            for(let i=0; i<5; i++) {
+                let rx = Math.floor(Math.random()*18-9);
+                let rz = Math.floor(Math.random()*18-9);
+                for(let h=1; h<4; h++) {
+                    const trunk = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), woodMat);
+                    trunk.position.set(rx, h, rz);
+                    scene.add(trunk);
+                    blocks.push(trunk);
+                }
+            }
+
+            camera.position.set(0, 3, 10);
+            
+            // Controles Básicos
+            let move = { f: false, b: false, l: false, r: false };
+            window.onkeydown = (e) => {
+                if(e.code === 'KeyW') move.f = true;
+                if(e.code === 'KeyS') move.b = true;
+                if(e.code === 'KeyA') move.l = true;
+                if(e.code === 'KeyD') move.r = true;
+            };
+            window.onkeyup = (e) => {
+                if(e.code === 'KeyW') move.f = false;
+                if(e.code === 'KeyS') move.b = false;
+                if(e.code === 'KeyA') move.l = false;
+                if(e.code === 'KeyD') move.r = false;
+            };
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if(move.f) camera.translateZ(-0.1);
+                if(move.b) camera.translateZ(0.1);
+                if(move.l) camera.translateX(-0.1);
+                if(move.r) camera.translateX(0.1);
+                renderer.render(scene, camera);
+            }
+            animate();
+            
+            renderer.domElement.onclick = () => renderer.domElement.requestPointerLock();
+            window.onmousemove = (e) => {
                 if(document.pointerLockElement) {
                     camera.rotation.y -= e.movementX * 0.002;
                     camera.rotation.x -= e.movementY * 0.002;
-                    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
                 }
-            });
-            window.addEventListener('mousedown', onAction);
-            
-            renderer.domElement.onclick = () => renderer.domElement.requestPointerLock();
-
-            loop();
+            };
         }
-
-        function addBlock(x, y, z, mat) {
-            const mesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), mat);
-            mesh.position.set(x, y, z);
-            scene.add(mesh);
-            blocks.push(mesh);
-        }
-
-        function createTree(x, y, z) {
-            for(let i=0; i<4; i++) addBlock(x, y+i, z, MATERIALS[2]); // Trunk
-            for(let ix=-1; ix<=1; ix++) {
-                for(let iz=-1; iz<=1; iz++) {
-                    addBlock(x+ix, y+4, z+iz, MATERIALS[3]); // Leaves
-                }
-            }
-        }
-
-        function switchSlot(idx) {
-            currentMaterial = idx;
-            document.querySelectorAll('.slot').forEach((s, i) => {
-                s.className = i === idx ? 'slot active-slot' : 'slot';
-            });
-        }
-
-        function onAction(e) {
-            if(!document.pointerLockElement) return;
-            raycaster.setFromCamera(new THREE.Vector2(), camera);
-            const hits = raycaster.intersectObjects(blocks);
-
-            if(hits.length > 0 && hits[0].distance < 6) {
-                if(e.button === 0) { // Break
-                    scene.remove(hits[0].object);
-                    blocks = blocks.filter(b => b !== hits[0].object);
-                } else { // Place
-                    const pos = hits[0].object.position.clone().add(hits[0].face.normal);
-                    addBlock(pos.x, pos.y, pos.z, MATERIALS[currentMaterial]);
-                }
-            }
-        }
-
-        function loop() {
-            requestAnimationFrame(loop);
-            
-            // Player Physics
-            const speed = 0.15;
-            if(keys['KeyW']) camera.translateZ(-speed);
-            if(keys['KeyS']) camera.translateZ(speed);
-            if(keys['KeyA']) camera.translateX(-speed);
-            if(keys['KeyD']) camera.translateX(speed);
-
-            velocity.y -= 0.01; // Gravity
-            camera.position.y += velocity.y;
-            if(camera.position.y < 2) {
-                camera.position.y = 2;
-                velocity.y = 0;
-                if(keys['Space']) velocity.y = 0.2;
-            }
-
-            // Hand Animation
-            hand.position.copy(camera.position);
-            hand.quaternion.copy(camera.quaternion);
-            hand.translateX(0.5);
-            hand.translateY(-0.4 + Math.sin(Date.now()*0.005)*0.02);
-            hand.translateZ(-0.8);
-
-            renderer.render(scene, camera);
-        }
-
-        window.oncontextmenu = () => false;
     </script>
 </body>
 </html>
