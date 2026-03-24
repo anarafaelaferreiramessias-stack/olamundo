@@ -24,7 +24,7 @@ function startGame() {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 250); // Aumentei o fog para combinar com o céu cheio
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
@@ -35,40 +35,47 @@ function init() {
     scene.add(sun);
 
     // Terreno
-    const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+    const groundGeo = new THREE.PlaneGeometry(2000, 2000); // Terreno maior para acompanhar o céu
     groundGeo.rotateX(-Math.PI / 2);
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SISTEMA DE NUVENS VOLUMÉTRICAS (QUANTIDADE AUMENTADA) ---
+    // --- SUPER SISTEMA DE NUVENS (80 NUVENS) ---
     const cloudMaterial = new THREE.MeshLambertMaterial({ 
         color: 0xffffff, 
         transparent: true, 
-        opacity: 0.82 
+        opacity: 0.8 
     });
 
-    // Aumentado para 40 nuvens para um céu bem cheio
-    for(let i = 0; i < 40; i++) {
+    for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
-        const w = Math.floor(Math.random() * 4) + 3; 
-        const d = Math.floor(Math.random() * 3) + 2;
+        
+        // Formato da nuvem
+        const w = Math.floor(Math.random() * 5) + 3; 
+        const d = Math.floor(Math.random() * 4) + 2;
 
         for(let x = 0; x < w; x++) {
             for(let z = 0; z < d; z++) {
-                if(Math.random() > 0.25) {
-                    const blockGeo = new THREE.BoxGeometry(6, 1.5, 6);
+                if(Math.random() > 0.2) {
+                    const blockGeo = new THREE.BoxGeometry(6, 1.8, 6);
                     const cloudBlock = new THREE.Mesh(blockGeo, cloudMaterial);
                     cloudBlock.position.set(x * 6, 0, z * 6);
                     cloudGroup.add(cloudBlock);
                 }
             }
         }
-        // Espalhamento em uma área maior (1000 unidades) e alturas variadas
+        
+        // Posição em uma área gigante (1600 unidades)
         cloudGroup.position.set(
-            Math.random() * 1000 - 500, 
-            48 + Math.random() * 15, 
-            Math.random() * 1000 - 500
+            Math.random() * 1600 - 800, 
+            50 + Math.random() * 25, 
+            Math.random() * 1600 - 800
         );
+
+        // Escala aleatória para variedade (nuvens maiores e menores)
+        const s = Math.random() * 1.5 + 0.5;
+        cloudGroup.scale.set(s, s, s);
+        
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
@@ -80,7 +87,7 @@ function init() {
     handItem.visible = false;
     scene.add(handItem);
 
-    for(let i=0; i<30; i++) spawnTree(Math.random()*100-50, 0, Math.random()*100-50);
+    for(let i=0; i<30; i++) spawnTree(Math.random()*150-75, 0, Math.random()*150-75);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -205,10 +212,10 @@ function animate() {
     
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
-    // Movimento das Nuvens (atualizado para resetar em área maior)
+    // Movimento das Nuvens (80 nuvens rodando em área maior)
     clouds.forEach(c => { 
-        c.position.x += 0.03; 
-        if(c.position.x > 500) c.position.x = -500; 
+        c.position.x += 0.04; 
+        if(c.position.x > 800) c.position.x = -800; 
     });
 
     if (isMining && currentTarget) {
