@@ -2,161 +2,128 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Enhanced Edition</title>
+    <title>Minecraft 2026 - Build Update</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Courier New', Courier, monospace; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
         
+        /* Menu Inicial */
         #ui-overlay {
             position: absolute; width: 100%; height: 100%; z-index: 100;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://minecraft.net/content/dam/archive/6636780829864f1699925697d8c06e8b/header.jpg') center/cover;
+            background: #222;
         }
-        .title-mc { font-size: 70px; color: white; font-weight: bold; text-shadow: 5px 5px #373737; margin-bottom: 40px; }
+        .title-mc { font-size: 50px; color: #8dc63f; font-weight: bold; margin-bottom: 30px; text-shadow: 3px 3px #000; }
         .btn-menu { 
-            padding: 15px 60px; background: #6c6c6c; border: 4px solid #000; color: #fff; 
-            cursor: pointer; font-size: 22px; text-transform: uppercase;
+            padding: 15px 50px; background: #4e4e4e; border: 4px solid #000; color: #fff; 
+            cursor: pointer; font-size: 20px; transition: 0.2s;
         }
-        .btn-menu:hover { background: #3c8527; border-color: #ffffff; }
+        .btn-menu:hover { background: #8dc63f; transform: scale(1.05); }
 
-        /* HOTBAR ESTILO MC */
+        /* Interface do Jogo */
         #hotbar {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-            display: none; gap: 2px; padding: 4px; background: rgba(0,0,0,0.5); border: 4px solid #1e1e1e;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 5px; padding: 5px; background: rgba(0,0,0,0.6); border: 3px solid #333;
         }
-        .slot { 
-            width: 50px; height: 50px; background: #8b8b8b; border: 4px solid #373737; 
-            display: flex; align-items: center; justify-content: center; position: relative;
-        }
-        .slot.selected { border: 4px solid #ffffff; background: #ababab; }
-        .count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 18px; text-shadow: 2px 2px #000; }
+        .slot { width: 50px; height: 50px; border: 3px solid #555; display: flex; align-items: center; justify-content: center; position: relative; background: #888; }
+        .slot.selected { border: 3px solid #fff; background: #aaa; }
+        .count { position: absolute; bottom: 2px; right: 5px; color: #fff; font-weight: bold; text-shadow: 1px 1px #000; }
         
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; transform: translate(-50%, -50%); display: none; pointer-events: none; }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; }
-        #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
-        #crosshair::after { top: 0; left: 9px; width: 2px; height: 20px; }
-
-        #mining-progress { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 100px; height: 10px; background: rgba(0,0,0,0.5); border: 2px solid #fff; display: none; }
-        #mining-bar { width: 0%; height: 100%; background: #00ff00; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
     </style>
 </head>
 <body>
 
     <div id="ui-overlay">
-        <div class="title-mc">MINECRAFT 2026</div>
-        <button class="btn-menu" onclick="startGame()">JOGAR MUNDO NOVO</button>
+        <div class="title-mc">MINECRAFT JS 2026</div>
+        <button class="btn-menu" onclick="startGame()">INICIAR MUNDO</button>
     </div>
 
-    <div id="mining-progress"><div id="mining-bar"></div></div>
-    
     <div id="hotbar">
         <div class="slot selected" id="s0">
-            <img src="https://i.imgur.com/8N7S7s9.png" width="35"> <div id="inv-wood" class="count">0</div>
+            <div style="width:30px; height:30px; background: #5d4037; border: 1px solid #000;"></div>
+            <div id="inv-wood" class="count">10</div>
         </div>
         <div class="slot" id="s1"></div>
         <div class="slot" id="s2"></div>
-        <div class="slot" id="s3"></div>
     </div>
     <div id="crosshair"></div>
 
     <script>
         let scene, camera, renderer, raycaster, selectionBox;
-        let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
+        let moveF = false, moveB = false, moveL = false, moveR = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let targetRotation = new THREE.Euler(0, 0, 0, 'YXZ');
         let prevTime = performance.now();
-        let blocks = [], drops = []; 
-        let inventoryWood = 5; // Começa com alguns blocos para testar
-        let selectedSlot = 0;
-        let isMining = false, miningTime = 0, currentTarget = null;
-
-        const loader = new THREE.TextureLoader();
-        
-        // Texturas Estilo Minecraft
-        const texWood = loader.load('https://i.imgur.com/8N7S7s9.png'); // Tronco
-        const texGrassSide = loader.load('https://i.imgur.com/9ccZf6v.png'); // Grama Lado
-        const texGrassTop = loader.load('https://i.imgur.com/9797m7s.png'); // Grama Topo
-        const texDirt = loader.load('https://i.imgur.com/7vGvBvX.png'); // Terra
+        let blocks = [];
+        let inventoryWood = 10;
 
         function startGame() {
             document.getElementById('ui-overlay').style.display = 'none';
             document.getElementById('hotbar').style.display = 'flex';
             document.getElementById('crosshair').style.display = 'block';
-            document.getElementById('inv-wood').innerText = inventoryWood;
             init();
-        }
-
-        function createBlockMaterial(top, side, bottom) {
-            return [
-                new THREE.MeshLambertMaterial({ map: side }),   // Right
-                new THREE.MeshLambertMaterial({ map: side }),   // Left
-                new THREE.MeshLambertMaterial({ map: top }),    // Top
-                new THREE.MeshLambertMaterial({ map: bottom }), // Bottom
-                new THREE.MeshLambertMaterial({ map: side }),   // Front
-                new THREE.MeshLambertMaterial({ map: side })    // Back
-            ];
         }
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x74b9ff);
-            scene.fog = new THREE.Fog(0x74b9ff, 20, 100);
+            scene.fog = new THREE.Fog(0x74b9ff, 10, 50);
             
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.rotation.order = 'YXZ';
-            camera.position.y = 5;
+            camera.position.y = 2; // Altura dos olhos
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
-            sun.position.set(20, 50, 20);
+            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambient);
+
+            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+            sun.position.set(10, 20, 10);
             scene.add(sun);
 
-            // Chão (Grid de blocos de grama)
-            const grassMat = createBlockMaterial(texGrassTop, texGrassSide, texDirt);
-            for(let x = -15; x < 15; x++) {
-                for(let z = -15; z < 15; z++) {
-                    const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), grassMat);
-                    b.position.set(x, 0, z);
-                    scene.add(b);
-                    blocks.push(b);
-                }
-            }
+            // Chao Base
+            const floorGeo = new THREE.PlaneGeometry(100, 100);
+            const floorMat = new THREE.MeshLambertMaterial({ color: 0x2d5a27 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
 
-            // Outline de Seleção
-            const selGeo = new THREE.BoxGeometry(1.01, 1.01, 1.01);
-            const selMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true, transparent: true, opacity: 0.5 });
+            // Cubo de Seleção (A borda preta que indica onde você está olhando)
+            const selGeo = new THREE.BoxGeometry(1.02, 1.02, 1.02);
+            const selMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
             selectionBox = new THREE.Mesh(selGeo, selMat);
             scene.add(selectionBox);
 
-            // Árvores
-            for(let i=0; i<8; i++) {
-                spawnTree(Math.floor(Math.random()*20-10), 1, Math.floor(Math.random()*20-10));
-            }
-
-            renderer = new THREE.WebGLRenderer({ antialias: false }); // Pixelado fica mais MC
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
+            
             raycaster = new THREE.Raycaster();
 
-            // Eventos
+            // Controles
             document.addEventListener('mousedown', (e) => {
                 if (document.pointerLockElement !== renderer.domElement) {
                     renderer.domElement.requestPointerLock();
                 } else {
-                    if (e.button === 0) startMining();
-                    if (e.button === 2) placeBlock();
+                    if (e.button === 0) breakBlock(); // Clique Esquerdo
+                    if (e.button === 2) placeBlock(); // Clique Direito
                 }
             });
-            document.addEventListener('mouseup', () => stopMining());
+
             document.addEventListener('keydown', (e) => {
-                if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
-                if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
-                if(e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
+                if(e.code === 'KeyW') moveF = true;
+                if(e.code === 'KeyS') moveB = true;
+                if(e.code === 'KeyA') moveL = true;
+                if(e.code === 'KeyD') moveR = true;
+                if(e.code === 'Space' && camera.position.y <= 2.1) velocity.y = 5;
             });
+
             document.addEventListener('keyup', (e) => {
-                if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
-                if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
+                if(e.code === 'KeyW') moveF = false;
+                if(e.code === 'KeyS') moveB = false;
+                if(e.code === 'KeyA') moveL = false;
+                if(e.code === 'KeyD') moveR = false;
             });
+
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement === renderer.domElement) {
                     targetRotation.y -= e.movementX * 0.002;
@@ -168,43 +135,53 @@
             animate();
         }
 
-        function spawnTree(x, y, z) {
-            for(let h=0; h<4; h++) {
-                const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: texWood}));
-                log.position.set(x, y + h, z);
-                log.userData = { type: 'wood', t: 1.0 };
-                scene.add(log); blocks.push(log);
-            }
-        }
-
-        function startMining() {
-            raycaster.setFromCamera(new THREE.Vector2(), camera);
-            const hits = raycaster.intersectObjects(blocks);
-            if (hits.length > 0 && hits[0].distance < 5) {
-                isMining = true; currentTarget = hits[0].object; miningTime = 0;
-                document.getElementById('mining-progress').style.display = 'block';
-            }
-        }
-
-        function stopMining() { isMining = false; document.getElementById('mining-progress').style.display = 'none'; }
-
         function placeBlock() {
             if (inventoryWood <= 0) return;
             raycaster.setFromCamera(new THREE.Vector2(), camera);
             const hits = raycaster.intersectObjects(blocks);
-            if (hits.length > 0 && hits[0].distance < 5) {
-                const pos = hits[0].object.position.clone().add(hits[0].face.normal);
-                
-                // Evita colocar bloco dentro da cabeça do player
-                const pPos = new THREE.Vector3(Math.round(camera.position.x), Math.round(camera.position.y), Math.round(camera.position.z));
-                if(pos.distanceTo(pPos) < 1) return;
+            
+            // Se não houver blocos, permite colocar no chão (y=0)
+            if (hits.length === 0) {
+                // Lógica simplificada: se olhar pro chão, coloca bloco
+                // Para este exemplo, vamos focar em colocar blocos encostados em outros
+                return;
+            }
 
-                const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: texWood}));
+            if (hits.length > 0 && hits[0].distance < 5) {
+                const hit = hits[0];
+                const pos = hit.object.position.clone().add(hit.face.normal);
+                
+                const b = new THREE.Mesh(
+                    new THREE.BoxGeometry(1, 1, 1), 
+                    new THREE.MeshLambertMaterial({ color: 0x5d4037 }) // Cor de madeira
+                );
                 b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+                
                 scene.add(b);
                 blocks.push(b);
                 inventoryWood--;
                 document.getElementById('inv-wood').innerText = inventoryWood;
+            }
+        }
+
+        function breakBlock() {
+            raycaster.setFromCamera(new THREE.Vector2(), camera);
+            const hits = raycaster.intersectObjects(blocks);
+            if (hits.length > 0 && hits[0].distance < 5) {
+                scene.remove(hits[0].object);
+                blocks = blocks.filter(b => b !== hits[0].object);
+                inventoryWood++;
+                document.getElementById('inv-wood').innerText = inventoryWood;
+            }
+        }
+
+        // Criar alguns blocos iniciais para teste
+        function createInitialBlocks() {
+            for(let i = 0; i < 5; i++) {
+                const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({color: 0x5d4037}));
+                b.position.set(i - 2, 0.5, -5);
+                scene.add(b);
+                blocks.push(b);
             }
         }
 
@@ -213,62 +190,51 @@
             const time = performance.now();
             const delta = (time - prevTime) / 1000;
 
-            // Suavização da câmera
+            // Rotação suave
             camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
             camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
-            // Movimentação
+            // Movimento
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
-            velocity.y -= 15.0 * delta; // Gravidade
+            velocity.y -= 9.8 * delta; // Gravidade
 
             direction.z = Number(moveF) - Number(moveB);
             direction.x = Number(moveR) - Number(moveL);
             direction.normalize();
 
-            if (moveF || moveB) velocity.z -= direction.z * 40.0 * delta;
-            if (moveL || moveR) velocity.x -= direction.x * 40.0 * delta;
+            if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
+            if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
             camera.translateX(-velocity.x * delta);
             camera.translateZ(velocity.z * delta);
             camera.position.y += velocity.y * delta;
-            
-            // Colisão simples com o chão
+
             if (camera.position.y < 2) {
                 velocity.y = 0;
                 camera.position.y = 2;
-                canJump = true;
             }
 
-            // Raycast para seleção de bloco (Highlight)
+            // Atualizar caixa de seleção
             raycaster.setFromCamera(new THREE.Vector2(), camera);
-            const interactHits = raycaster.intersectObjects(blocks);
-            if(interactHits.length > 0 && interactHits[0].distance < 5) {
+            const hits = raycaster.intersectObjects(blocks);
+            if(hits.length > 0 && hits[0].distance < 5) {
                 selectionBox.visible = true;
-                selectionBox.position.copy(interactHits[0].object.position);
+                selectionBox.position.copy(hits[0].object.position);
             } else {
                 selectionBox.visible = false;
-            }
-
-            // Lógica de Mineração
-            if (isMining && currentTarget) {
-                miningTime += delta;
-                document.getElementById('mining-bar').style.width = (miningTime/1.0)*100 + '%';
-                if (miningTime >= 1.0) {
-                    scene.remove(currentTarget);
-                    blocks = blocks.filter(b => b !== currentTarget);
-                    inventoryWood++;
-                    document.getElementById('inv-wood').innerText = inventoryWood;
-                    stopMining();
-                }
             }
 
             prevTime = time;
             renderer.render(scene, camera);
         }
 
-        // Prevenir menu de contexto do botão direito
-        document.addEventListener('contextmenu', e => e.preventDefault());
+        // Bloquear menu de contexto (botão direito)
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Iniciar blocos de teste após carregar
+        setTimeout(createInitialBlocks, 500);
+
     </script>
 </body>
 </html>
