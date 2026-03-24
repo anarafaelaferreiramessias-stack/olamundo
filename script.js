@@ -7,12 +7,10 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// --- NOVAS TEXTURAS ---
-const loader = new THREE.TextureLoader();
-// Mudei para uma textura de tronco de carvalho (oak log)
-const woodTex = loader.load('https://www.textures.com/system/resources/previews/000/017/237/original/Seamless_oak_bark_texture_background.jpg'); 
-const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+// --- MATERIAIS DE CORES SÓLIDAS (MAIS CONFIÁVEL) ---
+const woodMat = new THREE.MeshLambertMaterial({ color: 0x5d4037 }); // Marrom Tronco
+const grassMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Verde Grama
+const leafMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.9 }); // Verde Folha
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -35,9 +33,10 @@ function init() {
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
+    // Terreno
     const groundGeo = new THREE.PlaneGeometry(2000, 2000);
     groundGeo.rotateX(-Math.PI / 2);
-    ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
+    ground = new THREE.Mesh(groundGeo, grassMat);
     scene.add(ground);
 
     // --- SISTEMA DE NUVENS (80 NUVENS) ---
@@ -69,14 +68,14 @@ function init() {
         clouds.push(cloudGroup);
     }
 
-    // Braço e Item na mão
+    // Braço e Item
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
-    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), woodMat);
     handItem.visible = false;
     scene.add(handItem);
 
-    for(let i=0; i<30; i++) spawnTree(Math.random()*150-75, 0, Math.random()*150-75);
+    for(let i=0; i<35; i++) spawnTree(Math.random()*150-75, 0, Math.random()*150-75);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -101,17 +100,19 @@ function init() {
 }
 
 function spawnTree(x, y, z) {
+    // Tronco
     for(let h=0; h<4; h++) {
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
     }
+    // Folhas
     for(let hy=3; hy<6; hy++) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
                 if(Math.abs(hx) + Math.abs(hz) > 2) continue;
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({color: 0x2d5a27, map: leafTex, transparent: true, opacity: 0.9}));
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), leafMat);
                 leaf.position.set(x+hx, hy+0.5, z+hz);
                 leaf.userData = { type: 'leaf', t: 0.3 };
                 scene.add(leaf); blocks.push(leaf);
@@ -127,7 +128,7 @@ function placeBlock() {
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         scene.add(b); blocks.push(b); 
@@ -209,7 +210,7 @@ function animate() {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
         if (miningTime >= currentTarget.userData.t) {
-            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), currentTarget.material);
             d.position.copy(currentTarget.position);
             scene.add(d); drops.push(d);
             scene.remove(currentTarget);
