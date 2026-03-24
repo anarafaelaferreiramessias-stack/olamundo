@@ -7,147 +7,184 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// Tenta carregar texturas, mas define cores de reserva caso falhe (evita tela preta)
+// Texturas (Grama e Madeira)
 const loader = new THREE.TextureLoader();
-const woodMat = new THREE.MeshLambertMaterial({ color: 0x5d4037 }); // Marrom
-const grassMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Verde Grama
-const leafMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.9 }); // Verde Folha
-
-// Se quiser tentar carregar as texturas de novo, descomente as linhas abaixo:
-// loader.load('https://threejs.org/examples/textures/crate.gif', (tex) => woodMat.map = tex);
+const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
+const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
 function startGame() {
-    const overlay = document.getElementById('ui-overlay');
-    if(overlay) overlay.style.display = 'none';
+    document.getElementById('ui-overlay').style.display = 'none';
+    document.getElementById('hotbar').style.display = 'flex';
+    document.getElementById('crosshair').style.display = 'block';
+    document.getElementById('instructions').style.display = 'block';
     init();
 }
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Céu Azul
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 250); // Aumentei o fog para combinar com o céu cheio
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
-    camera.position.y = 2; // Altura dos olhos do "Steve"
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
-    sun.position.set(50, 100, 50);
+    
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+    sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    // Chão (Grama)
-    const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+    // Terreno
+    const groundGeo = new THREE.PlaneGeometry(2000, 2000); // Terreno maior para acompanhar o céu
     groundGeo.rotateX(-Math.PI / 2);
-    ground = new THREE.Mesh(groundGeo, grassMat);
+    ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // Braço do Jogador (Estilo Minecraft)
-    const handGeo = new THREE.BoxGeometry(0.2, 0.2, 0.5);
-    hand = new THREE.Mesh(handGeo, new THREE.MeshLambertMaterial({color: 0xe0ac69}));
-    scene.add(hand);
+    // --- SUPER SISTEMA DE NUVENS (80 NUVENS) ---
+    const cloudMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.8 
+    });
 
-    // Criar árvores espalhadas
-    for(let i=0; i<40; i++) {
-        spawnTree(Math.random()*100-50, 0, Math.random()*100-50);
+    for(let i = 0; i < 80; i++) {
+        const cloudGroup = new THREE.Group();
+        
+        // Formato da nuvem
+        const w = Math.floor(Math.random() * 5) + 3; 
+        const d = Math.floor(Math.random() * 4) + 2;
+
+        for(let x = 0; x < w; x++) {
+            for(let z = 0; z < d; z++) {
+                if(Math.random() > 0.2) {
+                    const blockGeo = new THREE.BoxGeometry(6, 1.8, 6);
+                    const cloudBlock = new THREE.Mesh(blockGeo, cloudMaterial);
+                    cloudBlock.position.set(x * 6, 0, z * 6);
+                    cloudGroup.add(cloudBlock);
+                }
+            }
+        }
+        
+        // Posição em uma área gigante (1600 unidades)
+        cloudGroup.position.set(
+            Math.random() * 1600 - 800, 
+            50 + Math.random() * 25, 
+            Math.random() * 1600 - 800
+        );
+
+        // Escala aleatória para variedade (nuvens maiores e menores)
+        const s = Math.random() * 1.5 + 0.5;
+        cloudGroup.scale.set(s, s, s);
+        
+        scene.add(cloudGroup);
+        clouds.push(cloudGroup);
     }
 
+    // Braço do Jogador
+    hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
+    scene.add(hand);
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+    handItem.visible = false;
+    scene.add(handItem);
+
+    for(let i=0; i<30; i++) spawnTree(Math.random()*150-75, 0, Math.random()*150-75);
+
     renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
-    
     raycaster = new THREE.Raycaster();
 
-    // Controles
+    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
-        } else {
-            if (e.button === 0) startMining();
+        } else { 
+            if (e.button === 0) startMining(); 
+            if (e.button === 2) placeBlock(); 
         }
     });
-    
-    document.addEventListener('keydown', (e) => {
-        if(e.code === 'KeyW') moveF = true;
-        if(e.code === 'KeyS') moveB = true;
-        if(e.code === 'KeyA') moveL = true;
-        if(e.code === 'KeyD') moveR = true;
-        if(e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
-    });
-
-    document.addEventListener('keyup', (e) => {
-        if(e.code === 'KeyW') moveF = false;
-        if(e.code === 'KeyS') moveB = false;
-        if(e.code === 'KeyA') moveL = false;
-        if(e.code === 'KeyD') moveR = false;
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (document.pointerLockElement === renderer.domElement) {
-            targetRotation.y -= e.movementX * 0.002;
-            targetRotation.x -= e.movementY * 0.002;
-            targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
-        }
-    });
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('mouseup', () => stopMining());
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    document.addEventListener('mousemove', handleMouseMove);
 
     animate();
 }
 
 function spawnTree(x, y, z) {
-    // Tronco
     for(let h=0; h<4; h++) {
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         log.position.set(x, h + 0.5, z);
-        log.userData = { type: 'wood', t: 1.0 };
-        scene.add(log);
-        blocks.push(log);
+        log.userData = { type: 'wood', t: 1.2 };
+        scene.add(log); blocks.push(log);
     }
-    // Folhas
     for(let hy=3; hy<6; hy++) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
-                if(Math.abs(hx) + Math.abs(hz) > 3) continue;
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), leafMat);
+                if(Math.abs(hx) + Math.abs(hz) > 2) continue;
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({color: 0x2d5a27, map: leafTex, transparent: true, opacity: 0.9}));
                 leaf.position.set(x+hx, hy+0.5, z+hz);
-                scene.add(leaf);
-                blocks.push(leaf);
+                leaf.userData = { type: 'leaf', t: 0.3 };
+                scene.add(leaf); blocks.push(leaf);
             }
         }
     }
 }
 
-// Lógica de Colisão
-function checkCollision(nextPos) {
-    const playerBox = new THREE.Box3().setFromCenterAndSize(
-        nextPos, 
-        new THREE.Vector3(0.7, 1.8, 0.7)
-    );
-    for (let i = 0; i < blocks.length; i++) {
-        const blockBox = new THREE.Box3().setFromObject(blocks[i]);
-        if (playerBox.intersectsBox(blockBox)) return true;
+function placeBlock() {
+    if (selectedSlot !== 0 || inventoryWood <= 0) return;
+    raycaster.setFromCamera(new THREE.Vector2(), camera);
+    const hits = raycaster.intersectObjects([ground, ...blocks]);
+    if (hits.length > 0 && hits[0].distance < 5) {
+        const hit = hits[0];
+        const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+        b.userData = { type: 'wood', t: 1.2 };
+        scene.add(b); blocks.push(b); 
+        inventoryWood--;
+        document.getElementById('inv-wood').innerText = inventoryWood;
+        if(inventoryWood <= 0) handItem.visible = false;
     }
-    return false;
 }
 
 function startMining() {
     raycaster.setFromCamera(new THREE.Vector2(), camera);
     const hits = raycaster.intersectObjects(blocks);
     if (hits.length > 0 && hits[0].distance < 4) {
-        const target = hits[0].object;
-        scene.remove(target);
-        blocks = blocks.filter(b => b !== target);
-        inventoryWood++;
-        console.log("Madeira coletada: " + inventoryWood);
+        isMining = true; currentTarget = hits[0].object; miningTime = 0;
+        document.getElementById('mining-progress').style.display = 'block';
     }
+}
+
+function stopMining() { isMining = false; document.getElementById('mining-progress').style.display = 'none'; }
+
+function handleKeyDown(e) {
+    if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
+    if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
+    if(e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
+    if(e.key >= 1 && e.key <= 4) updateSlot(parseInt(e.key)-1);
+}
+
+function handleKeyUp(e) {
+    if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
+    if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
+}
+
+function handleMouseMove(e) {
+    if (document.pointerLockElement === renderer.domElement) {
+        targetRotation.y -= e.movementX * 0.002;
+        targetRotation.x -= e.movementY * 0.002;
+        targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
+    }
+}
+
+function updateSlot(idx) {
+    document.getElementById('s'+selectedSlot).classList.remove('selected');
+    selectedSlot = idx;
+    document.getElementById('s'+selectedSlot).classList.add('selected');
+    handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
 }
 
 function animate() {
@@ -155,48 +192,60 @@ function animate() {
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
 
-    // Suavizar rotação da câmera
     camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
     camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
-    // Física simples
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 18.0 * delta; // Gravidade
+    velocity.y -= 15.0 * delta; 
 
     direction.z = Number(moveF) - Number(moveB);
     direction.x = Number(moveR) - Number(moveL);
     direction.normalize();
 
-    if (moveF || moveB) velocity.z -= direction.z * 60.0 * delta;
-    if (moveL || moveR) velocity.x -= direction.x * 60.0 * delta;
+    if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
+    if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
-    // Colisão Eixo X
-    const stepX = -velocity.x * delta;
-    const nextX = camera.position.clone();
-    nextX.x += Math.cos(camera.rotation.y + Math.PI/2) * stepX; // Simplificado para teste
-    if (!checkCollision(nextX)) camera.translateX(stepX);
-
-    // Colisão Eixo Z
-    const stepZ = velocity.z * delta;
-    const nextZ = camera.position.clone();
-    nextZ.translateZ(stepZ);
-    if (!checkCollision(nextZ)) camera.translateZ(stepZ);
-
-    // Gravidade e Chão
+    camera.translateX(-velocity.x * delta);
+    camera.translateZ(velocity.z * delta);
     camera.position.y += velocity.y * delta;
-    if (camera.position.y < 2) {
-        velocity.y = 0;
-        camera.position.y = 2;
-        canJump = true;
+    
+    if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
+
+    // Movimento das Nuvens (80 nuvens rodando em área maior)
+    clouds.forEach(c => { 
+        c.position.x += 0.04; 
+        if(c.position.x > 800) c.position.x = -800; 
+    });
+
+    if (isMining && currentTarget) {
+        miningTime += delta;
+        document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
+        if (miningTime >= currentTarget.userData.t) {
+            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+            d.position.copy(currentTarget.position);
+            scene.add(d); drops.push(d);
+            scene.remove(currentTarget);
+            blocks = blocks.filter(b => b !== currentTarget);
+            stopMining();
+        }
     }
 
-    // Mover mão junto com câmera
-    hand.position.copy(camera.position);
-    hand.quaternion.copy(camera.quaternion);
-    hand.translateX(0.5);
-    hand.translateY(-0.4);
-    hand.translateZ(-0.8);
+    drops.forEach((d, i) => {
+        d.rotation.y += 0.05;
+        if (camera.position.distanceTo(d.position) < 1.8) {
+            inventoryWood++; 
+            document.getElementById('inv-wood').innerText = inventoryWood;
+            if(selectedSlot === 0) handItem.visible = true;
+            scene.remove(d); drops.splice(i, 1);
+        }
+    });
+
+    const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
+    hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
+    hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
+    handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
+    handItem.translateZ(-0.3);
 
     prevTime = time;
     renderer.render(scene, camera);
