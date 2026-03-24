@@ -1,4 +1,5 @@
 let scene, camera, renderer, raycaster, hand, handItem, ground;
+let scene, camera, renderer, raycaster, hand, handItem, ground;
 let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
 let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 let targetRotation = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -7,10 +8,32 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// --- MATERIAIS DE CORES SÓLIDAS (MAIS CONFIÁVEL) ---
-const woodMat = new THREE.MeshLambertMaterial({ color: 0x5d4037 }); // Marrom Tronco
-const grassMat = new THREE.MeshLambertMaterial({ color: 0x4caf50 }); // Verde Grama
-const leafMat = new THREE.MeshLambertMaterial({ color: 0x2e7d32, transparent: true, opacity: 0.9 }); // Verde Folha
+// --- GERADOR DE TEXTURAS PIXELADAS (SEM DEPENDER DE LINKS) ---
+function createPixelTexture(color1, color2) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 16;
+    const ctx = canvas.getContext('2d');
+
+    for (let x = 0; x < 16; x++) {
+        for (let y = 0; y < 16; y++) {
+            ctx.fillStyle = Math.random() > 0.5 ? color1 : color2;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.magFilter = THREE.NearestFilter; // Mantém os pixels nítidos
+    texture.minFilter = THREE.NearestFilter;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
+
+// Criando as texturas procedurais
+const grassTex = createPixelTexture('#4caf50', '#388e3c'); // Tons de verde
+const woodTex = createPixelTexture('#5d4037', '#3e2723');  // Tons de marrom
+const leafTex = createPixelTexture('#2e7d32', '#1b5e20');  // Verde escuro
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -28,29 +51,24 @@ function init() {
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
     
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-    const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.5);
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    // Terreno
+    // Terreno (Grama com repetição para parecer blocos)
     const groundGeo = new THREE.PlaneGeometry(2000, 2000);
     groundGeo.rotateX(-Math.PI / 2);
-    ground = new THREE.Mesh(groundGeo, grassMat);
+    grassTex.repeat.set(500, 500); 
+    ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SISTEMA DE NUVENS (80 NUVENS) ---
-    const cloudMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xffffff, 
-        transparent: true, 
-        opacity: 0.8 
-    });
-
-    for(let i = 0; i < 80; i++) {
+    // --- NUVENS VOLUMÉTRICAS ---
+    const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+    for(let i = 0; i < 60; i++) {
         const cloudGroup = new THREE.Group();
         const w = Math.floor(Math.random() * 5) + 3; 
         const d = Math.floor(Math.random() * 4) + 2;
-
         for(let x = 0; x < w; x++) {
             for(let z = 0; z < d; z++) {
                 if(Math.random() > 0.2) {
@@ -61,23 +79,21 @@ function init() {
                 }
             }
         }
-        cloudGroup.position.set(Math.random()*1600-800, 50 + Math.random()*25, Math.random()*1600-800);
-        const s = Math.random() * 1.5 + 0.5;
-        cloudGroup.scale.set(s, s, s);
+        cloudGroup.position.set(Math.random()*1600-800, 55 + Math.random()*20, Math.random()*1600-800);
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
 
-    // Braço e Item
+    // Braço
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
-    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), woodMat);
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
     handItem.visible = false;
     scene.add(handItem);
 
-    for(let i=0; i<35; i++) spawnTree(Math.random()*150-75, 0, Math.random()*150-75);
+    for(let i=0; i<40; i++) spawnTree(Math.random()*200-100, 0, Math.random()*200-100);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: false }); // Desativa o suavizado global
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
@@ -100,14 +116,14 @@ function init() {
 }
 
 function spawnTree(x, y, z) {
-    // Tronco
+    const logMat = new THREE.MeshLambertMaterial({map: woodTex});
     for(let h=0; h<4; h++) {
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), logMat);
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
     }
-    // Folhas
+    const leafMat = new THREE.MeshLambertMaterial({map: leafTex, transparent: true, opacity: 0.9});
     for(let hy=3; hy<6; hy++) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
@@ -128,7 +144,7 @@ function placeBlock() {
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         scene.add(b); blocks.push(b); 
