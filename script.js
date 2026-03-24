@@ -40,7 +40,7 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // Nuvens
+    // Sistema de Nuvens
     const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
@@ -63,7 +63,7 @@ function init() {
         clouds.push(cloudGroup);
     }
 
-    // Braço
+    // Braço do Jogador
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
@@ -114,19 +114,22 @@ function spawnTree(x, y, z) {
     }
 }
 
-// --- FUNÇÃO DE COLISÃO ---
+// --- NOVA FUNÇÃO DE COLISÃO ---
 function checkCollision(nextPos) {
-    // Cria uma caixa ao redor do jogador (0.6 de largura, 1.8 de altura)
-    const playerBox = new THREE.Box3().setFromCenterAndSize(
+    // Cria uma caixa de colisão para o jogador (hitbox)
+    // 0.6 de largura e 1.8 de altura para simular o corpo
+    const playerHitbox = new THREE.Box3().setFromCenterAndSize(
         nextPos, 
         new THREE.Vector3(0.6, 1.8, 0.6)
     );
 
     for (let i = 0; i < blocks.length; i++) {
         const blockBox = new THREE.Box3().setFromObject(blocks[i]);
-        if (playerBox.intersectsBox(blockBox)) return true;
+        if (playerHitbox.intersectsBox(blockBox)) {
+            return true; // Colidiu!
+        }
     }
-    return false;
+    return false; // Caminho livre
 }
 
 function placeBlock() {
@@ -203,34 +206,39 @@ function animate() {
     if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
-    // Movimento com colisão lateral (X)
+    // --- LOGICA DE MOVIMENTO COM COLISÃO ---
+    
+    // 1. Tenta mover no eixo X
     const stepX = -velocity.x * delta;
     const nextPosX = camera.position.clone();
     nextPosX.translateX(stepX);
     if (!checkCollision(nextPosX)) {
         camera.translateX(stepX);
     } else {
-        velocity.x = 0;
+        velocity.x = 0; // Para a velocidade se bater
     }
 
-    // Movimento com colisão frontal (Z)
+    // 2. Tenta mover no eixo Z
     const stepZ = velocity.z * delta;
     const nextPosZ = camera.position.clone();
     nextPosZ.translateZ(stepZ);
     if (!checkCollision(nextPosZ)) {
         camera.translateZ(stepZ);
     } else {
-        velocity.z = 0;
+        velocity.z = 0; // Para a velocidade se bater
     }
 
+    // Gravidade
     camera.position.y += velocity.y * delta;
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
+    // Movimento das Nuvens
     clouds.forEach(c => { 
         c.position.x += 0.04; 
         if(c.position.x > 800) c.position.x = -800; 
     });
 
+    // Mineração
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -244,6 +252,7 @@ function animate() {
         }
     }
 
+    // Coleta de itens
     drops.forEach((d, i) => {
         d.rotation.y += 0.05;
         if (camera.position.distanceTo(d.position) < 1.8) {
@@ -254,6 +263,7 @@ function animate() {
         }
     });
 
+    // Animação da mão
     const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
