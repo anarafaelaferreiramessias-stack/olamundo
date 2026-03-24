@@ -7,24 +7,11 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// --- CONFIGURAÇÃO DE TEXTURAS PIXELADAS (ESTILO MINECRAFT) ---
+// Texturas (Grama e Madeira)
 const loader = new THREE.TextureLoader();
-
-// Função auxiliar para carregar e configurar a textura como pixelada
-function loadPixelTexture(url) {
-    const texture = loader.load(url);
-    // Magia do Minecraft: NearestFilter impede o suavizamento (anti-aliasing) dos pixels
-    texture.magFilter = THREE.NearestFilter;
-    texture.minFilter = THREE.NearestFilter;
-    return texture;
-}
-
-// Textura de tronco de árvore pixelada (Oak Log)
-const woodTex = loadPixelTexture('https://i.imgur.com/C7W90Pj.png'); 
-// Textura de bloco de grama pixelada (Grass Block Side)
-const grassTex = loadPixelTexture('https://i.imgur.com/mOIdU2m.png');
-// Textura de folhas pixelada
-const leafTex = loadPixelTexture('https://i.imgur.com/5uW3m7b.png');
+const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
+const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -37,7 +24,7 @@ function startGame() {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 250);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 250); // Aumentei o fog para combinar com o céu cheio
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
@@ -47,13 +34,13 @@ function init() {
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+    // Terreno
+    const groundGeo = new THREE.PlaneGeometry(2000, 2000); // Terreno maior para acompanhar o céu
     groundGeo.rotateX(-Math.PI / 2);
-    // Usando MeshStandardMaterial para melhor resposta à luz com as novas texturas
-    ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({map: grassTex}));
+    ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SISTEMA DE NUVENS VOLUMÉTRICAS ---
+    // --- SUPER SISTEMA DE NUVENS (80 NUVENS) ---
     const cloudMaterial = new THREE.MeshLambertMaterial({ 
         color: 0xffffff, 
         transparent: true, 
@@ -62,6 +49,8 @@ function init() {
 
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
+        
+        // Formato da nuvem
         const w = Math.floor(Math.random() * 5) + 3; 
         const d = Math.floor(Math.random() * 4) + 2;
 
@@ -75,17 +64,26 @@ function init() {
                 }
             }
         }
-        cloudGroup.position.set(Math.random()*1600-800, 50 + Math.random()*25, Math.random()*1600-800);
+        
+        // Posição em uma área gigante (1600 unidades)
+        cloudGroup.position.set(
+            Math.random() * 1600 - 800, 
+            50 + Math.random() * 25, 
+            Math.random() * 1600 - 800
+        );
+
+        // Escala aleatória para variedade (nuvens maiores e menores)
         const s = Math.random() * 1.5 + 0.5;
         cloudGroup.scale.set(s, s, s);
+        
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
 
-    // Braço e Item na mão
-    hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshStandardMaterial({color: 0xdbac82}));
+    // Braço do Jogador
+    hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
-    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({map: woodTex}));
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
     handItem.visible = false;
     scene.add(handItem);
 
@@ -96,6 +94,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
+    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -115,9 +114,7 @@ function init() {
 
 function spawnTree(x, y, z) {
     for(let h=0; h<4; h++) {
-        // Criando materiais diferentes para o tronco e as folhas para usar as texturas corretas
-        const logMat = new THREE.MeshStandardMaterial({map: woodTex});
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), logMat);
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
@@ -126,9 +123,7 @@ function spawnTree(x, y, z) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
                 if(Math.abs(hx) + Math.abs(hz) > 2) continue;
-                // Textura pixelada para as folhas
-                const leafMat = new THREE.MeshStandardMaterial({map: leafTex, transparent: true, opacity: 0.9});
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), leafMat);
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({color: 0x2d5a27, map: leafTex, transparent: true, opacity: 0.9}));
                 leaf.position.set(x+hx, hy+0.5, z+hz);
                 leaf.userData = { type: 'leaf', t: 0.3 };
                 scene.add(leaf); blocks.push(leaf);
@@ -144,8 +139,7 @@ function placeBlock() {
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-        // Bloco colocado com a textura pixelada de madeira
-        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({map: woodTex}));
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         scene.add(b); blocks.push(b); 
@@ -218,6 +212,7 @@ function animate() {
     
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
+    // Movimento das Nuvens (80 nuvens rodando em área maior)
     clouds.forEach(c => { 
         c.position.x += 0.04; 
         if(c.position.x > 800) c.position.x = -800; 
@@ -227,9 +222,7 @@ function animate() {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
         if (miningTime >= currentTarget.userData.t) {
-            // Drop com a textura pixelada correta
-            const dropMat = new THREE.MeshStandardMaterial({map: currentTarget.material.map});
-            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), dropMat);
+            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
             d.position.copy(currentTarget.position);
             scene.add(d); drops.push(d);
             scene.remove(currentTarget);
