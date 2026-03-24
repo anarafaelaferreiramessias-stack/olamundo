@@ -7,7 +7,7 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// Texturas (Grama e Madeira)
+// Texturas
 const loader = new THREE.TextureLoader();
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
@@ -24,7 +24,7 @@ function startGame() {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 250); // Aumentei o fog para combinar com o céu cheio
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 250);
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
@@ -35,25 +35,17 @@ function init() {
     scene.add(sun);
 
     // Terreno
-    const groundGeo = new THREE.PlaneGeometry(2000, 2000); // Terreno maior para acompanhar o céu
+    const groundGeo = new THREE.PlaneGeometry(2000, 2000);
     groundGeo.rotateX(-Math.PI / 2);
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SUPER SISTEMA DE NUVENS (80 NUVENS) ---
-    const cloudMaterial = new THREE.MeshLambertMaterial({ 
-        color: 0xffffff, 
-        transparent: true, 
-        opacity: 0.8 
-    });
-
+    // Nuvens
+    const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
-        
-        // Formato da nuvem
         const w = Math.floor(Math.random() * 5) + 3; 
         const d = Math.floor(Math.random() * 4) + 2;
-
         for(let x = 0; x < w; x++) {
             for(let z = 0; z < d; z++) {
                 if(Math.random() > 0.2) {
@@ -64,23 +56,14 @@ function init() {
                 }
             }
         }
-        
-        // Posição em uma área gigante (1600 unidades)
-        cloudGroup.position.set(
-            Math.random() * 1600 - 800, 
-            50 + Math.random() * 25, 
-            Math.random() * 1600 - 800
-        );
-
-        // Escala aleatória para variedade (nuvens maiores e menores)
+        cloudGroup.position.set(Math.random() * 1600 - 800, 50 + Math.random() * 25, Math.random() * 1600 - 800);
         const s = Math.random() * 1.5 + 0.5;
         cloudGroup.scale.set(s, s, s);
-        
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
 
-    // Braço do Jogador
+    // Braço
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
@@ -94,7 +77,6 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
-    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -130,6 +112,21 @@ function spawnTree(x, y, z) {
             }
         }
     }
+}
+
+// --- FUNÇÃO DE COLISÃO ---
+function checkCollision(nextPos) {
+    // Cria uma caixa ao redor do jogador (0.6 de largura, 1.8 de altura)
+    const playerBox = new THREE.Box3().setFromCenterAndSize(
+        nextPos, 
+        new THREE.Vector3(0.6, 1.8, 0.6)
+    );
+
+    for (let i = 0; i < blocks.length; i++) {
+        const blockBox = new THREE.Box3().setFromObject(blocks[i]);
+        if (playerBox.intersectsBox(blockBox)) return true;
+    }
+    return false;
 }
 
 function placeBlock() {
@@ -186,21 +183,6 @@ function updateSlot(idx) {
     document.getElementById('s'+selectedSlot).classList.add('selected');
     handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
 }
-function checkCollision(nextPos) {
-    // Criamos uma "caixa" imaginária para o jogador (hitbox)
-    const playerHitbox = new THREE.Box3().setFromCenterAndSize(
-        nextPos, 
-        new THREE.Vector3(0.6, 1.8, 0.6) // Largura, Altura, Profundidade do jogador
-    );
-
-    for (let i = 0; i < blocks.length; i++) {
-        const blockBox = new THREE.Box3().setFromObject(blocks[i]);
-        if (playerHitbox.intersectsBox(blockBox)) {
-            return true; // Colidiu
-        }
-    }
-    return false; // Caminho livre
-}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -221,38 +203,29 @@ function animate() {
     if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
-    // --- LÓGICA DE COLISÃO ---
-    
-    // Tentativa de movimento em X
-    const deltaX = -velocity.x * delta;
-    let nextPosX = camera.position.clone();
-    nextPosX.translateX(deltaX);
+    // Movimento com colisão lateral (X)
+    const stepX = -velocity.x * delta;
+    const nextPosX = camera.position.clone();
+    nextPosX.translateX(stepX);
     if (!checkCollision(nextPosX)) {
-        camera.translateX(deltaX);
+        camera.translateX(stepX);
     } else {
         velocity.x = 0;
     }
 
-    // Tentativa de movimento em Z
-    const deltaZ = velocity.z * delta;
-    let nextPosZ = camera.position.clone();
-    nextPosZ.translateZ(deltaZ);
+    // Movimento com colisão frontal (Z)
+    const stepZ = velocity.z * delta;
+    const nextPosZ = camera.position.clone();
+    nextPosZ.translateZ(stepZ);
     if (!checkCollision(nextPosZ)) {
-        camera.translateZ(deltaZ);
+        camera.translateZ(stepZ);
     } else {
         velocity.z = 0;
     }
 
-    // Movimento em Y (Gravidade e Pulo)
     camera.position.y += velocity.y * delta;
-    if (camera.position.y < 1.8) { 
-        velocity.y = 0; 
-        camera.position.y = 1.8; 
-        canJump = true; 
-    }
+    if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
-    // --- RESTO DO CÓDIGO (Nuvens, Mineração, Drops, Mão) ---
-    
     clouds.forEach(c => { 
         c.position.x += 0.04; 
         if(c.position.x > 800) c.position.x = -800; 
