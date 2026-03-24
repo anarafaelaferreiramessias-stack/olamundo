@@ -7,12 +7,11 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
+// Texturas (Grama e Madeira)
 const loader = new THREE.TextureLoader();
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-// Textura de nuvem (link de exemplo estilo Minecraft)
-const cloudTex = loader.load('https://i.imgur.com/8pSInmI.png'); 
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -41,20 +40,31 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // Nuvens com Textura
-    const cloudGeo = new THREE.BoxGeometry(20, 1, 15); 
-    for(let i=0; i<20; i++) {
-        const cloudMat = new THREE.MeshLambertMaterial({
-            map: cloudTex,
-            transparent: true,
-            opacity: 0.8,
-            depthWrite: false,
-            side: THREE.DoubleSide
-        });
-        const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-        cloud.position.set(Math.random()*400-200, 45 + Math.random()*5, Math.random()*400-200);
-        scene.add(cloud);
-        clouds.push(cloud);
+    // --- NOVO SISTEMA DE NUVENS VOLUMÉTRICAS (RESOLVE O ERRO DE TEXTURA) ---
+    const cloudMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0xffffff, 
+        transparent: true, 
+        opacity: 0.8 
+    });
+
+    for(let i = 0; i < 15; i++) {
+        const cloudGroup = new THREE.Group();
+        const w = Math.floor(Math.random() * 4) + 3; 
+        const d = Math.floor(Math.random() * 3) + 2;
+
+        for(let x = 0; x < w; x++) {
+            for(let z = 0; z < d; z++) {
+                if(Math.random() > 0.3) {
+                    const blockGeo = new THREE.BoxGeometry(6, 1.5, 6);
+                    const cloudBlock = new THREE.Mesh(blockGeo, cloudMaterial);
+                    cloudBlock.position.set(x * 6, 0, z * 6);
+                    cloudGroup.add(cloudBlock);
+                }
+            }
+        }
+        cloudGroup.position.set(Math.random()*600-300, 50 + Math.random()*10, Math.random()*600-300);
+        scene.add(cloudGroup);
+        clouds.push(cloudGroup);
     }
 
     // Braço do Jogador
@@ -71,7 +81,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
-    // Eventos
+    // Eventos de Input
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -189,10 +199,10 @@ function animate() {
     
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
-    // Movimento das Nuvens
+    // --- MOVIMENTO DAS NUVENS ---
     clouds.forEach(c => { 
-        c.position.x += 0.05; 
-        if(c.position.x > 200) c.position.x = -200; 
+        c.position.x += 0.03; 
+        if(c.position.x > 300) c.position.x = -300; 
     });
 
     if (isMining && currentTarget) {
