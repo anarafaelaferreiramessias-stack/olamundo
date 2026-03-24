@@ -186,6 +186,21 @@ function updateSlot(idx) {
     document.getElementById('s'+selectedSlot).classList.add('selected');
     handItem.visible = (selectedSlot === 0 && inventoryWood > 0);
 }
+function checkCollision(nextPos) {
+    // Criamos uma "caixa" imaginária para o jogador (hitbox)
+    const playerHitbox = new THREE.Box3().setFromCenterAndSize(
+        nextPos, 
+        new THREE.Vector3(0.6, 1.8, 0.6) // Largura, Altura, Profundidade do jogador
+    );
+
+    for (let i = 0; i < blocks.length; i++) {
+        const blockBox = new THREE.Box3().setFromObject(blocks[i]);
+        if (playerHitbox.intersectsBox(blockBox)) {
+            return true; // Colidiu
+        }
+    }
+    return false; // Caminho livre
+}
 
 function animate() {
     requestAnimationFrame(animate);
@@ -206,13 +221,38 @@ function animate() {
     if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
 
-    camera.translateX(-velocity.x * delta);
-    camera.translateZ(velocity.z * delta);
-    camera.position.y += velocity.y * delta;
+    // --- LÓGICA DE COLISÃO ---
     
-    if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
+    // Tentativa de movimento em X
+    const deltaX = -velocity.x * delta;
+    let nextPosX = camera.position.clone();
+    nextPosX.translateX(deltaX);
+    if (!checkCollision(nextPosX)) {
+        camera.translateX(deltaX);
+    } else {
+        velocity.x = 0;
+    }
 
-    // Movimento das Nuvens (80 nuvens rodando em área maior)
+    // Tentativa de movimento em Z
+    const deltaZ = velocity.z * delta;
+    let nextPosZ = camera.position.clone();
+    nextPosZ.translateZ(deltaZ);
+    if (!checkCollision(nextPosZ)) {
+        camera.translateZ(deltaZ);
+    } else {
+        velocity.z = 0;
+    }
+
+    // Movimento em Y (Gravidade e Pulo)
+    camera.position.y += velocity.y * delta;
+    if (camera.position.y < 1.8) { 
+        velocity.y = 0; 
+        camera.position.y = 1.8; 
+        canJump = true; 
+    }
+
+    // --- RESTO DO CÓDIGO (Nuvens, Mineração, Drops, Mão) ---
+    
     clouds.forEach(c => { 
         c.position.x += 0.04; 
         if(c.position.x > 800) c.position.x = -800; 
