@@ -40,21 +40,22 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- NOVO SISTEMA DE NUVENS VOLUMÉTRICAS (RESOLVE O ERRO DE TEXTURA) ---
+    // --- SISTEMA DE NUVENS VOLUMÉTRICAS (QUANTIDADE AUMENTADA) ---
     const cloudMaterial = new THREE.MeshLambertMaterial({ 
         color: 0xffffff, 
         transparent: true, 
-        opacity: 0.8 
+        opacity: 0.82 
     });
 
-    for(let i = 0; i < 15; i++) {
+    // Aumentado para 40 nuvens para um céu bem cheio
+    for(let i = 0; i < 40; i++) {
         const cloudGroup = new THREE.Group();
         const w = Math.floor(Math.random() * 4) + 3; 
         const d = Math.floor(Math.random() * 3) + 2;
 
         for(let x = 0; x < w; x++) {
             for(let z = 0; z < d; z++) {
-                if(Math.random() > 0.3) {
+                if(Math.random() > 0.25) {
                     const blockGeo = new THREE.BoxGeometry(6, 1.5, 6);
                     const cloudBlock = new THREE.Mesh(blockGeo, cloudMaterial);
                     cloudBlock.position.set(x * 6, 0, z * 6);
@@ -62,7 +63,12 @@ function init() {
                 }
             }
         }
-        cloudGroup.position.set(Math.random()*600-300, 50 + Math.random()*10, Math.random()*600-300);
+        // Espalhamento em uma área maior (1000 unidades) e alturas variadas
+        cloudGroup.position.set(
+            Math.random() * 1000 - 500, 
+            48 + Math.random() * 15, 
+            Math.random() * 1000 - 500
+        );
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
@@ -81,7 +87,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
-    // Eventos de Input
+    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -199,10 +205,10 @@ function animate() {
     
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
-    // --- MOVIMENTO DAS NUVENS ---
+    // Movimento das Nuvens (atualizado para resetar em área maior)
     clouds.forEach(c => { 
         c.position.x += 0.03; 
-        if(c.position.x > 300) c.position.x = -300; 
+        if(c.position.x > 500) c.position.x = -500; 
     });
 
     if (isMining && currentTarget) {
