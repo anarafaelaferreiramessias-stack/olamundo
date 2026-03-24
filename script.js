@@ -8,11 +8,11 @@ let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
 const loader = new THREE.TextureLoader();
-
-// TEXTURAS - Usando links externos padrão do Three.js para garantir que carreguem
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+// Textura de nuvem (link de exemplo estilo Minecraft)
+const cloudTex = loader.load('https://i.imgur.com/8pSInmI.png'); 
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -24,88 +24,78 @@ function startGame() {
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Céu azul
-    scene.fog = new THREE.Fog(0x87CEEB, 20, 150); // Neblina para performance
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 150);
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
     
-    // ILUMINAÇÃO
-    scene.add(new THREE.AmbientLight(0xffffff, 0.8)); // Luz ambiente
-    const sun = new THREE.DirectionalLight(0xffffff, 0.6); // Luz do sol
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.6);
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    // TERRENO
+    // Terreno
     const groundGeo = new THREE.PlaneGeometry(1000, 1000);
     groundGeo.rotateX(-Math.PI / 2);
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // NUVENS - ATUALIZADAS: BRANCAS E ESTILO MINECRAFT
-    // Usamos BoxGeometry para criar "blocos" de nuvem
-    const cloudGeo = new THREE.BoxGeometry(20, 1.5, 15); 
-    // Material simples, branco sólido e sem transparência
-    const cloudMat = new THREE.MeshLambertMaterial({
-        color: 0xffffff, // Branco puro
-        flatShading: true // Realça o visual de blocos
-    });
-
+    // Nuvens com Textura
+    const cloudGeo = new THREE.BoxGeometry(20, 1, 15); 
     for(let i=0; i<20; i++) {
+        const cloudMat = new THREE.MeshLambertMaterial({
+            map: cloudTex,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-        // Espalha as nuvens aleatoriamente pelo céu, em uma altura fixa
-        cloud.position.set(Math.random()*400-200, 45, Math.random()*400-200);
+        cloud.position.set(Math.random()*400-200, 45 + Math.random()*5, Math.random()*400-200);
         scene.add(cloud);
         clouds.push(cloud);
     }
 
-    // JOGADOR E MÃO
+    // Braço do Jogador
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
     handItem.visible = false;
     scene.add(handItem);
 
-    // ÁRVORES
     for(let i=0; i<30; i++) spawnTree(Math.random()*100-50, 0, Math.random()*100-50);
 
-    // RENDERIZADOR
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
-    // CONTROLES
-    setupEventListeners();
-
-    animate();
-}
-
-function setupEventListeners() {
+    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
         } else { 
-            if (e.button === 0) startMining(); // Clique esquerdo: quebrar
-            if (e.button === 2) placeBlock(); // Clique direito: colocar
+            if (e.button === 0) startMining(); 
+            if (e.button === 2) placeBlock(); 
         }
     });
-    document.addEventListener('contextmenu', e => e.preventDefault()); // Desabilita menu de contexto
+    document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('mouseup', () => stopMining());
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
     document.addEventListener('mousemove', handleMouseMove);
+
+    animate();
 }
 
 function spawnTree(x, y, z) {
-    // Tronco (4 blocos)
     for(let h=0; h<4; h++) {
         const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         log.position.set(x, h + 0.5, z);
-        log.userData = { type: 'wood', t: 1.2 }; // Tipo e tempo de mineração
+        log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
     }
-    // Folhas
     for(let hy=3; hy<6; hy++) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
@@ -120,12 +110,11 @@ function spawnTree(x, y, z) {
 }
 
 function placeBlock() {
-    if (selectedSlot !== 0 || inventoryWood <= 0) return; // Só coloca se tiver madeira no slot 1
+    if (selectedSlot !== 0 || inventoryWood <= 0) return;
     raycaster.setFromCamera(new THREE.Vector2(), camera);
     const hits = raycaster.intersectObjects([ground, ...blocks]);
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
-        // Calcula onde colocar o bloco com base na face atingida
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
         const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
@@ -164,7 +153,7 @@ function handleMouseMove(e) {
     if (document.pointerLockElement === renderer.domElement) {
         targetRotation.y -= e.movementX * 0.002;
         targetRotation.x -= e.movementY * 0.002;
-        targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x)); // Limita rotação vertical
+        targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
     }
 }
 
@@ -180,18 +169,16 @@ function animate() {
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
 
-    // Movimento suave da câmera
     camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
     camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
-    // Física e Movimento
-    velocity.x -= velocity.x * 10.0 * delta; // Atrito
+    velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 15.0 * delta; // Gravidade
+    velocity.y -= 15.0 * delta; 
 
     direction.z = Number(moveF) - Number(moveB);
     direction.x = Number(moveR) - Number(moveL);
-    direction.normalize(); // Garante velocidade constante na diagonal
+    direction.normalize();
 
     if (moveF || moveB) velocity.z -= direction.z * 50.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 50.0 * delta;
@@ -200,32 +187,27 @@ function animate() {
     camera.translateZ(velocity.z * delta);
     camera.position.y += velocity.y * delta;
     
-    // Colisão simples com o chão
     if (camera.position.y < 1.8) { velocity.y = 0; camera.position.y = 1.8; canJump = true; }
 
-    // MOVIMENTO DAS NUVENS
+    // Movimento das Nuvens
     clouds.forEach(c => { 
-        c.position.x += 0.05; // Velocidade da nuvem
-        if(c.position.x > 200) c.position.x = -200; // Reposiciona quando sai da área
+        c.position.x += 0.05; 
+        if(c.position.x > 200) c.position.x = -200; 
     });
 
-    // MINERAÇÃO E COLETA DE ITENS
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
         if (miningTime >= currentTarget.userData.t) {
-            // Cria o item solto (drop)
             const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
             d.position.copy(currentTarget.position);
             scene.add(d); drops.push(d);
-            // Remove o bloco quebrado
             scene.remove(currentTarget);
             blocks = blocks.filter(b => b !== currentTarget);
             stopMining();
         }
     }
 
-    // Coleta de drops
     drops.forEach((d, i) => {
         d.rotation.y += 0.05;
         if (camera.position.distanceTo(d.position) < 1.8) {
@@ -236,6 +218,12 @@ function animate() {
         }
     });
 
-    // ANIMAÇÃO DA MÃO (Bobbing)
     const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
+    hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
+    handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
+    handItem.translateZ(-0.3);
+
+    prevTime = time;
+    renderer.render(scene, camera);
+}
