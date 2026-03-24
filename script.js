@@ -1,5 +1,4 @@
 let scene, camera, renderer, raycaster, hand, handItem, ground;
-let scene, camera, renderer, raycaster, hand, handItem, ground;
 let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
 let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
 let targetRotation = new THREE.Euler(0, 0, 0, 'YXZ');
@@ -8,30 +7,24 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// --- CONFIGURAÇÃO DE TEXTURAS ESTILO PIXEL (MINECRAFT) ---
+// --- CONFIGURAÇÃO DE TEXTURAS PIXELADAS (ESTILO MINECRAFT) ---
 const loader = new THREE.TextureLoader();
 
-// 1. Carregar as texturas
-// Usei links de texturas que já têm uma resolução baixa e rústica.
-const woodTex = loader.load('https://www.textures.com/system/resources/previews/000/017/237/original/Seamless_oak_bark_texture_background.jpg'); 
-const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+// Função auxiliar para carregar e configurar a textura como pixelada
+function loadPixelTexture(url) {
+    const texture = loader.load(url);
+    // Magia do Minecraft: NearestFilter impede o suavizamento (anti-aliasing) dos pixels
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    return texture;
+}
 
-// 2. ATIVAR O MODO PIXEL (MagFilter e MinFilter)
-// Isso é o que remove o "borrão" e mostra os pixels quadrados.
-[woodTex, grassTex, leafTex].forEach(tex => {
-    // THREE.NearestFilter é o segredo do visual Minecraft
-    tex.magFilter = THREE.NearestFilter; 
-    tex.minFilter = THREE.NearestFilter; 
-    
-    // Opcional: Melhora a repetição da textura no chão
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-});
-
-// Ajuste específico para a grama repetir bem no chão gigante
-grassTex.repeat.set(100, 100); 
-
+// Textura de tronco de árvore pixelada (Oak Log)
+const woodTex = loadPixelTexture('https://i.imgur.com/C7W90Pj.png'); 
+// Textura de bloco de grama pixelada (Grass Block Side)
+const grassTex = loadPixelTexture('https://i.imgur.com/mOIdU2m.png');
+// Textura de folhas pixelada
+const leafTex = loadPixelTexture('https://i.imgur.com/5uW3m7b.png');
 
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
@@ -43,9 +36,8 @@ function startGame() {
 
 function init() {
     scene = new THREE.Scene();
-    // Um azul mais clássico e "limpo" para o céu
-    scene.background = new THREE.Color(0x7dc9f2); 
-    scene.fog = new THREE.Fog(0x7dc9f2, 20, 250);
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 20, 250);
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
@@ -57,15 +49,15 @@ function init() {
 
     const groundGeo = new THREE.PlaneGeometry(2000, 2000);
     groundGeo.rotateX(-Math.PI / 2);
-    // Usando MeshLambertMaterial para uma iluminação mais "bloco"
-    ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
+    // Usando MeshStandardMaterial para melhor resposta à luz com as novas texturas
+    ground = new THREE.Mesh(groundGeo, new THREE.MeshStandardMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SISTEMA DE NUVENS (80 NUVENS) ---
+    // --- SISTEMA DE NUVENS VOLUMÉTRICAS ---
     const cloudMaterial = new THREE.MeshLambertMaterial({ 
         color: 0xffffff, 
         transparent: true, 
-        opacity: 0.82 
+        opacity: 0.8 
     });
 
     for(let i = 0; i < 80; i++) {
@@ -90,10 +82,10 @@ function init() {
         clouds.push(cloudGroup);
     }
 
-    // Braço e Item na mão (também pixelados)
-    hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
+    // Braço e Item na mão
+    hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshStandardMaterial({color: 0xdbac82}));
     scene.add(hand);
-    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshStandardMaterial({map: woodTex}));
     handItem.visible = false;
     scene.add(handItem);
 
@@ -123,8 +115,9 @@ function init() {
 
 function spawnTree(x, y, z) {
     for(let h=0; h<4; h++) {
-        // Tronco (com textura pixelada)
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        // Criando materiais diferentes para o tronco e as folhas para usar as texturas corretas
+        const logMat = new THREE.MeshStandardMaterial({map: woodTex});
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), logMat);
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
@@ -133,13 +126,9 @@ function spawnTree(x, y, z) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
                 if(Math.abs(hx) + Math.abs(hz) > 2) continue;
-                // Folhas (com textura pixelada e cor verde)
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({
-                    color: 0x387332, // Verde mais rústico
-                    map: leafTex, 
-                    transparent: true, 
-                    opacity: 0.90
-                }));
+                // Textura pixelada para as folhas
+                const leafMat = new THREE.MeshStandardMaterial({map: leafTex, transparent: true, opacity: 0.9});
+                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), leafMat);
                 leaf.position.set(x+hx, hy+0.5, z+hz);
                 leaf.userData = { type: 'leaf', t: 0.3 };
                 scene.add(leaf); blocks.push(leaf);
@@ -155,8 +144,8 @@ function placeBlock() {
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-        // Bloco colocado (com textura pixelada)
-        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        // Bloco colocado com a textura pixelada de madeira
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({map: woodTex}));
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         scene.add(b); blocks.push(b); 
@@ -237,4 +226,34 @@ function animate() {
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
-        if (miningTime >= currentTarget.userData.
+        if (miningTime >= currentTarget.userData.t) {
+            // Drop com a textura pixelada correta
+            const dropMat = new THREE.MeshStandardMaterial({map: currentTarget.material.map});
+            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), dropMat);
+            d.position.copy(currentTarget.position);
+            scene.add(d); drops.push(d);
+            scene.remove(currentTarget);
+            blocks = blocks.filter(b => b !== currentTarget);
+            stopMining();
+        }
+    }
+
+    drops.forEach((d, i) => {
+        d.rotation.y += 0.05;
+        if (camera.position.distanceTo(d.position) < 1.8) {
+            inventoryWood++; 
+            document.getElementById('inv-wood').innerText = inventoryWood;
+            if(selectedSlot === 0) handItem.visible = true;
+            scene.remove(d); drops.splice(i, 1);
+        }
+    });
+
+    const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
+    hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
+    hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
+    handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
+    handItem.translateZ(-0.3);
+
+    prevTime = time;
+    renderer.render(scene, camera);
+}
