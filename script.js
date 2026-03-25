@@ -7,13 +7,13 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// Texturas (Grama e Madeira)
+// Texturas
 const loader = new THREE.TextureLoader();
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-// Filtro para deixar pixelado (Estilo Minecraft)
+// Deixa as texturas nítidas (estilo pixel)
 [woodTex, grassTex, leafTex].forEach(t => {
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
@@ -27,14 +27,14 @@ function startGame() {
     init();
 }
 
-// --- NOVA FUNÇÃO DE COLISÃO ---
+// Sistema de Colisão AABB (Igual Minecraft)
 function checkCollision(x, y, z) {
-    const playerRadius = 0.35; 
-    const playerHeight = 1.7; 
+    const r = 0.35; // Raio do jogador
+    const h = 1.7;  // Altura do corpo
     
-    const pMinX = x - playerRadius, pMaxX = x + playerRadius;
-    const pMinZ = z - playerRadius, pMaxZ = z + playerRadius;
-    const pMinY = y - playerHeight, pMaxY = y + 0.2;
+    const pMinX = x - r, pMaxX = x + r;
+    const pMinZ = z - r, pMaxZ = z + r;
+    const pMinY = y - h, pMaxY = y + 0.2;
 
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
@@ -69,7 +69,7 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // --- SISTEMA DE NUVENS (MANTIDO GRANDE) ---
+    // Sistema de Nuvens
     const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
@@ -86,12 +86,12 @@ function init() {
             }
         }
         cloudGroup.position.set(Math.random() * 1600 - 800, 50 + Math.random() * 25, Math.random() * 1600 - 800);
-        const s = Math.random() * 1.5 + 0.5;
-        cloudGroup.scale.set(s, s, s);
+        cloudGroup.scale.setScalar(Math.random() * 1.5 + 0.5);
         scene.add(cloudGroup);
         clouds.push(cloudGroup);
     }
 
+    // Braço e Item
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
@@ -105,6 +105,7 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
+    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -171,8 +172,10 @@ function startMining() {
 function stopMining() { isMining = false; document.getElementById('mining-progress').style.display = 'none'; }
 
 function handleKeyDown(e) {
-    if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
-    if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
+    if(e.code === 'KeyW') moveF = true; 
+    if(e.code === 'KeyS') moveB = true;
+    if(e.code === 'KeyA') moveL = true; 
+    if(e.code === 'KeyD') moveR = true;
     if(e.code === 'Space' && canJump) { velocity.y += 6; canJump = false; }
     if(e.key >= 1 && e.key <= 4) updateSlot(parseInt(e.key)-1);
 }
@@ -209,24 +212,32 @@ function animate() {
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 20.0 * delta; 
 
-    direction.z = Number(moveF) - Number(moveB);
-    direction.x = Number(moveR) - Number(moveL);
+    // Ajuste de WASD corrigido para frente/trás
+    let front = (Number(moveF) - Number(moveB));
+    let side = (Number(moveR) - Number(moveL));
+    
+    direction.z = front;
+    direction.x = side;
     direction.normalize();
 
     if (moveF || moveB) velocity.z -= direction.z * 80.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 80.0 * delta;
 
-    // --- LÓGICA DE MOVIMENTO COM COLISÃO ---
-    let nextX = camera.position.x - (velocity.x * delta);
-    if (!checkCollision(nextX, camera.position.y, camera.position.z)) {
-        camera.position.x = nextX;
+    // Movimentação local baseada na rotação do mouse
+    let moveX = (velocity.z * Math.sin(camera.rotation.y) - velocity.x * Math.cos(camera.rotation.y)) * delta;
+    let moveZ = (velocity.z * Math.cos(camera.rotation.y) + velocity.x * Math.sin(camera.rotation.y)) * delta;
+
+    // Colisão Eixo X
+    if (!checkCollision(camera.position.x + moveX, camera.position.y, camera.position.z)) {
+        camera.position.x += moveX;
     } else { velocity.x = 0; }
 
-    let nextZ = camera.position.z + (velocity.z * delta);
-    if (!checkCollision(camera.position.x, camera.position.y, nextZ)) {
-        camera.position.z = nextZ;
+    // Colisão Eixo Z
+    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + moveZ)) {
+        camera.position.z += moveZ;
     } else { velocity.z = 0; }
 
+    // Colisão Eixo Y (Pulo e Gravidade)
     let nextY = camera.position.y + (velocity.y * delta);
     if (nextY < 1.8) { 
         velocity.y = 0; camera.position.y = 1.8; canJump = true; 
@@ -240,11 +251,13 @@ function animate() {
         }
     }
 
+    // Nuvens
     clouds.forEach(c => { 
         c.position.x += 0.04; 
         if(c.position.x > 800) c.position.x = -800; 
     });
 
+    // Mineração e Drops
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -268,6 +281,7 @@ function animate() {
         }
     });
 
+    // Animação do Braço
     const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
