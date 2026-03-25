@@ -11,14 +11,16 @@ let worldTime = 0;
 
 // --- CONFIGURAÇÃO DO MUNDO INFINITO (CHUNKS) ---
 const CHUNK_SIZE = 16;       // Tamanho de cada pedaço (16x16 blocos)
-const TERRAIN_HEIGHT = 20;  // Altura máxima das montanhas
-const TREE_DENSITY = 0.6;   // Chance de árvore (0.0 a 1.0) - AUMENTADO PARA "CHEIO MESMO"
-const VIEW_DISTANCE = 4;    // Quantos chunks ver ao redor (raio) - CUIDADO COM ESTE VALOR
+const TERRAIN_HEIGHT = 25;  // Altura máxima das montanhas
+// --- INFESTAÇÃO TOTAL: 100% DE CHANCE DE ÁRVORE ---
+const TREE_DENSITY = 1.0;   // 1.0 = Árvore em CADA bloco. CUIDADO COM A PERFORMANCE!
+// --- DISTÂNCIA DE VISÃO REDUZIDA PARA EVITAR CRASH ---
+const VIEW_DISTANCE = 2;    // Mantido baixo (2 ou 3) para compensar a densidade extrema
 let activeChunks = new Map(); // Armazena os chunks gerados: "x,z" -> Group
 
 // --- CARREGAMENTO DE TEXTURAS PIXELADAS ---
 const loader = new THREE.TextureLoader();
-// Usando texturas padrão do Three.js para este exemplo (devem ser pixeladas no seu projeto)
+// Texturas padrão (pixeladas no seu projeto)
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg'); 
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
@@ -28,7 +30,6 @@ const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grass
     t.minFilter = THREE.NearestFilter;
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
 });
-// grassTex.repeat.set(512, 512); // Não precisamos mais repetir no plano, cada bloco terá sua textura
 
 // --- FUNÇÃO START GAME ---
 function startGame() {
@@ -53,7 +54,7 @@ function checkCollision(x, y, z) {
             return true;
         }
     }
-    // Colisão com o "chão base" infinito
+    // Colisão com o "chão base" infinito (camada de segurança)
     if (y < 1.0) return true; 
     return false;
 }
@@ -62,22 +63,20 @@ function checkCollision(x, y, z) {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 10, CHUNK_SIZE * VIEW_DISTANCE * 0.9); // Fog para performance
+    // Fog ajustado para a distância de visão curta
+    scene.fog = new THREE.Fog(0x87CEEB, 5, CHUNK_SIZE * VIEW_DISTANCE * 0.8); 
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
     
-    // Posição inicial do jogador (um pouco alta para não nascer dentro da montanha)
-    camera.position.set(CHUNK_SIZE / 2, TERRAIN_HEIGHT + 5, CHUNK_SIZE / 2);
+    // Posição inicial do jogador (MUITO ALTA para não nascer sufocado em árvores)
+    camera.position.set(CHUNK_SIZE / 2, TERRAIN_HEIGHT + 15, CHUNK_SIZE / 2);
     
     // Iluminação Dinâmica
     scene.add(new THREE.AmbientLight(0xffffff, 0.5));
     sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
     sunLight.position.set(50, 100, 50);
     scene.add(sunLight);
-
-    // --- REMOVIDO O GROUND PLANO ---
-    // O chão agora será gerado bloco por bloco nos chunks.
 
     // Nuvens
     const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
@@ -89,7 +88,7 @@ function init() {
             b.position.set(j*8, 0, Math.random()*5);
             group.add(b);
         }
-        group.position.set(Math.random()*2000-1000, 70+Math.random()*20, Math.random()*2000-1000);
+        group.position.set(Math.random()*2000-1000, 80+Math.random()*20, Math.random()*2000-1000);
         scene.add(group);
         clouds.push(group);
     }
@@ -125,13 +124,12 @@ function init() {
     animate();
 }
 
-// --- GERAÇÃO DE CHUNKS (Procedural com Perlin Noise) ---
-// Função de ruído simples (para não depender de bibliotecas externas neste exemplo)
+// --- GERAÇÃO DE CHUNKS (Procedural com Ruído) ---
 function noise(x, z) {
-    // Uma função de ruído muito básica e determinística
-    let v = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 0.5 + 0.5;
-    v += Math.sin(x * 0.05 + z * 0.05) * 0.25; // Adiciona detalhes maiores
-    return v; // Retorna valor entre ~0 e ~1
+    // Ruído básico determinístico
+    let v = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 0.6 + 0.4;
+    v += Math.sin(x * 0.04 + z * 0.04) * 0.3; // Detalhes maiores das montanhas
+    return v; // Valor entre ~0 e ~1
 }
 
 function generateChunk(chunkX, chunkZ) {
@@ -149,6 +147,8 @@ function generateChunk(chunkX, chunkZ) {
     const woodMat = new THREE.MeshLambertMaterial({map: woodTex, color: 0x663300});
     const leafMat = new THREE.MeshLambertMaterial({color: 0x228822, map: leafTex, transparent: true, opacity: 0.9});
 
+    const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+
     // Percorrer a grade do chunk
     for (let x = 0; x < CHUNK_SIZE; x++) {
         for (let z = 0; z < CHUNK_SIZE; z++) {
@@ -157,49 +157,44 @@ function generateChunk(chunkX, chunkZ) {
 
             // 1. Calcular Altura do Terreno (Montanhas)
             const n = noise(worldX, worldZ);
-            const height = Math.floor(n * TERRAIN_HEIGHT) + 1; // Mínimo 1 bloco de altura
+            const groundHeight = Math.floor(n * TERRAIN_HEIGHT) + 1; // Mínimo 1 bloco
 
-            // 2. Gerar Coluna de Chão (Grama no topo, terra embaixo - simplificado para Grama)
-            const blockGeo = new THREE.BoxGeometry(1, 1, 1);
+            // 2. Gerar Bloco de Grama no topo
             const grassBlock = new THREE.Mesh(blockGeo, grassMat);
-            grassBlock.position.set(worldX, height - 0.5, worldZ);
+            grassBlock.position.set(worldX, groundHeight - 0.5, worldZ);
             chunkGroup.add(grassBlock);
             blocks.push(grassBlock); // Adicionar à lista global para colisão
 
-            // 3. Gerar Árvores (Densa Floresta)
-            // Usamos uma semente determinística baseada na posição para as árvores
-            const treeNoise = Math.sin(worldX * 1.5 + worldZ * 0.8) * 0.5 + 0.5;
-            
-            // CONDIÇÃO DE ÁRVORE: Alta densidade e não muito alto (neve/pico)
-            if (treeNoise > (1 - TREE_DENSITY) && height < TERRAIN_HEIGHT * 0.9) {
-                spawnTreeProc(worldX, height, worldZ, chunkGroup, woodMat, leafMat);
-            }
+            // 3. INFESTAÇÃO TOTAL DE ÁRVORES
+            // Como TREE_DENSITY é 1.0, esta condição SEMPRE será verdadeira.
+            // Colocamos árvore em CADA bloco de grama gerado.
+            spawnTreeProc(worldX, groundHeight, worldZ, chunkGroup, woodMat, leafMat, blockGeo);
         }
     }
 }
 
 // Função para gerar árvore processual dentro do chunk
-function spawnTreeProc(x, groundHeight, z, chunkGroup, woodMat, leafMat) {
-    const treeHeight = Math.floor(Math.random() * 3) + 4; // Altura tronco: 4 a 6
+function spawnTreeProc(x, groundHeight, z, chunkGroup, woodMat, leafMat, blockGeo) {
+    // Altura tronco variando entre 4 e 6 blocos
+    const treeHeight = Math.floor(Math.random() * 3) + 4; 
 
     // Tronco
     for (let h = 0; h < treeHeight; h++) {
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), woodMat);
+        const log = new THREE.Mesh(blockGeo, woodMat);
         log.position.set(x, groundHeight + h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         chunkGroup.add(log);
         blocks.push(log);
     }
 
-    // Copa (Cubo de folhas) - Densa e Quadrada estilo Minecraft
+    // Copa (Cubo de folhas estilo Minecraft)
+    // Infelizmente, as copas vão se sobrepor completamente, criando um emaranhado denso.
     for (let hy = treeHeight - 2; hy <= treeHeight + 1; hy++) {
         let radius = (hy > treeHeight) ? 1 : 2; // Estreita no topo
         for (let hx = -radius; hx <= radius; hx++) {
             for (let hz = -radius; hz <= radius; hz++) {
-                // Probabilidade para falhas naturais na copa
-                if (Math.random() > 0.95) continue; 
-                
-                const leaf = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), leafMat);
+                // Removemos a falha aleatória para garantir densidade máxima
+                const leaf = new THREE.Mesh(blockGeo, leafMat);
                 leaf.position.set(x + hx, groundHeight + hy + 0.5, z + hz);
                 leaf.userData = { type: 'leaf', t: 0.3 };
                 chunkGroup.add(leaf);
@@ -222,10 +217,10 @@ function updateChunks() {
     }
 
     // 2. (Opcional) Remover chunks distantes para economizar memória
-    // Em um jogo real, você faria isso. Para este exemplo, vamos manter ativos para simplificar.
+    // Manteremos ativos para simplificar o exemplo, mas isso consome memória.
 }
 
-// --- FUNÇÕES DE MINERAÇÃO, COLOCAÇÃO E INPUT (Mantidas e Ajustadas) ---
+// --- FUNÇÕES DE MINERAÇÃO, COLOCAÇÃO E INPUT (Mantidas) ---
 function placeBlock() {
     if (selectedSlot !== 0 || inventoryWood <= 0) return;
     raycaster.setFromCamera(new THREE.Vector2(), camera);
@@ -234,13 +229,11 @@ function placeBlock() {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
         
-        // Criar bloco de madeira processada
         const bMat = new THREE.MeshLambertMaterial({map: woodTex, color: 0x8B4513});
         const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), bMat);
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         
-        // Adicionar à cena (não ao chunk, blocos colocados são globais neste exemplo)
         scene.add(b); 
         blocks.push(b); 
         
@@ -336,7 +329,6 @@ function animate() {
     // Colisão Eixo Y (Pulo e Gravidade)
     let nextY = camera.position.y + (velocity.y * delta);
     
-    // Teste de colisão no Eixo Y
     if (checkCollision(camera.position.x, nextY, camera.position.z)) {
         if (velocity.y < 0) {
             canJump = true; // Bateu no chão
@@ -344,7 +336,8 @@ function animate() {
         velocity.y = 0;
     } else {
         camera.position.y = nextY;
-        if (nextY > TERRAIN_HEIGHT + 5) canJump = false; // Está no ar
+        // Altura do pulo ajustada para nascer alto
+        if (nextY > TERRAIN_HEIGHT + 15) canJump = false; 
     }
 
     // 4. Nuvens Infinitas
