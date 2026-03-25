@@ -10,25 +10,27 @@ let isMining = false, miningTime = 0, currentTarget = null;
 // --- CARREGAMENTO DE TEXTURAS (COM ESTILO PIXELADO DO MINECRAFT) ---
 const loader = new THREE.TextureLoader();
 
-// Textura da Madeira (Crate padrão, mas pixelada)
-const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
+// --- NOVA TEXTURA DE MADEIRA (CASCA DE ÁRVORE RÚSTICA) ---
+// Trocando a textura de caixote ("crate") por uma textura de tronco/casca
+const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
+// Vamos ajustar a cor da textura existente para dar um tom marrom casca de árvore
+woodTex.wrapS = THREE.RepeatWrapping;
+woodTex.wrapT = THREE.RepeatWrapping;
 
-// --- NOVA TEXTURA DE GRAMA IGUAL DO MINECRAFT ---
-// Usando uma textura que imita o bloco de grama clássico do Minecraft (topo verde, lados terra)
+// Textura de Grama clássica do Minecraft (Topo verde, lados terra)
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg'); 
-// Vamos ajustar a cor da grama existente para torná-la mais verde e vibrante, imitando o bioma clássico do Minecraft
 grassTex.wrapS = THREE.RepeatWrapping;
 grassTex.wrapT = THREE.RepeatWrapping;
-grassTex.repeat.set(128, 128); // Repetir a textura para cobrir o chão imenso
+grassTex.repeat.set(128, 128); // Repetir para cobrir o chão imenso
 
-// Textura das Folhas (Pixelada e com transparência)
+// Textura das Folhas (Pixelada)
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
 // --- CRÍTICO: APLICAR FILTRO NEAREST PARA VISUAL DE PIXEL (MINECRAFT) ---
-// Isso impede o suavizamento dos pixels, mantendo-os nítidos e quadrados
+// Mantém os pixels nítidos e quadrados em todas as texturas
 [woodTex, grassTex, leafTex].forEach(t => {
-    t.magFilter = THREE.NearestFilter; // Filtro para ampliação (quando você está perto)
-    t.minFilter = THREE.NearestFilter; // Filtro para minificação (quando você está longe)
+    t.magFilter = THREE.NearestFilter; // Ampliação nítida
+    t.minFilter = THREE.NearestFilter; // Minificação nítida
 });
 
 function startGame() {
@@ -42,7 +44,7 @@ function startGame() {
 // --- COLISÃO AABB CORRIGIDA ---
 function checkCollision(x, y, z) {
     const r = 0.35; // Largura do jogador (raio)
-    const h = 1.6;  // Altura do corpo (dos pés aos olhos)
+    const h = 1.6;  // Altura do corpo (pés aos olhos)
     
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
@@ -71,13 +73,13 @@ function init() {
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    // --- TERRENO COM NOVA TEXTURA ESTILO MINECRAFT ---
+    // --- TERRENO COM TEXTURA ESTILO MINECRAFT ---
     const groundGeo = new THREE.PlaneGeometry(2000, 2000); 
     groundGeo.rotateX(-Math.PI / 2);
     // Usando MeshLambertMaterial com a textura de grama pixelada
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({
         map: grassTex,
-        color: 0x55aa55 // Adicionando um tom verde vibrante clássico do Minecraft
+        color: 0x55aa55 // Tom verde vibrante clássico do Minecraft
     }));
     scene.add(ground);
 
@@ -106,7 +108,12 @@ function init() {
     // Braço do Jogador e Item na mão
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
-    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+    
+    // --- ITEM NA MÃO COM NOVA TEXTURA DE MADEIRA ---
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({
+        map: woodTex,
+        color: 0x8B4513 // Marrom sela para cor de madeira rústica no item
+    }));
     handItem.visible = false;
     scene.add(handItem);
 
@@ -137,9 +144,13 @@ function init() {
 }
 
 function spawnTree(x, y, z) {
-    // Tronco (Madeira pixelada)
+    // --- TRONCO COM NOVA TEXTURA DE MADEIRA ---
+    // Usando a nova woodTex e aplicando cor marrom para parecer casca
     for(let h=0; h<4; h++) {
-        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({
+            map: woodTex,
+            color: 0x663300 // Marrom escuro para troncos (cor de casca)
+        }));
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
@@ -170,7 +181,12 @@ function placeBlock() {
     if (hits.length > 0 && hits[0].distance < 5) {
         const hit = hits[0];
         const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
-        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
+        
+        // --- BLOCO COLOCADO COM NOVA TEXTURA DE MADEIRA ---
+        const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({
+            map: woodTex,
+            color: 0x8B4513 // Marrom sela para blocos de madeira colocados
+        }));
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.2 };
         scene.add(b); blocks.push(b); 
@@ -300,7 +316,11 @@ function animate() {
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
         if (miningTime >= currentTarget.userData.t) {
             // Cria drop
-            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({map: woodTex}));
+            // --- DROP COM NOVA TEXTURA DE MADEIRA ---
+            const d = new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.3), new THREE.MeshLambertMaterial({
+                map: woodTex,
+                color: 0x8B4513 // Marrom sela para o item dropado
+            }));
             d.position.copy(currentTarget.position);
             scene.add(d); drops.push(d);
             // Remove bloco
