@@ -13,7 +13,7 @@ const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-// Pixelado
+// Estilo Pixelado (Minecraft)
 [woodTex, grassTex, leafTex].forEach(t => {
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
@@ -27,14 +27,14 @@ function startGame() {
     init();
 }
 
-// --- COLISÃO AABB MELHORADA ---
+// --- COLISÃO AABB (CAIXA CONTRA CAIXA) ---
 function checkCollision(x, y, z) {
-    const r = 0.3; // Raio do corpo do jogador
-    const h = 1.6; // Altura dos olhos até o pé
+    const r = 0.35; // Largura do jogador
+    const h = 1.6;  // Altura dos pés
     
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
-        // Se a caixa do jogador intersectar a caixa do bloco
+        // Verifica se a caixa do jogador toca a caixa do bloco (1x1x1)
         if (x + r > b.x - 0.5 && x - r < b.x + 0.5 &&
             y + 0.2 > b.y - 0.5 && y - h < b.y + 0.5 &&
             z + r > b.z - 0.5 && z - r < b.z + 0.5) {
@@ -62,7 +62,7 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // Nuvens
+    // Sistema de Nuvens Gigante (80 nuvens)
     const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
@@ -167,13 +167,15 @@ function handleKeyDown(e) {
     if(e.code === 'KeyS') moveB = true;
     if(e.code === 'KeyA') moveL = true; 
     if(e.code === 'KeyD') moveR = true;
-    if(e.code === 'Space' && canJump) { velocity.y = 7; canJump = false; }
+    if(e.code === 'Space' && canJump) { velocity.y = 8; canJump = false; }
     if(e.key >= 1 && e.key <= 4) updateSlot(parseInt(e.key)-1);
 }
 
 function handleKeyUp(e) {
-    if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
-    if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
+    if(e.code === 'KeyW') moveF = false; 
+    if(e.code === 'KeyS') moveB = false;
+    if(e.code === 'KeyA') moveL = false; 
+    if(e.code === 'KeyD') moveR = false;
 }
 
 function handleMouseMove(e) {
@@ -196,45 +198,49 @@ function animate() {
     const time = performance.now();
     const delta = Math.min((time - prevTime) / 1000, 0.1);
 
-    camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.25;
-    camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.25;
+    // Suavização da Visão
+    camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.3;
+    camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.3;
 
-    // Física e Atrito
+    // Física
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 22.0 * delta; // Gravidade
+    velocity.y -= 25.0 * delta; // Gravidade
 
-    // Direção baseada na rotação atual
+    // Direção baseada no WASD
     direction.z = Number(moveF) - Number(moveB);
     direction.x = Number(moveR) - Number(moveL);
     direction.normalize();
 
-    // Velocidade de caminhada
+    // Aplica força
     if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta;
     if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
 
-    // --- MOVIMENTO LOCAL CORRIGIDO (WASD REAL) ---
-    // Calculamos o quanto queremos mover no mundo baseado na visão da câmera
-    const mX = (-velocity.x * Math.cos(camera.rotation.y) + velocity.z * Math.sin(camera.rotation.y)) * delta;
-    const mZ = (-velocity.x * Math.sin(camera.rotation.y) - velocity.z * Math.cos(camera.rotation.y)) * delta;
+    // --- CÁLCULO DE MOVIMENTO LOCAL (CORRIGIDO) ---
+    // O movimento é relativo ao ângulo da câmera (rotation.y)
+    const sin = Math.sin(camera.rotation.y);
+    const cos = Math.cos(camera.rotation.y);
 
-    // Teste de colisão no Eixo X
-    if (!checkCollision(camera.position.x + mX, camera.position.y, camera.position.z)) {
-        camera.position.x += mX;
+    const moveX = (velocity.z * sin - velocity.x * cos) * delta;
+    const moveZ = (velocity.z * cos + velocity.x * sin) * delta;
+
+    // Colisão Eixo X
+    if (!checkCollision(camera.position.x + moveX, camera.position.y, camera.position.z)) {
+        camera.position.x += moveX;
     } else { velocity.x = 0; }
 
-    // Teste de colisão no Eixo Z
-    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + mZ)) {
-        camera.position.z += mZ;
+    // Colisão Eixo Z
+    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + moveZ)) {
+        camera.position.z += moveZ;
     } else { velocity.z = 0; }
 
-    // Teste de colisão no Eixo Y (Pulo/Gravidade)
+    // Colisão Eixo Y (Pulo e Gravidade)
     let nextY = camera.position.y + (velocity.y * delta);
     if (nextY < 1.8) { 
         velocity.y = 0; camera.position.y = 1.8; canJump = true; 
     } else {
         if (checkCollision(camera.position.x, nextY, camera.position.z)) {
-            if (velocity.y < 0) canJump = true; // Bateu no chão
+            if (velocity.y < 0) canJump = true;
             velocity.y = 0;
         } else {
             camera.position.y = nextY;
@@ -248,7 +254,7 @@ function animate() {
         if(c.position.x > 800) c.position.x = -800; 
     });
 
-    // Mineração
+    // Mineração e Drops
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -262,7 +268,6 @@ function animate() {
         }
     }
 
-    // Coleta
     drops.forEach((d, i) => {
         d.rotation.y += 0.05;
         if (camera.position.distanceTo(d.position) < 1.8) {
@@ -274,7 +279,7 @@ function animate() {
     });
 
     // Braço
-    const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.04 : 0.005);
+    const bob = Math.sin(time * 0.01) * ( (moveF||moveB) ? 0.04 : 0.005);
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
     handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
