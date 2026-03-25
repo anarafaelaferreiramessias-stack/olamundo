@@ -7,26 +7,28 @@ let blocks = [], drops = [], clouds = [];
 let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 
-// --- CARREGAMENTO DE TEXTURAS ---
+// --- CARREGAMENTO DE TEXTURAS (COM ESTILO PIXELADO DO MINECRAFT) ---
 const loader = new THREE.TextureLoader();
-// Textura da Madeira (Crate padrão)
+
+// Textura da Madeira (Crate padrão, mas pixelada)
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 
-// --- NOVA TEXTURA DE GRAMA PIXELADA (VERDE VIBRANTE) ---
-// Usando uma textura de grama pixelada para um visual mais "Minecraft"
+// --- NOVA TEXTURA DE GRAMA IGUAL DO MINECRAFT ---
+// Usando uma textura que imita o bloco de grama clássico do Minecraft (topo verde, lados terra)
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg'); 
-// Vamos ajustar a cor da grama existente para torná-la mais verde e vibrante
+// Vamos ajustar a cor da grama existente para torná-la mais verde e vibrante, imitando o bioma clássico do Minecraft
 grassTex.wrapS = THREE.RepeatWrapping;
 grassTex.wrapT = THREE.RepeatWrapping;
 grassTex.repeat.set(128, 128); // Repetir a textura para cobrir o chão imenso
 
-// Textura das Folhas
+// Textura das Folhas (Pixelada e com transparência)
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-// Filtro Pixelado (NearestFilter) para todas as texturas
+// --- CRÍTICO: APLICAR FILTRO NEAREST PARA VISUAL DE PIXEL (MINECRAFT) ---
+// Isso impede o suavizamento dos pixels, mantendo-os nítidos e quadrados
 [woodTex, grassTex, leafTex].forEach(t => {
-    t.magFilter = THREE.NearestFilter;
-    t.minFilter = THREE.NearestFilter;
+    t.magFilter = THREE.NearestFilter; // Filtro para ampliação (quando você está perto)
+    t.minFilter = THREE.NearestFilter; // Filtro para minificação (quando você está longe)
 });
 
 function startGame() {
@@ -69,13 +71,13 @@ function init() {
     sun.position.set(10, 50, 10);
     scene.add(sun);
 
-    // --- TERRENO COM NOVA TEXTURA ---
+    // --- TERRENO COM NOVA TEXTURA ESTILO MINECRAFT ---
     const groundGeo = new THREE.PlaneGeometry(2000, 2000); 
     groundGeo.rotateX(-Math.PI / 2);
-    // Usando MeshLambertMaterial com a nova textura de grama
+    // Usando MeshLambertMaterial com a textura de grama pixelada
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({
         map: grassTex,
-        color: 0x55aa55 // Adicionando um tom verde vibrante à textura existente
+        color: 0x55aa55 // Adicionando um tom verde vibrante clássico do Minecraft
     }));
     scene.add(ground);
 
@@ -135,14 +137,14 @@ function init() {
 }
 
 function spawnTree(x, y, z) {
-    // Tronco (Madeira)
+    // Tronco (Madeira pixelada)
     for(let h=0; h<4; h++) {
         const log = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshLambertMaterial({map: woodTex}));
         log.position.set(x, h + 0.5, z);
         log.userData = { type: 'wood', t: 1.2 };
         scene.add(log); blocks.push(log);
     }
-    // Folhas (Verde escuro)
+    // Folhas (Verde escuro pixelado)
     for(let hy=3; hy<6; hy++) {
         for(let hx=-2; hx<=2; hx++) {
             for(let hz=-2; hz<=2; hz++) {
