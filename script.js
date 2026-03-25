@@ -13,7 +13,7 @@ const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif');
 const grassTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-// Deixa as texturas nítidas (estilo pixel)
+// Pixelado
 [woodTex, grassTex, leafTex].forEach(t => {
     t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
@@ -27,24 +27,17 @@ function startGame() {
     init();
 }
 
-// Sistema de Colisão AABB (Igual Minecraft)
+// --- COLISÃO AABB MELHORADA ---
 function checkCollision(x, y, z) {
-    const r = 0.35; // Raio do jogador
-    const h = 1.7;  // Altura do corpo
+    const r = 0.3; // Raio do corpo do jogador
+    const h = 1.6; // Altura dos olhos até o pé
     
-    const pMinX = x - r, pMaxX = x + r;
-    const pMinZ = z - r, pMaxZ = z + r;
-    const pMinY = y - h, pMaxY = y + 0.2;
-
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
-        const bMinX = b.x - 0.5, bMaxX = b.x + 0.5;
-        const bMinY = b.y - 0.5, bMaxY = b.y + 0.5;
-        const bMinZ = b.z - 0.5, bMaxZ = b.z + 0.5;
-
-        if (pMaxX > bMinX && pMinX < bMaxX &&
-            pMaxY > bMinY && pMinY < bMaxY &&
-            pMaxZ > bMinZ && pMinZ < bMaxZ) {
+        // Se a caixa do jogador intersectar a caixa do bloco
+        if (x + r > b.x - 0.5 && x - r < b.x + 0.5 &&
+            y + 0.2 > b.y - 0.5 && y - h < b.y + 0.5 &&
+            z + r > b.z - 0.5 && z - r < b.z + 0.5) {
             return true;
         }
     }
@@ -69,7 +62,7 @@ function init() {
     ground = new THREE.Mesh(groundGeo, new THREE.MeshLambertMaterial({map: grassTex}));
     scene.add(ground);
 
-    // Sistema de Nuvens
+    // Nuvens
     const cloudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
     for(let i = 0; i < 80; i++) {
         const cloudGroup = new THREE.Group();
@@ -91,7 +84,6 @@ function init() {
         clouds.push(cloudGroup);
     }
 
-    // Braço e Item
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshLambertMaterial({map: woodTex}));
@@ -105,7 +97,6 @@ function init() {
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
 
-    // Eventos
     document.addEventListener('mousedown', (e) => {
         if (document.pointerLockElement !== renderer.domElement) {
             renderer.domElement.requestPointerLock();
@@ -176,7 +167,7 @@ function handleKeyDown(e) {
     if(e.code === 'KeyS') moveB = true;
     if(e.code === 'KeyA') moveL = true; 
     if(e.code === 'KeyD') moveR = true;
-    if(e.code === 'Space' && canJump) { velocity.y += 6; canJump = false; }
+    if(e.code === 'Space' && canJump) { velocity.y = 7; canJump = false; }
     if(e.key >= 1 && e.key <= 4) updateSlot(parseInt(e.key)-1);
 }
 
@@ -205,45 +196,45 @@ function animate() {
     const time = performance.now();
     const delta = Math.min((time - prevTime) / 1000, 0.1);
 
-    camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
-    camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
+    camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.25;
+    camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.25;
 
+    // Física e Atrito
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 20.0 * delta; 
+    velocity.y -= 22.0 * delta; // Gravidade
 
-    // Ajuste de WASD corrigido para frente/trás
-    let front = (Number(moveF) - Number(moveB));
-    let side = (Number(moveR) - Number(moveL));
-    
-    direction.z = front;
-    direction.x = side;
+    // Direção baseada na rotação atual
+    direction.z = Number(moveF) - Number(moveB);
+    direction.x = Number(moveR) - Number(moveL);
     direction.normalize();
 
-    if (moveF || moveB) velocity.z -= direction.z * 80.0 * delta;
-    if (moveL || moveR) velocity.x -= direction.x * 80.0 * delta;
+    // Velocidade de caminhada
+    if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta;
+    if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
 
-    // Movimentação local baseada na rotação do mouse
-    let moveX = (velocity.z * Math.sin(camera.rotation.y) - velocity.x * Math.cos(camera.rotation.y)) * delta;
-    let moveZ = (velocity.z * Math.cos(camera.rotation.y) + velocity.x * Math.sin(camera.rotation.y)) * delta;
+    // --- MOVIMENTO LOCAL CORRIGIDO (WASD REAL) ---
+    // Calculamos o quanto queremos mover no mundo baseado na visão da câmera
+    const mX = (-velocity.x * Math.cos(camera.rotation.y) + velocity.z * Math.sin(camera.rotation.y)) * delta;
+    const mZ = (-velocity.x * Math.sin(camera.rotation.y) - velocity.z * Math.cos(camera.rotation.y)) * delta;
 
-    // Colisão Eixo X
-    if (!checkCollision(camera.position.x + moveX, camera.position.y, camera.position.z)) {
-        camera.position.x += moveX;
+    // Teste de colisão no Eixo X
+    if (!checkCollision(camera.position.x + mX, camera.position.y, camera.position.z)) {
+        camera.position.x += mX;
     } else { velocity.x = 0; }
 
-    // Colisão Eixo Z
-    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + moveZ)) {
-        camera.position.z += moveZ;
+    // Teste de colisão no Eixo Z
+    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + mZ)) {
+        camera.position.z += mZ;
     } else { velocity.z = 0; }
 
-    // Colisão Eixo Y (Pulo e Gravidade)
+    // Teste de colisão no Eixo Y (Pulo/Gravidade)
     let nextY = camera.position.y + (velocity.y * delta);
     if (nextY < 1.8) { 
         velocity.y = 0; camera.position.y = 1.8; canJump = true; 
     } else {
         if (checkCollision(camera.position.x, nextY, camera.position.z)) {
-            if (velocity.y < 0) canJump = true;
+            if (velocity.y < 0) canJump = true; // Bateu no chão
             velocity.y = 0;
         } else {
             camera.position.y = nextY;
@@ -257,7 +248,7 @@ function animate() {
         if(c.position.x > 800) c.position.x = -800; 
     });
 
-    // Mineração e Drops
+    // Mineração
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -271,6 +262,7 @@ function animate() {
         }
     }
 
+    // Coleta
     drops.forEach((d, i) => {
         d.rotation.y += 0.05;
         if (camera.position.distanceTo(d.position) < 1.8) {
@@ -281,8 +273,8 @@ function animate() {
         }
     });
 
-    // Animação do Braço
-    const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.03 : 0.005);
+    // Braço
+    const bob = Math.sin(time * 0.008) * ( (moveF||moveB) ? 0.04 : 0.005);
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.45); hand.translateY(-0.35 + bob); hand.translateZ(-0.6);
     handItem.position.copy(hand.position); handItem.quaternion.copy(hand.quaternion);
