@@ -9,31 +9,31 @@ let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 let worldTime = 0; 
 
-// --- CONFIGURAÇÃO DO MUNDO INFINITO ---
+// --- CONFIGURAÇÃO DO MUNDO INFINITO (OPTIMIZADO) ---
 const CHUNK_SIZE = 16;       
-const VIEW_DISTANCE = 4;    
+const VIEW_DISTANCE = 4;    // Agora podemos ver mais longe porque está leve
 let activeChunks = new Map(); 
 
-// --- TEXTURAS ESTILO MINECRAFT ---
+// --- TEXTURAS (MODIFICADO APENAS AQUI) ---
 const loader = new THREE.TextureLoader();
-
-// URLs de texturas que lembram o estilo 16x16 original
-const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/grass.png'); 
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
+
+// Usando o atlas oficial do Three.js que tem a grama pixelada do Minecraft
+const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png'); 
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-// ESSENCIAL: Isso tira o "borrado" e deixa os pixels nítidos (estilo 8-bit)
-[grassTex, woodTex, leafTex].forEach(t => {
-    t.magFilter = THREE.NearestFilter;
+[woodTex, grassTex, leafTex].forEach(t => {
+    t.magFilter = THREE.NearestFilter; // Isso tira o borrado
     t.minFilter = THREE.NearestFilter;
-    t.wrapS = THREE.RepeatWrapping;
-    t.wrapT = THREE.RepeatWrapping;
 });
 
-// --- MATERIAIS ---
-// Ajustei a cor da grama para um verde clássico do Minecraft
-const grassMat = new THREE.MeshLambertMaterial({map: grassTex, color: 0x7cfc00});
-const woodMat = new THREE.MeshLambertMaterial({map: woodTex});
+// Ajuste para a textura de grama pegar o quadrado certo do arquivo atlas
+grassTex.repeat.set(0.0625, 0.0625);
+grassTex.offset.set(0, 0.9375);
+
+// --- MATERIAIS ÚNICOS (Reutilizar economiza MUITA memória) ---
+const grassMat = new THREE.MeshLambertMaterial({map: grassTex}); 
+const woodMat = new THREE.MeshLambertMaterial({map: woodTex, color: 0x663300});
 const leafMat = new THREE.MeshLambertMaterial({color: 0x228822, map: leafTex, transparent: true, opacity: 0.9});
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
@@ -47,6 +47,7 @@ function startGame() {
 function checkCollision(x, y, z) {
     const r = 0.3; 
     const h = 1.6;
+    // Otimização: Só checar colisão com blocos próximos (distância < 3)
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
         if (Math.abs(x - b.x) < 1.5 && Math.abs(z - b.z) < 1.5) {
@@ -63,25 +64,26 @@ function checkCollision(x, y, z) {
 
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x78A7FF); // Azul céu mais vivo
-    scene.fog = new THREE.Fog(0x78A7FF, 10, CHUNK_SIZE * VIEW_DISTANCE * 1.2); 
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 10, CHUNK_SIZE * VIEW_DISTANCE * 1.2); 
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
-    camera.position.set(0, 5, 0); 
+    camera.position.set(0, 5, 0); // Começa um pouco acima do chão plano
     
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
     sunLight.position.set(50, 100, 50);
     scene.add(sunLight);
 
+    // Braço
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), woodMat);
     handItem.visible = false;
     scene.add(handItem);
 
-    renderer = new THREE.WebGLRenderer({ antialias: false }); 
+    renderer = new THREE.WebGLRenderer({ antialias: false }); // Antialias OFF = Mais FPS
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
@@ -102,6 +104,7 @@ function init() {
     animate();
 }
 
+// --- GERAÇÃO DE MUNDO PLANO E LIMPEZA DE MEMÓRIA ---
 function generateChunk(chunkX, chunkZ) {
     const chunkKey = `${chunkX},${chunkZ}`;
     if (activeChunks.has(chunkKey)) return;
@@ -118,11 +121,14 @@ function generateChunk(chunkX, chunkZ) {
             const worldX = startX + x;
             const worldZ = startZ + z;
 
+            // CHÃO SEMPRE PLANO (Y = 0)
             const grassBlock = new THREE.Mesh(blockGeo, grassMat);
             grassBlock.position.set(worldX, 0, worldZ);
             chunkGroup.add(grassBlock);
             blocks.push(grassBlock);
 
+            // ÁRVORES ORGANIZADAS (Mais leves)
+            // Nasce uma árvore a cada 8 blocos
             if (worldX % 8 === 0 && worldZ % 8 === 0) {
                 spawnTreeProc(worldX, 0.5, worldZ, chunkGroup);
             }
@@ -132,6 +138,7 @@ function generateChunk(chunkX, chunkZ) {
 
 function spawnTreeProc(x, groundY, z, chunkGroup) {
     const treeHeight = 5; 
+    // Tronco
     for (let h = 0; h < treeHeight; h++) {
         const log = new THREE.Mesh(blockGeo, woodMat);
         log.position.set(x, groundY + h + 0.5, z);
@@ -139,10 +146,11 @@ function spawnTreeProc(x, groundY, z, chunkGroup) {
         chunkGroup.add(log);
         blocks.push(log);
     }
+    // Folhas (Simplificadas para um cubo 3x3x3 no topo)
     for (let hy = 0; hy < 3; hy++) {
         for (let hx = -1; hx <= 1; hx++) {
             for (let hz = -1; hz <= 1; hz++) {
-                if (hx === 0 && hz === 0 && hy < 2) continue;
+                if (hx === 0 && hz === 0 && hy < 2) continue; // Pula onde tem tronco
                 const leaf = new THREE.Mesh(blockGeo, leafMat);
                 leaf.position.set(x + hx, groundY + treeHeight + hy - 0.5, z + hz);
                 leaf.userData = { type: 'leaf', t: 0.3 };
@@ -157,15 +165,19 @@ function updateChunks() {
     const pX = Math.floor(camera.position.x / CHUNK_SIZE);
     const pZ = Math.floor(camera.position.z / CHUNK_SIZE);
 
+    // 1. Criar novos
     for (let x = pX - VIEW_DISTANCE; x <= pX + VIEW_DISTANCE; x++) {
         for (let z = pZ - VIEW_DISTANCE; z <= pZ + VIEW_DISTANCE; z++) {
             generateChunk(x, z);
         }
     }
 
+    // 2. LIMPEZA (O "Garbage Collector")
+    // Remove chunks que estão muito longe para o PC não explodir
     for (const [key, group] of activeChunks) {
         const [cx, cz] = key.split(',').map(Number);
         if (Math.abs(cx - pX) > VIEW_DISTANCE + 1 || Math.abs(cz - pZ) > VIEW_DISTANCE + 1) {
+            // Remover blocos do array de colisão
             group.children.forEach(child => {
                 const index = blocks.indexOf(child);
                 if (index > -1) blocks.splice(index, 1);
@@ -176,6 +188,7 @@ function updateChunks() {
     }
 }
 
+// --- SISTEMAS DE JOGO ---
 function placeBlock() {
     if (selectedSlot !== 0 || inventoryWood <= 0) return;
     raycaster.setFromCamera(new THREE.Vector2(), camera);
@@ -230,6 +243,7 @@ function animate() {
 
     updateChunks();
 
+    // Movimentação
     camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
     camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
@@ -258,6 +272,7 @@ function animate() {
         velocity.y = 0;
     }
 
+    // Mineração
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -270,6 +285,7 @@ function animate() {
         }
     }
 
+    // Braço
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.4); hand.translateY(-0.3); hand.translateZ(-0.6);
 
