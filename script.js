@@ -9,32 +9,36 @@ let inventoryWood = 0, selectedSlot = 0;
 let isMining = false, miningTime = 0, currentTarget = null;
 let worldTime = 0; 
 
-// --- CONFIGURAÇÃO DO MUNDO INFINITO (OPTIMIZADO) ---
+// --- CONFIGURAÇÃO DO MUNDO INFINITO ---
 const CHUNK_SIZE = 16;       
-const VIEW_DISTANCE = 4;    // Agora podemos ver mais longe porque está leve
+const VIEW_DISTANCE = 4;    
 let activeChunks = new Map(); 
 
-// --- TEXTURAS (MODIFICADO PARA GRAMA MINECRAFT) ---
+// --- TEXTURAS ---
 const loader = new THREE.TextureLoader();
-const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
 
-// Usando o atlas oficial do Three.js que tem a grama pixelada do Minecraft
-const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png'); 
+// Textura de Grama (Minecraft Atlas)
+const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png', (tex) => {
+    tex.magFilter = THREE.NearestFilter;
+    tex.minFilter = THREE.NearestFilter;
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    // Ajuste para o quadrado da grama
+    tex.repeat.set(0.0625, 0.0625);
+    tex.offset.set(0, 0.9375);
+});
+
+const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
 const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-[woodTex, grassTex, leafTex].forEach(t => {
-    t.magFilter = THREE.NearestFilter; // Isso tira o borrado e deixa pixelado
+[woodTex, leafTex].forEach(t => {
+    t.magFilter = THREE.NearestFilter;
     t.minFilter = THREE.NearestFilter;
 });
 
-// Ajuste preciso para a textura de grama pegar o quadrado verde do atlas
-grassTex.repeat.set(0.0625, 0.0625);
-grassTex.offset.set(0, 0.9375); // Posição exata do bloco de grama no atlas.png
-
-// --- MATERIAIS ÚNICOS (Reutilizar economiza MUITA memória) ---
-const grassMat = new THREE.MeshLambertMaterial({map: grassTex}); 
-const woodMat = new THREE.MeshLambertMaterial({map: woodTex, color: 0x663300});
-const leafMat = new THREE.MeshLambertMaterial({color: 0x228822, map: leafTex, transparent: true, opacity: 0.9});
+// --- MATERIAIS ---
+const grassMat = new THREE.MeshLambertMaterial({ map: grassTex, color: 0x7cfc00 }); // Cor de backup verde clara
+const woodMat = new THREE.MeshLambertMaterial({ map: woodTex, color: 0x663300 });
+const leafMat = new THREE.MeshLambertMaterial({ color: 0x228822, map: leafTex, transparent: true, opacity: 0.9 });
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
 function startGame() {
@@ -47,10 +51,9 @@ function startGame() {
 function checkCollision(x, y, z) {
     const r = 0.3; 
     const h = 1.6;
-    // Otimização: Só checar colisão com blocos muito próximos
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i].position;
-        if (Math.abs(x - b.x) < 1.5 && Math.abs(z - b.z) < 1.5) {
+        if (Math.abs(x - b.x) < 1.2 && Math.abs(z - b.z) < 1.2) {
             if (x + r > b.x - 0.5 && x - r < b.x + 0.5 &&
                 y + 0.2 > b.y - 0.5 && y - h < b.y + 0.5 &&
                 z + r > b.z - 0.5 && z - r < b.z + 0.5) {
@@ -65,25 +68,24 @@ function checkCollision(x, y, z) {
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
-    scene.fog = new THREE.Fog(0x87CEEB, 10, CHUNK_SIZE * VIEW_DISTANCE * 1.2); 
+    scene.fog = new THREE.Fog(0x87CEEB, 15, CHUNK_SIZE * VIEW_DISTANCE * 1.1); 
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.rotation.order = 'YXZ';
     camera.position.set(0, 5, 0); 
     
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    sunLight = new THREE.DirectionalLight(0xffffff, 0.7);
     sunLight.position.set(50, 100, 50);
     scene.add(sunLight);
 
-    // Braço do Personagem
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
     handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), woodMat);
     handItem.visible = false;
     scene.add(handItem);
 
-    renderer = new THREE.WebGLRenderer({ antialias: false }); // Desativar antialias aumenta o FPS
+    renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
@@ -104,7 +106,6 @@ function init() {
     animate();
 }
 
-// --- GERAÇÃO DE MUNDO INFINITO PLANO ---
 function generateChunk(chunkX, chunkZ) {
     const chunkKey = `${chunkX},${chunkZ}`;
     if (activeChunks.has(chunkKey)) return;
@@ -121,14 +122,14 @@ function generateChunk(chunkX, chunkZ) {
             const worldX = startX + x;
             const worldZ = startZ + z;
 
-            // CHÃO COM TEXTURA DE GRAMA PIXELADA
+            // CHÃO PLANO COM TEXTURA
             const grassBlock = new THREE.Mesh(blockGeo, grassMat);
             grassBlock.position.set(worldX, 0, worldZ);
             chunkGroup.add(grassBlock);
             blocks.push(grassBlock);
 
-            // MENOS ÁRVORES (Espaçadas a cada 16 blocos para evitar lag)
-            if (worldX % 16 === 0 && worldZ % 16 === 0) {
+            // ÁRVORES (Intervalo de 10 para ficar cheio mas leve)
+            if (worldX % 10 === 0 && worldZ % 10 === 0) {
                 spawnTreeProc(worldX, 0.5, worldZ, chunkGroup);
             }
         }
@@ -137,7 +138,6 @@ function generateChunk(chunkX, chunkZ) {
 
 function spawnTreeProc(x, groundY, z, chunkGroup) {
     const treeHeight = 5; 
-    // Tronco de Madeira
     for (let h = 0; h < treeHeight; h++) {
         const log = new THREE.Mesh(blockGeo, woodMat);
         log.position.set(x, groundY + h + 0.5, z);
@@ -145,7 +145,6 @@ function spawnTreeProc(x, groundY, z, chunkGroup) {
         chunkGroup.add(log);
         blocks.push(log);
     }
-    // Folhagem simplificada 3x3x3
     for (let hy = 0; hy < 3; hy++) {
         for (let hx = -1; hx <= 1; hx++) {
             for (let hz = -1; hz <= 1; hz++) {
@@ -164,14 +163,12 @@ function updateChunks() {
     const pX = Math.floor(camera.position.x / CHUNK_SIZE);
     const pZ = Math.floor(camera.position.z / CHUNK_SIZE);
 
-    // Criar novos chunks conforme o jogador anda
     for (let x = pX - VIEW_DISTANCE; x <= pX + VIEW_DISTANCE; x++) {
         for (let z = pZ - VIEW_DISTANCE; z <= pZ + VIEW_DISTANCE; z++) {
             generateChunk(x, z);
         }
     }
 
-    // Limpeza de memória (Remove chunks distantes)
     for (const [key, group] of activeChunks) {
         const [cx, cz] = key.split(',').map(Number);
         if (Math.abs(cx - pX) > VIEW_DISTANCE + 1 || Math.abs(cz - pZ) > VIEW_DISTANCE + 1) {
@@ -185,7 +182,6 @@ function updateChunks() {
     }
 }
 
-// --- SISTEMAS DE INTERAÇÃO ---
 function placeBlock() {
     if (selectedSlot !== 0 || inventoryWood <= 0) return;
     raycaster.setFromCamera(new THREE.Vector2(), camera);
@@ -196,8 +192,7 @@ function placeBlock() {
         const b = new THREE.Mesh(blockGeo, woodMat);
         b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
         b.userData = { type: 'wood', t: 1.0 };
-        scene.add(b); 
-        blocks.push(b); 
+        scene.add(b); blocks.push(b); 
         inventoryWood--;
         document.getElementById('inv-wood').innerText = inventoryWood;
     }
@@ -240,7 +235,6 @@ function animate() {
 
     updateChunks();
 
-    // Suavização da Rotação
     camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
     camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
 
@@ -269,7 +263,6 @@ function animate() {
         velocity.y = 0;
     }
 
-    // Mineração
     if (isMining && currentTarget) {
         miningTime += delta;
         document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
@@ -282,7 +275,6 @@ function animate() {
         }
     }
 
-    // Braço
     hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
     hand.translateX(0.4); hand.translateY(-0.3); hand.translateZ(-0.6);
 
