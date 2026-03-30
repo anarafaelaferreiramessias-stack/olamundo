@@ -17,36 +17,30 @@ let activeChunks = new Map();
 // --- TEXTURAS ---
 const loader = new THREE.TextureLoader();
 
-// Função auxiliar para pegar um quadrado específico do Atlas
-function getAtlasMat(x, y) {
-    const tex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png');
+// Textura de Grama (Minecraft Atlas)
+const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png', (tex) => {
     tex.magFilter = THREE.NearestFilter;
     tex.minFilter = THREE.NearestFilter;
-    tex.repeat.set(0.0625, 0.0625); // 1/16 do atlas
-    tex.offset.set(x * 0.0625, y * 0.0625);
-    return new THREE.MeshLambertMaterial({ map: tex });
-}
-
-// --- MATERIAIS DE BLOCO (ESTILO MINECRAFT) ---
-const grassTop = getAtlasMat(0, 15);    // Parte verde
-const grassSide = getAtlasMat(3, 15);   // Lado (terra + grama)
-const dirtMat = getAtlasMat(2, 15);     // Parte de baixo (só terra)
-
-// Array de 6 materiais para as 6 faces do cubo [X+, X-, Y+, Y-, Z+, Z-]
-const grassBlockMaterials = [
-    grassSide, grassSide, // Lados
-    grassTop,  dirtMat,   // Cima e Baixo
-    grassSide, grassSide  // Frente e Trás
-];
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    // Ajuste para o quadrado da grama
+    tex.repeat.set(0.0625, 0.0625);
+    tex.offset.set(0, 0.9375);
+});
 
 const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
-woodTex.magFilter = THREE.NearestFilter;
-const woodMat = new THREE.MeshLambertMaterial({ map: woodTex });
+const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
 
-const leafMat = new THREE.MeshLambertMaterial({ color: 0x228822, transparent: true, opacity: 0.9 });
+[woodTex, leafTex].forEach(t => {
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
+});
+
+// --- MATERIAIS ---
+const grassMat = new THREE.MeshLambertMaterial({ map: grassTex, color: 0x7cfc00 }); // Cor de backup verde clara
+const woodMat = new THREE.MeshLambertMaterial({ map: woodTex, color: 0x663300 });
+const leafMat = new THREE.MeshLambertMaterial({ color: 0x228822, map: leafTex, transparent: true, opacity: 0.9 });
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
-// --- FUNÇÕES DE JOGO ---
 function startGame() {
     document.getElementById('ui-overlay').style.display = 'none';
     document.getElementById('hotbar').style.display = 'flex';
@@ -67,7 +61,8 @@ function checkCollision(x, y, z) {
             }
         }
     }
-    return y < 0.5; 
+    if (y < 0.5) return true; 
+    return false;
 }
 
 function init() {
@@ -86,6 +81,9 @@ function init() {
 
     hand = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.6), new THREE.MeshLambertMaterial({color: 0xdbac82}));
     scene.add(hand);
+    handItem = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), woodMat);
+    handItem.visible = false;
+    scene.add(handItem);
 
     renderer = new THREE.WebGLRenderer({ antialias: false });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -124,12 +122,13 @@ function generateChunk(chunkX, chunkZ) {
             const worldX = startX + x;
             const worldZ = startZ + z;
 
-            // --- AQUI MUDOU: O chão agora usa o array de materiais ---
-            const grassBlock = new THREE.Mesh(blockGeo, grassBlockMaterials);
+            // CHÃO PLANO COM TEXTURA
+            const grassBlock = new THREE.Mesh(blockGeo, grassMat);
             grassBlock.position.set(worldX, 0, worldZ);
             chunkGroup.add(grassBlock);
             blocks.push(grassBlock);
 
+            // ÁRVORES (Intervalo de 10 para ficar cheio mas leve)
             if (worldX % 10 === 0 && worldZ % 10 === 0) {
                 spawnTreeProc(worldX, 0.5, worldZ, chunkGroup);
             }
@@ -152,4 +151,133 @@ function spawnTreeProc(x, groundY, z, chunkGroup) {
                 if (hx === 0 && hz === 0 && hy < 2) continue; 
                 const leaf = new THREE.Mesh(blockGeo, leafMat);
                 leaf.position.set(x + hx, groundY + treeHeight + hy - 0.5, z + hz);
-                leaf.userData = {
+                leaf.userData = { type: 'leaf', t: 0.3 };
+                chunkGroup.add(leaf);
+                blocks.push(leaf);
+            }
+        }
+    }
+}
+
+function updateChunks() {
+    const pX = Math.floor(camera.position.x / CHUNK_SIZE);
+    const pZ = Math.floor(camera.position.z / CHUNK_SIZE);
+
+    for (let x = pX - VIEW_DISTANCE; x <= pX + VIEW_DISTANCE; x++) {
+        for (let z = pZ - VIEW_DISTANCE; z <= pZ + VIEW_DISTANCE; z++) {
+            generateChunk(x, z);
+        }
+    }
+
+    for (const [key, group] of activeChunks) {
+        const [cx, cz] = key.split(',').map(Number);
+        if (Math.abs(cx - pX) > VIEW_DISTANCE + 1 || Math.abs(cz - pZ) > VIEW_DISTANCE + 1) {
+            group.children.forEach(child => {
+                const index = blocks.indexOf(child);
+                if (index > -1) blocks.splice(index, 1);
+            });
+            scene.remove(group);
+            activeChunks.delete(key);
+        }
+    }
+}
+
+function placeBlock() {
+    if (selectedSlot !== 0 || inventoryWood <= 0) return;
+    raycaster.setFromCamera(new THREE.Vector2(), camera);
+    const hits = raycaster.intersectObjects(blocks);
+    if (hits.length > 0 && hits[0].distance < 5) {
+        const hit = hits[0];
+        const pos = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.5));
+        const b = new THREE.Mesh(blockGeo, woodMat);
+        b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
+        b.userData = { type: 'wood', t: 1.0 };
+        scene.add(b); blocks.push(b); 
+        inventoryWood--;
+        document.getElementById('inv-wood').innerText = inventoryWood;
+    }
+}
+
+function startMining() {
+    raycaster.setFromCamera(new THREE.Vector2(), camera);
+    const hits = raycaster.intersectObjects(blocks);
+    if (hits.length > 0 && hits[0].distance < 4) {
+        isMining = true; currentTarget = hits[0].object; miningTime = 0;
+        document.getElementById('mining-progress').style.display = 'block';
+    }
+}
+
+function stopMining() { isMining = false; document.getElementById('mining-progress').style.display = 'none'; }
+
+function handleKeyDown(e) {
+    if(e.code === 'KeyW') moveF = true; if(e.code === 'KeyS') moveB = true;
+    if(e.code === 'KeyA') moveL = true; if(e.code === 'KeyD') moveR = true;
+    if(e.code === 'Space' && canJump) { velocity.y = 8; canJump = false; }
+}
+
+function handleKeyUp(e) {
+    if(e.code === 'KeyW') moveF = false; if(e.code === 'KeyS') moveB = false;
+    if(e.code === 'KeyA') moveL = false; if(e.code === 'KeyD') moveR = false;
+}
+
+function handleMouseMove(e) {
+    if (document.pointerLockElement === renderer.domElement) {
+        targetRotation.y -= e.movementX * 0.002;
+        targetRotation.x -= e.movementY * 0.002;
+        targetRotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotation.x));
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    const time = performance.now();
+    const delta = Math.min((time - prevTime) / 1000, 0.1);
+
+    updateChunks();
+
+    camera.rotation.x += (targetRotation.x - camera.rotation.x) * 0.2;
+    camera.rotation.y += (targetRotation.y - camera.rotation.y) * 0.2;
+
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 22.0 * delta; 
+
+    direction.z = Number(moveF) - Number(moveB);
+    direction.x = Number(moveR) - Number(moveL);
+    direction.normalize();
+
+    if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta;
+    if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
+
+    const sinY = Math.sin(camera.rotation.y), cosY = Math.cos(camera.rotation.y);
+    const mX = (velocity.z * sinY - velocity.x * cosY) * delta;
+    const mZ = (velocity.z * cosY + velocity.x * sinY) * delta;
+
+    if (!checkCollision(camera.position.x + mX, camera.position.y, camera.position.z)) camera.position.x += mX;
+    if (!checkCollision(camera.position.x, camera.position.y, camera.position.z + mZ)) camera.position.z += mZ;
+
+    camera.position.y += velocity.y * delta;
+    if (checkCollision(camera.position.x, camera.position.y, camera.position.z)) {
+        camera.position.y -= velocity.y * delta;
+        if (velocity.y < 0) canJump = true;
+        velocity.y = 0;
+    }
+
+    if (isMining && currentTarget) {
+        miningTime += delta;
+        document.getElementById('mining-bar').style.width = (miningTime/currentTarget.userData.t)*100 + '%';
+        if (miningTime >= currentTarget.userData.t) {
+            inventoryWood++;
+            document.getElementById('inv-wood').innerText = inventoryWood;
+            currentTarget.parent.remove(currentTarget); 
+            blocks = blocks.filter(b => b !== currentTarget);
+            stopMining();
+        }
+    }
+
+    hand.position.copy(camera.position); hand.quaternion.copy(camera.quaternion);
+    hand.translateX(0.4); hand.translateY(-0.3); hand.translateZ(-0.6);
+
+    prevTime = time;
+    renderer.render(scene, camera);
+}
