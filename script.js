@@ -14,31 +14,30 @@ const CHUNK_SIZE = 16;
 const VIEW_DISTANCE = 4;    
 let activeChunks = new Map(); 
 
-// --- TEXTURAS ---
+// --- TEXTURAS (AJUSTADAS PARA PIXEL ART) ---
 const loader = new THREE.TextureLoader();
 
-// Textura de Grama (Minecraft Atlas)
+// Função para aplicar o filtro de pixel (NearestFilter)
+function applyPixelSettings(tex) {
+    tex.magFilter = THREE.NearestFilter; // Remove o embaçado ao chegar perto
+    tex.minFilter = THREE.NearestFilter; // Remove o embaçado ao longe
+    return tex;
+}
+
+// Textura de Grama (Pegando o topo verde do atlas)
 const grassTex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png', (tex) => {
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    // Ajuste para o quadrado da grama
+    applyPixelSettings(tex);
     tex.repeat.set(0.0625, 0.0625);
     tex.offset.set(0, 0.9375);
 });
 
-const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif'); 
-const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-
-[woodTex, leafTex].forEach(t => {
-    t.magFilter = THREE.NearestFilter;
-    t.minFilter = THREE.NearestFilter;
-});
+const woodTex = loader.load('https://threejs.org/examples/textures/crate.gif', applyPixelSettings); 
+const leafTex = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg', applyPixelSettings);
 
 // --- MATERIAIS ---
-const grassMat = new THREE.MeshLambertMaterial({ map: grassTex, color: 0x7cfc00 }); // Cor de backup verde clara
-const woodMat = new THREE.MeshLambertMaterial({ map: woodTex, color: 0x663300 });
-const leafMat = new THREE.MeshLambertMaterial({ color: 0x228822, map: leafTex, transparent: true, opacity: 0.9 });
+const grassMat = new THREE.MeshLambertMaterial({ map: grassTex });
+const woodMat = new THREE.MeshLambertMaterial({ map: woodTex });
+const leafMat = new THREE.MeshLambertMaterial({ map: leafTex, color: 0x228822, transparent: true, opacity: 0.9 });
 const blockGeo = new THREE.BoxGeometry(1, 1, 1);
 
 function startGame() {
@@ -74,8 +73,8 @@ function init() {
     camera.rotation.order = 'YXZ';
     camera.position.set(0, 5, 0); 
     
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-    sunLight = new THREE.DirectionalLight(0xffffff, 0.7);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8)); // Aumentado para cores mais vibrantes
+    sunLight = new THREE.DirectionalLight(0xffffff, 0.6);
     sunLight.position.set(50, 100, 50);
     scene.add(sunLight);
 
@@ -85,7 +84,9 @@ function init() {
     handItem.visible = false;
     scene.add(handItem);
 
+    // Renderer configurado sem antialias para manter as bordas dos blocos vivas
     renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setPixelRatio(window.devicePixelRatio); // Garante que não haja borrão em telas Retina
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
     raycaster = new THREE.Raycaster();
@@ -122,13 +123,11 @@ function generateChunk(chunkX, chunkZ) {
             const worldX = startX + x;
             const worldZ = startZ + z;
 
-            // CHÃO PLANO COM TEXTURA
             const grassBlock = new THREE.Mesh(blockGeo, grassMat);
             grassBlock.position.set(worldX, 0, worldZ);
             chunkGroup.add(grassBlock);
             blocks.push(grassBlock);
 
-            // ÁRVORES (Intervalo de 10 para ficar cheio mas leve)
             if (worldX % 10 === 0 && worldZ % 10 === 0) {
                 spawnTreeProc(worldX, 0.5, worldZ, chunkGroup);
             }
