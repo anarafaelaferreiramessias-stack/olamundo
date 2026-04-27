@@ -1,133 +1,156 @@
-/* LOGICA DO JOGO - MINECRAFT 3D (JavaScript)
-   Instruções: 
-   - W, A, S, D para andar
-   - SHIFT para correr
-   - ESPAÇO para pular
-   - CLIQUE na tela para travar o mouse e olhar ao redor
+/* 
+   Lógica do Jogo: Mundo de Blocos 3D
+   - Sistema de Quebrar e Colocar blocos
+   - Física de Gravidade e Colisão simples
 */
 
-let scene, camera, renderer, moveForward, moveBackward, moveLeft, moveRight, canJump;
-let velocity = new THREE.Vector3();
-let direction = new THREE.Vector3();
-let trees = [];
+let cena, camera, renderizador, controles;
+let moverFrente = false, moverTras = false, moverEsquerda = false, moverDireita = false;
+let podePular = false, correndo = false;
+let velocidade = new THREE.Vector3();
+let direcao = new THREE.Vector3();
+let blocos = []; // Lista para colisão e interação
 
-function iniciarJogo() {
-    // Esconde o menu
-    document.getElementById('tela-inicial').style.display = 'none';
+function comecar() {
+    document.getElementById('tela-inicial').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('tela-inicial').style.display = 'none';
+        document.getElementById('instrucoes').style.display = 'block';
+    }, 800);
 
-    // 1. Configuração Básica da Cena
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Céu
-    scene.fog = new THREE.Fog(0x87CEEB, 0, 50); // Neblina para parecer infinito
+    inicializar3D();
+}
+
+function inicializar3D() {
+    // 1. Cena e Camera
+    cena = new THREE.Scene();
+    cena.background = new THREE.Color(0x87CEEB); // Cor do céu
+    cena.fog = new THREE.Fog(0x87CEEB, 0, 100);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    // 2. Renderizador
+    renderizador = new THREE.WebGLRenderer({ antialias: true });
+    renderizador.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderizador.domElement);
 
-    // 2. Iluminação
-    const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 1);
-    scene.add(light);
+    // 3. Luzes
+    const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.6);
+    cena.add(luzAmbiente);
+    const luzSol = new THREE.DirectionalLight(0xffffff, 0.8);
+    luzSol.position.set(10, 20, 10);
+    cena.add(luzSol);
 
-    // 3. O Chão (Grama)
-    const floorGeo = new THREE.PlaneGeometry(200, 200);
-    const floorMat = new THREE.MeshLambertMaterial({ color: 0x44aa44 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    scene.add(floor);
-
-    // 4. Criando Árvores (Troncos e Folhas)
-    for (let i = 0; i < 20; i++) {
-        criarArvore(
-            Math.random() * 80 - 40, 
-            Math.random() * 80 - 40
-        );
+    // 4. Criar o Chão (Mundo de blocos inicial)
+    const tamanho = 20;
+    for (let x = -tamanho/2; x < tamanho/2; x++) {
+        for (let z = -tamanho/2; z < tamanho/2; z++) {
+            criarBloco(x, 0, z, 'grama');
+        }
     }
 
-    // 5. Controles de Teclado
-    document.addEventListener('keydown', (e) => toggleKey(e.code, true));
-    document.addEventListener('keyup', (e) => toggleKey(e.code, false));
-
-    // 6. Controle de Mouse (Olhar)
-    document.addEventListener('click', () => {
+    // 5. Eventos de Controles
+    document.addEventListener('keydown', (e) => tratarTeclado(e.code, true));
+    document.addEventListener('keyup', (e) => tratarTeclado(e.code, false));
+    
+    // Travar mouse ao clicar
+    document.body.addEventListener('click', () => {
         document.body.requestPointerLock();
     });
 
     document.addEventListener('mousemove', (e) => {
         if (document.pointerLockElement === document.body) {
             camera.rotation.y -= e.movementX * 0.002;
-            // Limitar olhar para cima e baixo
-            let newRotationX = camera.rotation.x - e.movementY * 0.002;
-            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, newRotationX));
+            camera.rotation.x -= e.movementY * 0.002;
+            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
         }
     });
 
-    animate();
+    // Clique para quebrar/colocar
+    document.addEventListener('mousedown', interagirComBlocos);
+
+    camera.position.y = 2; // Altura inicial do personagem
+    camera.rotation.order = "YXZ"; // Ordem de rotação correta para FPS
+
+    animar();
 }
 
-function criarArvore(x, z) {
-    const trunk = new THREE.Mesh(
-        new THREE.BoxGeometry(0.8, 3, 0.8),
-        new THREE.MeshLambertMaterial({ color: 0x5d4037 })
-    );
-    trunk.position.set(x, 1.5, z);
-    
-    const leaves = new THREE.Mesh(
-        new THREE.BoxGeometry(3, 3, 3),
-        new THREE.MeshLambertMaterial({ color: 0x228822 })
-    );
-    leaves.position.set(x, 4, z);
-    
-    scene.add(trunk);
-    scene.add(leaves);
+function criarBloco(x, y, z, tipo) {
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    let cor = tipo === 'grama' ? 0x55aa55 : 0x8b4513;
+    const mat = new THREE.MeshLambertMaterial({ color: cor });
+    const bloco = new THREE.Mesh(geo, mat);
+    bloco.position.set(x, y, z);
+    cena.add(bloco);
+    blocos.push(bloco);
 }
 
-function toggleKey(code, isPressed) {
-    if (code === 'KeyW') moveForward = isPressed;
-    if (code === 'KeyS') moveBackward = isPressed;
-    if (code === 'KeyA') moveLeft = isPressed;
-    if (code === 'KeyD') moveRight = isPressed;
-    if (code === 'Space' && isPressed && canJump) {
-        velocity.y += 10;
-        canJump = false;
+function interagirComBlocos(e) {
+    if (document.pointerLockElement !== document.body) return;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const intersects = raycaster.intersectObjects(blocos);
+
+    if (intersects.length > 0 && intersects[0].distance < 5) {
+        const obj = intersects[0].object;
+
+        if (e.button === 0) { // Clique Esquerdo: Quebrar
+            cena.remove(obj);
+            blocos = blocos.filter(b => b !== obj);
+        } else if (e.button === 2) { // Clique Direito: Colocar
+            const normal = intersects[0].face.normal;
+            const pos = obj.position.clone().add(normal);
+            criarBloco(pos.x, pos.y, pos.z, 'terra');
+        }
     }
 }
 
-function animate() {
-    requestAnimationFrame(animate);
+function tratarTeclado(code, status) {
+    if (code === 'KeyW') moverFrente = status;
+    if (code === 'KeyS') moverTras = status;
+    if (code === 'KeyA') moverEsquerda = status;
+    if (code === 'KeyD') moverDireita = status;
+    if (code === 'Space' && status && podePular) {
+        velocidade.y += 10;
+        podePular = false;
+    }
+    if (code === 'ShiftLeft') correndo = status;
+}
 
-    const delta = 0.1; // Velocidade do tempo
-    const sprint = (keys['ShiftLeft'] || keys['ShiftRight']) ? 1.5 : 1.0;
+function animar() {
+    requestAnimationFrame(animar);
+
+    const delta = 0.15;
+    const multVel = correndo ? 1.5 : 1.0;
 
     // Física de Movimento
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 2.0 * delta; // Gravidade
+    velocity_logic: {
+        velocidade.x -= velocidade.x * 10.0 * delta;
+        velocidade.z -= velocidade.z * 10.0 * delta;
+        velocidade.y -= 9.8 * 3.0 * delta; // Gravidade
 
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize();
+        direcao.z = Number(moverFrente) - Number(moverTras);
+        direcao.x = Number(moverDireita) - Number(moverEsquerda);
+        direcao.normalize();
 
-    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta * sprint;
-    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta * sprint;
+        if (moverFrente || moverTras) velocidade.z -= direcao.z * 400.0 * delta * multVel;
+        if (moverEsquerda || moverDireita) velocidade.x -= direcao.x * 400.0 * delta * multVel;
 
-    // Aplicar Velocidade à Câmera
-    camera.translateX(-velocity.x * delta);
-    camera.translateZ(velocity.z * delta);
-    camera.position.y += (velocity.y * delta);
+        camera.translateX(-velocidade.x * delta / 100);
+        camera.translateZ(velocidade.z * delta / 100);
+        camera.position.y += (velocidade.y * delta / 60);
 
-    // Chão Físico
-    if (camera.position.y < 1.6) {
-        velocity.y = 0;
-        camera.position.y = 1.6;
-        canJump = true;
+        // Chão Simples (Prevenir cair no infinito)
+        if (camera.position.y < 1.8) {
+            velocidade.y = 0;
+            camera.position.y = 1.8;
+            podePular = true;
+        }
     }
 
-    renderer.render(scene, camera);
+    renderizador.render(cena, camera);
 }
 
-// Objeto auxiliar para capturar Shift
-const keys = {};
-document.addEventListener('keydown', e => keys[e.code] = true);
-document.addEventListener('keyup', e => keys[e.code] = false);
+// Bloquear menu de contexto do clique direito
+document.addEventListener('contextmenu', e => e.preventDefault());

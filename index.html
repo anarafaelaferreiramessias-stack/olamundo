@@ -2,53 +2,116 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Clone 2D</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft 3D Clone</title>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #000; }
-        
-        /* Menu */
-        #menu {
-            position: absolute; width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://minecraft.net/static/theme/img/background/panorama_0.jpg');
-            background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
-        }
-        .btn { width: 300px; padding: 15px; margin: 5px; background: #4a4a4a; border: 3px solid #000; color: #fff; cursor: pointer; font-size: 18px; }
-        .btn:hover { background: #5a8a4a; border-color: #fff; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
-        /* Jogo */
-        #mundo { display: none; width: 100vw; height: 100vh; background: #87CEEB; position: relative; }
-        #chao { position: absolute; bottom: 0; width: 100%; height: 100px; background: #567d46; border-top: 5px solid #3d5e30; }
-        
-        #steve { 
-            width: 40px; height: 60px; background: #2ecc71; position: absolute; 
-            bottom: 100px; left: 50px; transition: background 0.2s; 
+        /* Fundo da Tela Inicial */
+        #tela-inicial {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), 
+                        url('https://wallpaperaccess.com/full/1152723.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: opacity 0.8s ease;
         }
 
-        .arvore {
-            position: absolute; bottom: 100px; width: 40px; height: 120px;
-            background: #5d4037; cursor: crosshair;
+        .logo {
+            font-size: 100px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 8px 8px #373737;
+            margin-bottom: 50px;
+            letter-spacing: 5px;
+            transform: scale(1);
+            animation: balanco 2s infinite ease-in-out;
         }
-        .folhas {
-            position: absolute; top: -60px; left: -30px; width: 100px; height: 80px;
-            background: #2e7d32; border-radius: 5px;
+
+        @keyframes balanco {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .container-botoes {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-minecraft {
+            width: 400px;
+            padding: 15px;
+            background: #4e4e4e;
+            border: 4px solid #000;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            text-shadow: 2px 2px #222;
+            box-shadow: inset -4px -4px #222, inset 4px 4px #aaa;
+            transition: 0.2s;
+        }
+
+        .btn-minecraft:hover {
+            background: #5fa03d;
+            border-color: white;
+        }
+
+        /* Interface do Jogo */
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            color: white;
+            font-size: 24px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #instrucoes {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <div id="menu">
-        <h1 style="color: white; font-size: 60px; text-shadow: 3px 3px #000;">MINECRAFT</h1>
-        <button class="btn" onclick="iniciar()">JOGAR</button>
-    </div>
-
-    <div id="mundo">
-        <div id="chao"></div>
-        <div id="arvore1" class="arvore" onclick="quebrar(this)">
-            <div class="folhas"></div>
+    <div id="tela-inicial">
+        <div class="logo">BLOCKS 3D</div>
+        <div class="container-botoes">
+            <button class="btn-minecraft" onclick="comecar()">JOGAR NOVO MUNDO</button>
+            <button class="btn-minecraft">OPÇÕES</button>
+            <button class="btn-minecraft">SAIR</button>
         </div>
-        <div id="steve"></div>
     </div>
 
+    <div id="crosshair">+</div>
+
+    <div id="instrucoes">
+        <b>W, A, S, D</b> - Andar | <b>SHIFT</b> - Correr | <b>ESPAÇO</b> - Pular<br>
+        <b>Clique Esquerdo</b> - Quebrar Bloco | <b>Clique Direito</b> - Colocar Bloco<br>
+        <b>Esc</b> - Soltar Mouse
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="logicajogo.js"></script>
 </body>
 </html>
