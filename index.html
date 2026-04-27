@@ -1,147 +1,87 @@
-[<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blocks 3D - Edição Premium</title>
+    <title>Blocks 3D - Ultimate Edition</title>
     <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-        }
-
-        /* TELA INICIAL COM FUNDO MELHORADO */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        
         #tela-inicial {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            /* Substituímos por uma imagem de paisagem épica do Minecraft */
-            background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)), 
-                        url('https://images.alphacoders.com/133/1331001.png');
+            width: 100%; height: 100%;
+            /* Fundo com imagem épica e degradê suave */
+            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%), 
+                        url('https://minecraft.net/static/theme/img/background/panorama_0.jpg');
             background-size: cover;
             background-position: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            transition: opacity 0.8s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; transition: 1s ease-in-out;
         }
 
-        /* LOGO ESTILIZADA */
         .logo {
-            font-size: clamp(50px, 10vw, 120px);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: clamp(40px, 8vw, 100px);
             color: #fff;
-            font-weight: 900;
-            text-shadow: 10px 10px 0px #373737;
-            margin-bottom: 40px;
-            letter-spacing: 4px;
+            text-shadow: 5px 5px 0px #373737, 10px 10px 20px rgba(0,0,0,0.5);
+            margin-bottom: 50px;
             animation: flutuar 3s infinite ease-in-out;
         }
 
         @keyframes flutuar {
-            0%, 100% { transform: translateY(0) rotate(-2deg); }
-            50% { transform: translateY(-20px) rotate(2deg); }
+            0%, 100% { transform: scale(1) rotate(-1deg); }
+            50% { transform: scale(1.05) rotate(1deg); }
         }
 
-        .container-botoes {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        /* BOTÕES ESTILO MINECRAFT MODERNIZADOS */
         .btn-minecraft {
-            padding: 18px;
-            background: #4e4e4e;
-            border: 4px solid #000;
-            color: white;
-            font-size: 22px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            text-shadow: 2px 2px #000;
-            box-shadow: inset -6px -6px 0px #222, inset 6px 6px 0px #888;
-            transition: all 0.1s;
+            width: 380px; padding: 15px; margin: 10px;
+            background: #6c6c6c; border: 4px solid #000;
+            color: white; font-size: 20px; font-weight: bold;
+            cursor: pointer; text-shadow: 2px 2px #000;
+            box-shadow: inset -4px -4px #222, inset 4px 4px #aaa;
+            transition: 0.2s;
         }
 
-        .btn-minecraft:hover {
-            background: #5fa03d;
-            transform: scale(1.02);
-            box-shadow: inset -6px -6px 0px #3d6627, inset 6px 6px 0px #a4e082;
-        }
+        .btn-minecraft:hover { background: #5fa03d; border-color: #fff; transform: translateY(-3px); }
 
-        .btn-minecraft:active {
-            transform: scale(0.98);
-        }
-
-        /* CROSSHAIR (MIRA) */
         #crosshair {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
-            color: white;
-            font-size: 30px;
-            font-weight: 100;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 10;
-            display: none; /* Só aparece quando o jogo começa */
-        }
-
-        #instrucoes {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            color: #ddd;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border: 2px solid #555;
-            font-size: 13px;
-            display: none;
+            position: fixed; top: 50%; left: 50%; color: white;
+            font-size: 24px; transform: translate(-50%, -50%);
+            pointer-events: none; z-index: 10; display: none;
         }
     </style>
 </head>
 <body>
 
+    <audio id="musica" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+
     <div id="tela-inicial">
         <div class="logo">BLOCKS 3D</div>
-        <div class="container-botoes">
-            <button class="btn-minecraft" onclick="comecar()">Jogar Mundo</button>
-            <button class="btn-minecraft">Opções</button>
-            <button class="btn-minecraft">Sair</button>
-        </div>
+        <button class="btn-minecraft" onclick="iniciarTudo()">JOGAR MUNDO</button>
+        <button class="btn-minecraft">OPÇÕES</button>
     </div>
 
     <div id="crosshair">+</div>
-
-    <div id="instrucoes">
-        <b>WASD</b>: Mover | <b>SHIFT</b>: Correr | <b>ESPAÇO</b>: Pular<br>
-        <b>Click Esq</b>: Quebrar | <b>Click Dir</b>: Construir
-    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="logicajogo.js"></script>
 
     <script>
-        function comecar() {
+        function iniciarTudo() {
+            // Toca a música
+            const musica = document.getElementById('musica');
+            musica.volume = 0.3;
+            musica.play();
+
+            // Esconde o menu
             document.getElementById('tela-inicial').style.opacity = '0';
             setTimeout(() => {
                 document.getElementById('tela-inicial').style.display = 'none';
-                document.getElementById('instrucoes').style.display = 'block';
                 document.getElementById('crosshair').style.display = 'block';
-                // Chama a função que está no seu arquivo logicajogo.js
                 if(typeof inicializar3D === "function") inicializar3D();
-            }, 800);
+            }, 1000);
         }
     </script>
 </body>
-</html>]
+</html>
