@@ -2,69 +2,51 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft HTML</title>
+    <title>Minecraft Clone 2D</title>
     <style>
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
-            background-color: #000;
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: sans-serif; background: #000; }
+        
+        /* Menu */
+        #menu {
+            position: absolute; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://minecraft.net/static/theme/img/background/panorama_0.jpg');
+            background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+        }
+        .btn { width: 300px; padding: 15px; margin: 5px; background: #4a4a4a; border: 3px solid #000; color: #fff; cursor: pointer; font-size: 18px; }
+        .btn:hover { background: #5a8a4a; border-color: #fff; }
+
+        /* Jogo */
+        #mundo { display: none; width: 100vw; height: 100vh; background: #87CEEB; position: relative; }
+        #chao { position: absolute; bottom: 0; width: 100%; height: 100px; background: #567d46; border-top: 5px solid #3d5e30; }
+        
+        #steve { 
+            width: 40px; height: 60px; background: #2ecc71; position: absolute; 
+            bottom: 100px; left: 50px; transition: background 0.2s; 
         }
 
-        /* Tela Inicial Estilo Minecraft */
-        #tela-inicial {
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                        url('https://minecraft.net/static/theme/img/background/panorama_0.jpg');
-            background-size: cover;
-            width: 100%; height: 100%;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            position: absolute;
+        .arvore {
+            position: absolute; bottom: 100px; width: 40px; height: 120px;
+            background: #5d4037; cursor: crosshair;
         }
-
-        h1 {
-            color: #fff; font-size: 80px;
-            text-shadow: 4px 4px #3f3f3f;
-            margin-bottom: 40px;
-        }
-
-        .botao {
-            width: 300px; padding: 15px;
-            margin: 5px; background: #4a4a4a;
-            border: 3px solid #000; color: #fff;
-            font-size: 20px; cursor: pointer;
-            box-shadow: inset -4px -4px #222, inset 4px 4px #aaa;
-        }
-
-        .botao:hover { background: #5a8a4a; }
-
-        /* Tela do Jogo */
-        #jogo {
-            display: none; width: 100%; height: 100%;
-            background: #87CEEB; position: relative;
-        }
-
-        #steve {
-            width: 40px; height: 60px;
-            background: #2ecc71; border: 2px solid #1b5e20;
-            position: absolute; bottom: 50%; left: 50%;
+        .folhas {
+            position: absolute; top: -60px; left: -30px; width: 100px; height: 80px;
+            background: #2e7d32; border-radius: 5px;
         }
     </style>
 </head>
 <body>
 
-    <div id="tela-inicial">
-        <h1>MINECRAFT</h1>
-        <button class="botao" onclick="jogar()">JOGAR</button>
-        <button class="botao">OPÇÕES</button>
+    <div id="menu">
+        <h1 style="color: white; font-size: 60px; text-shadow: 3px 3px #000;">MINECRAFT</h1>
+        <button class="btn" onclick="iniciar()">JOGAR</button>
     </div>
 
-    <div id="jogo">
-        <div id="steve"></div>
-        <div style="padding: 20px; background: rgba(0,0,0,0.3); color: white; display: inline-block;">
-            Use W, A, S, D para andar
+    <div id="mundo">
+        <div id="chao"></div>
+        <div id="arvore1" class="arvore" onclick="quebrar(this)">
+            <div class="folhas"></div>
         </div>
+        <div id="steve"></div>
     </div>
 
     <script src="logicajogo.js"></script>
