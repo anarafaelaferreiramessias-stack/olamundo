@@ -2,36 +2,205 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft 2026 - Build Update</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <title>Minecraft Web Clone</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        
+        /* --- MENU DE ENTRADA --- */
+        #menu-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+                        url('https://wallpaperaccess.com/full/1183305.jpg');
+            background-size: cover;
+            z-index: 10;
+            transition: opacity 0.8s ease;
+        }
+
+        #logo {
+            width: 600px;
+            filter: drop-shadow(5px 5px 0px #333);
+            margin-bottom: 50px;
+            image-rendering: pixelated;
+        }
+
+        .mc-button {
+            width: 400px;
+            height: 60px;
+            background: #4a4a4a;
+            border: 4px solid #000;
+            border-top-color: #8b8b8b;
+            border-left-color: #8b8b8b;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px;
+            text-shadow: 2px 2px 0px #000;
+            box-shadow: inset -4px -4px 0px #222;
+        }
+
+        .mc-button:hover {
+            background: #5a8eaf;
+            border-top-color: #7eb4d7;
+            border-left-color: #7eb4d7;
+        }
+
+        /* --- UI DO JOGO --- */
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            pointer-events: none;
+            display: none;
+            z-index: 5;
+        }
+    </style>
 </head>
 <body>
 
-    <div id="ui-overlay">
-        <div class="title-mc">MINECRAFT 2026</div>
-        <button class="btn-menu" onclick="startGame()">START GAME</button>
+    <div id="menu-container">
+        <img id="logo" src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft Logo">
+        <div class="mc-button" onclick="startGame()">JOGAR</div>
+        <div class="mc-button">OPÇÕES</div>
+        <div class="mc-button" onclick="window.close()">SAIR</div>
     </div>
 
-    <div id="instructions">
-        WASD: Movimento | ESPAÇO: Pular<br>
-        CLICK ESQUERDO: Minerar | CLICK DIREITO: Colocar Bloco<br>
-        1-4: Slots do Inventário
-    </div>
+    <div id="crosshair">+</div>
 
-    <div id="mining-progress"><div id="mining-bar"></div></div>
-    
-    <div id="hotbar">
-        <div class="slot selected" id="s0">
-            <div style="width:24px; height:24px; background: #5d4037; border: 1px solid #000;"></div>
-            <div id="inv-wood" class="count">0</div>
-        </div>
-        <div class="slot" id="s1"></div>
-        <div class="slot" id="s2"></div>
-        <div class="slot" id="s3"></div>
-    </div>
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
 
-    <div id="crosshair"></div>
-    <script src="script.js"></script>
+        let scene, camera, renderer, raycaster;
+        let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
+        let velocity = new THREE.Vector3();
+        let prevTime = performance.now();
+        let objects = [];
+
+        // Função chamada pelo botão "JOGAR"
+        window.startGame = function() {
+            document.getElementById('menu-container').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('menu-container').style.display = 'none';
+                document.getElementById('crosshair').style.display = 'block';
+                initGame();
+            }, 800);
+        };
+
+        function initGame() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.Fog(0x87CEEB, 0, 50);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            // Luzes
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.6);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
+
+            // Textura
+            const loader = new THREE.TextureLoader();
+            const tex = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png');
+            tex.magFilter = THREE.NearestFilter;
+            
+            const mat = new THREE.MeshLambertMaterial({ map: tex });
+            mat.map.repeat.set(0.0625, 0.0625);
+            mat.map.offset.set(0, 0.9375); // Offset da Grama
+
+            // Chão
+            const geo = new THREE.BoxGeometry(1, 1, 1);
+            for (let x = -10; x < 10; x++) {
+                for (let z = -10; z < 10; z++) {
+                    const block = new THREE.Mesh(geo, mat);
+                    block.position.set(x, 0, z);
+                    scene.add(block);
+                    objects.push(block);
+                }
+            }
+
+            // Trava o mouse ao clicar
+            renderer.domElement.requestPointerLock();
+            renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
+
+            setupControls();
+            animate();
+        }
+
+        function setupControls() {
+            document.addEventListener('keydown', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveF = true; break;
+                    case 'KeyS': moveB = true; break;
+                    case 'KeyA': moveL = true; break;
+                    case 'KeyD': moveR = true; break;
+                    case 'Space': if (canJump) velocity.y += 10; canJump = false; break;
+                }
+            });
+            document.addEventListener('keyup', (e) => {
+                switch (e.code) {
+                    case 'KeyW': moveF = false; break;
+                    case 'KeyS': moveB = false; break;
+                    case 'KeyA': moveL = false; break;
+                    case 'KeyD': moveR = false; break;
+                }
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (document.pointerLockElement === renderer.domElement) {
+                    camera.rotation.y -= e.movementX * 0.002;
+                    camera.rotation.x -= e.movementY * 0.002;
+                    camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+                    camera.rotation.order = 'YXZ';
+                }
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            velocity.x -= velocity.x * 10.0 * delta;
+            velocity.z -= velocity.z * 10.0 * delta;
+            velocity.y -= 25.0 * delta;
+
+            const dir = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            dir.y = 0; dir.normalize();
+            
+            const side = new THREE.Vector3().crossVectors(camera.up, dir).normalize();
+
+            if (moveF) camera.position.addScaledVector(dir, 0.15);
+            if (moveB) camera.position.addScaledVector(dir, -0.15);
+            if (moveA) camera.position.addScaledVector(side, 0.15); // Corrigido L/R
+            if (moveD) camera.position.addScaledVector(side, -0.15);
+
+            camera.position.y += velocity.y * delta;
+
+            if (camera.position.y < 2) {
+                velocity.y = 0;
+                camera.position.y = 2;
+                canJump = true;
+            }
+
+            prevTime = time;
+            renderer.render(scene, camera);
+        }
+    </script>
 </body>
 </html>
