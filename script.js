@@ -1,33 +1,63 @@
-// Referências dos elementos
-const telaMenu = document.getElementById('tela-inicial');
-const telaJogo = document.getElementById('jogo');
 const steve = document.getElementById('steve');
+const mundo = document.getElementById('mundo');
+const menu = document.getElementById('menu');
 
-// Posição do personagem
-let x = window.innerWidth / 2;
-let y = window.innerHeight / 2;
-const velocidade = 10;
+let posX = 50;
+let posY = 100; // Altura do chão
+let vY = 0; // Velocidade vertical (pulo/gravidade)
+let noChao = true;
+let teclas = {};
 
-// Função para mudar da tela inicial para o jogo
-function jogar() {
-    telaMenu.style.display = 'none';
-    telaJogo.style.display = 'block';
-    console.log("Jogo iniciado!");
+function iniciar() {
+    menu.style.display = 'none';
+    mundo.style.display = 'block';
+    loop();
 }
 
-// Controle de teclas
-document.addEventListener('keydown', (e) => {
-    // Só move se o jogo estiver visível
-    if (telaJogo.style.display === 'block') {
-        const tecla = e.key.toLowerCase();
+// Monitora teclas pressionadas
+document.addEventListener('keydown', (e) => teclas[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', (e) => teclas[e.key.toLowerCase()] = false);
 
-        if (tecla === 'w') y -= velocidade;
-        if (tecla === 's') y += velocidade;
-        if (tecla === 'a') x -= velocidade;
-        if (tecla === 'd') x += velocidade;
+function loop() {
+    // 1. CORRER (Shift)
+    let velAtual = teclas['shift'] ? 10 : 5;
 
-        // Aplica o movimento na tela
-        steve.style.top = y + 'px';
-        steve.style.left = x + 'px';
+    // 2. ANDAR (A e D)
+    if (teclas['a']) posX -= velAtual;
+    if (teclas['d']) posX += velAtual;
+
+    // 3. PULAR (Espaço ou W)
+    if ((teclas[' '] || teclas['w']) && noChao) {
+        vY = 15; // Força do pulo
+        noChao = false;
     }
-});
+
+    // 4. GRAVIDADE
+    if (!noChao) {
+        vY -= 0.8; // Força da gravidade puxando pra baixo
+        posY += vY;
+    }
+
+    // 5. COLISÃO COM O CHÃO
+    if (posY <= 100) {
+        posY = 100;
+        vY = 0;
+        noChao = true;
+    }
+
+    // Atualiza visual
+    steve.style.left = posX + 'px';
+    steve.style.bottom = posY + 'px';
+
+    requestAnimationFrame(loop);
+}
+
+// 6. QUEBRAR ÁRVORE
+function quebrar(elemento) {
+    // Simula o tempo de quebra
+    elemento.style.opacity = "0.5";
+    setTimeout(() => {
+        elemento.style.display = "none";
+        alert("Você coletou madeira!");
+    }, 500);
+}
