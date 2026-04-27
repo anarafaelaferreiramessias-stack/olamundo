@@ -1,171 +1,125 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Minecraft HTML5 Edition</title>
-    <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
-        
-        /* --- TELA DE MENU --- */
-        #menu-launcher {
-            position: absolute;
-            width: 100%; height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
-                        url('https://wallpaperaccess.com/full/1183305.jpg');
-            background-size: cover;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100;
+import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+
+// --- VARIÁVEIS DO MOTOR ---
+let scene, camera, renderer, clock;
+let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+
+// --- CARREGAR TEXTURAS PIXELADAS (IGUAL AO JAVA) ---
+const loader = new THREE.TextureLoader();
+const textureAtlas = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png');
+textureAtlas.magFilter = THREE.NearestFilter; // Deixa os pixels nítidos
+
+// --- FUNÇÃO PARA INICIAR O JOGO (CHAMADA PELO BOTÃO JOGAR) ---
+window.iniciarJogo = function() {
+    const launcher = document.getElementById('launcher');
+    if (launcher) launcher.style.display = 'none';
+    init();
+};
+
+function init() {
+    // 1. Criar o Mundo
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x7fb3d5); // Cor do céu
+    scene.fog = new THREE.Fog(0x7fb3d5, 5, 40);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 2, 5);
+
+    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+    // 2. Criar os Materiais (Corta o Atlas para pegar Grama e Terra)
+    const criarMaterial = (x, y) => {
+        const tex = textureAtlas.clone();
+        tex.needsUpdate = true;
+        tex.repeat.set(0.0625, 0.0625);
+        tex.offset.set(x * 0.0625, 1 - (y + 1) * 0.0625);
+        return new THREE.MeshLambertMaterial({ map: tex });
+    };
+
+    const blocoGrama = [
+        criarMaterial(3, 0), criarMaterial(3, 0), // Lados
+        criarMaterial(0, 0), criarMaterial(2, 0), // Topo e Base
+        criarMaterial(3, 0), criarMaterial(3, 0)
+    ];
+
+    // 3. Gerar Chão de Blocos Quadrados
+    const geo = new THREE.BoxGeometry(1, 1, 1);
+    for (let x = -10; x < 10; x++) {
+        for (let z = -10; z < 10; z++) {
+            const block = new THREE.Mesh(geo, blocoGrama);
+            block.position.set(x, 0, z);
+            scene.add(block);
         }
+    }
 
-        #logo { width: 500px; margin-bottom: 40px; image-rendering: pixelated; }
+    // 4. Controles e Mouse
+    configurarControles();
+    clock = new THREE.Clock();
+    animate();
+}
 
-        .mc-button {
-            width: 380px; padding: 15px; margin: 8px;
-            background: #4e4e4e; border: 4px solid #000;
-            border-top-color: #8b8b8b; border-left-color: #8b8b8b;
-            color: white; font-size: 22px; cursor: pointer;
-            text-align: center; text-shadow: 2px 2px #000;
-            box-shadow: inset -4px -4px 0px #222;
+function configurarControles() {
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyW') moveF = true;
+        if (e.code === 'KeyS') moveB = true;
+        if (e.code === 'KeyA') moveL = true;
+        if (e.code === 'KeyD') moveR = true;
+        if (e.code === 'Space' && canJump) { velocity.y += 10; canJump = false; }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'KeyW') moveF = false;
+        if (e.code === 'KeyS') moveB = false;
+        if (e.code === 'KeyA') moveL = false;
+        if (e.code === 'KeyD') moveR = false;
+    });
+
+    renderer.domElement.addEventListener('click', () => {
+        renderer.domElement.requestPointerLock();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === renderer.domElement) {
+            camera.rotation.y -= e.movementX * 0.002;
+            camera.rotation.x -= e.movementY * 0.002;
+            camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
+            camera.rotation.order = 'YXZ';
         }
+    });
+}
 
-        .mc-button:hover { background: #5a8eaf; border-top-color: #7eb4d7; border-left-color: #7eb4d7; }
+function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
 
-        /* --- INTERFACE DO JOGO --- */
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: white; font-size: 24px; pointer-events: none;
-            display: none; z-index: 50;
-        }
-    </style>
-</head>
-<body>
+    // Física e Movimento
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 30.0 * delta; // Gravidade
 
-    <div id="menu-launcher">
-        <img id="logo" src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg">
-        <div class="mc-button" onclick="startWorld()">JOGAR</div>
-        <div class="mc-button">OPÇÕES</div>
-        <div class="mc-button" onclick="window.close()">SAIR</div>
-    </div>
+    direction.z = Number(moveF) - Number(moveB);
+    direction.x = Number(moveR) - Number(moveL);
+    direction.normalize();
 
-    <div id="crosshair">+</div>
+    if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta;
+    if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
 
-    <script type="module">
-        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    camera.translateX(-velocity.x * delta);
+    camera.translateZ(-velocity.z * delta);
+    camera.position.y += velocity.y * delta;
 
-        let scene, camera, renderer, clock;
-        let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
-        let velocity = new THREE.Vector3();
-        let direction = new THREE.Vector3();
+    // Colisão com o chão
+    if (camera.position.y < 2) {
+        velocity.y = 0;
+        camera.position.y = 2;
+        canJump = true;
+    }
 
-        // Carregar texturas pixeladas
-        const loader = new THREE.TextureLoader();
-        const texture = loader.load('https://threejs.org/examples/textures/minecraft/atlas.png');
-        texture.magFilter = THREE.NearestFilter; // Pixels nítidos
-
-        window.startWorld = function() {
-            document.getElementById('menu-launcher').style.display = 'none';
-            document.getElementById('crosshair').style.display = 'block';
-            init();
-        }
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x7fb3d5);
-            scene.fog = new THREE.Fog(0x7fb3d5, 5, 40);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 2, 5);
-
-            renderer = new THREE.WebGLRenderer({ antialias: false });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            // Luz
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-
-            // Materiais do Bloco de Grama (Mapeamento de textura pixelada)
-            const getMat = (x, y) => {
-                const tex = texture.clone();
-                tex.needsUpdate = true;
-                tex.repeat.set(0.0625, 0.0625);
-                tex.offset.set(x * 0.0625, 1 - (y + 1) * 0.0625);
-                return new THREE.MeshLambertMaterial({ map: tex });
-            };
-
-            const grassMats = [
-                getMat(3, 0), getMat(3, 0), // Lados
-                getMat(0, 0), getMat(2, 0), // Cima e Baixo
-                getMat(3, 0), getMat(3, 0)  // Frente e Trás
-            ];
-
-            // Gerar o chão de blocos
-            const geo = new THREE.BoxGeometry(1, 1, 1);
-            for (let x = -10; x < 10; x++) {
-                for (let z = -10; z < 10; z++) {
-                    const block = new THREE.Mesh(geo, grassMats);
-                    block.position.set(x, 0, z);
-                    scene.add(block);
-                }
-            }
-
-            // Controles
-            setupControls();
-            clock = new THREE.Clock();
-            animate();
-        }
-
-        function setupControls() {
-            document.addEventListener('keydown', (e) => handleKey(e.code, true));
-            document.addEventListener('keyup', (e) => handleKey(e.code, false));
-            
-            renderer.domElement.addEventListener('click', () => renderer.domElement.requestPointerLock());
-            
-            document.addEventListener('mousemove', (e) => {
-                if (document.pointerLockElement === renderer.domElement) {
-                    camera.rotation.y -= e.movementX * 0.002;
-                    camera.rotation.x -= e.movementY * 0.002;
-                    camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
-                    camera.rotation.order = 'YXZ';
-                }
-            });
-        }
-
-        function handleKey(code, down) {
-            if (code === 'KeyW') moveF = down;
-            if (code === 'KeyS') moveB = down;
-            if (code === 'KeyA') moveL = down;
-            if (code === 'KeyD') moveR = down;
-            if (code === 'Space' && down && canJump) { velocity.y += 10; canJump = false; }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const delta = clock.getDelta();
-
-            velocity.x -= velocity.x * 10.0 * delta;
-            velocity.z -= velocity.z * 10.0 * delta;
-            velocity.y -= 30.0 * delta;
-
-            direction.z = Number(moveF) - Number(moveB);
-            direction.x = Number(moveR) - Number(moveL);
-            direction.normalize();
-
-            if (moveF || moveB) velocity.z -= direction.z * 100.0 * delta;
-            if (moveL || moveR) velocity.x -= direction.x * 100.0 * delta;
-
-            camera.translateX(-velocity.x * delta);
-            camera.translateZ(-velocity.z * delta);
-            camera.position.y += velocity.y * delta;
-
-            if (camera.position.y < 2) {
-                velocity.y = 0;
-                camera.position.y = 2;
-                canJump = true;
-            }
-
-            renderer.render(scene, camera);
-        }
-    </script>
-</body>
-</html>
+    renderer.render(scene, camera);
+}
