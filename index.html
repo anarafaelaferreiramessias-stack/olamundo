@@ -2,58 +2,70 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Blocks 3D - Ultimate Edition</title>
+    <title>Blocks 3D - Aria Math Edition</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
         
         #tela-inicial {
             position: absolute;
             width: 100%; height: 100%;
-            /* Fundo com imagem épica e degradê suave */
-            background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%), 
-                        url('https://minecraft.net/static/theme/img/background/panorama_0.jpg');
+            background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%), 
+                        url('https://images.alphacoders.com/133/1331001.png');
             background-size: cover;
             background-position: center;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; transition: 1s ease-in-out;
+            z-index: 100; transition: 1.5s ease-in-out;
         }
 
         .logo {
             font-family: 'Courier New', Courier, monospace;
             font-size: clamp(40px, 8vw, 100px);
             color: #fff;
-            text-shadow: 5px 5px 0px #373737, 10px 10px 20px rgba(0,0,0,0.5);
+            text-shadow: 8px 8px 0px #373737;
             margin-bottom: 50px;
-            animation: flutuar 3s infinite ease-in-out;
+            animation: flutuar 4s infinite ease-in-out;
         }
 
         @keyframes flutuar {
-            0%, 100% { transform: scale(1) rotate(-1deg); }
-            50% { transform: scale(1.05) rotate(1deg); }
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-15px) scale(1.02); }
         }
 
         .btn-minecraft {
-            width: 380px; padding: 15px; margin: 10px;
-            background: #6c6c6c; border: 4px solid #000;
-            color: white; font-size: 20px; font-weight: bold;
+            width: 380px; padding: 18px; margin: 10px;
+            background: #4e4e4e; border: 4px solid #000;
+            color: white; font-size: 22px; font-weight: bold;
             cursor: pointer; text-shadow: 2px 2px #000;
             box-shadow: inset -4px -4px #222, inset 4px 4px #aaa;
             transition: 0.2s;
         }
 
-        .btn-minecraft:hover { background: #5fa03d; border-color: #fff; transform: translateY(-3px); }
+        .btn-minecraft:hover { 
+            background: #5fa03d; 
+            border-color: #fff; 
+            transform: scale(1.05); 
+        }
 
         #crosshair {
-            position: fixed; top: 50%; left: 50%; color: white;
-            font-size: 24px; transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 50%; color: rgba(255,255,255,0.8);
+            font-size: 30px; transform: translate(-50%, -50%);
             pointer-events: none; z-index: 10; display: none;
+        }
+
+        /* Texto de música tocando */
+        #music-info {
+            position: fixed; top: 20px; right: 20px;
+            color: white; font-family: monospace;
+            background: rgba(0,0,0,0.5); padding: 10px;
+            border-radius: 5px; display: none; z-index: 20;
         }
     </style>
 </head>
 <body>
 
     <audio id="musica" loop>
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        <source src="aria_math.mp3" type="audio/mpeg">
+        <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/C418/Minecraft_Volume_Alpha/C418_-_08_-_Aria_Math.mp3" type="audio/mpeg">
     </audio>
 
     <div id="tela-inicial">
@@ -62,6 +74,7 @@
         <button class="btn-minecraft">OPÇÕES</button>
     </div>
 
+    <div id="music-info">♪ Tocando: C418 - Aria Math</div>
     <div id="crosshair">+</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -69,13 +82,15 @@
 
     <script>
         function iniciarTudo() {
-            // Toca a música
             const musica = document.getElementById('musica');
-            musica.volume = 0.3;
-            musica.play();
+            musica.volume = 0.4;
+            
+            // Inicia a música (Aria Math)
+            musica.play().catch(e => console.log("Erro ao tocar: ", e));
 
-            // Esconde o menu
             document.getElementById('tela-inicial').style.opacity = '0';
+            document.getElementById('music-info').style.display = 'block';
+            
             setTimeout(() => {
                 document.getElementById('tela-inicial').style.display = 'none';
                 document.getElementById('crosshair').style.display = 'block';
