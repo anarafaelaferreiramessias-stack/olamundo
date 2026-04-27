@@ -1,105 +1,133 @@
-/* LOGICA DO JOGO - VERSÃO PRO 
-   Funcionalidades: Movimento suave, Pulo, Corrida e Coleta de Madeira
+/* LOGICA DO JOGO - MINECRAFT 3D (JavaScript)
+   Instruções: 
+   - W, A, S, D para andar
+   - SHIFT para correr
+   - ESPAÇO para pular
+   - CLIQUE na tela para travar o mouse e olhar ao redor
 */
 
-const steve = document.getElementById('steve');
-const mundo = document.getElementById('mundo');
-const menu = document.getElementById('menu');
+let scene, camera, renderer, moveForward, moveBackward, moveLeft, moveRight, canJump;
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+let trees = [];
 
-// Configurações de Física
-let posX = 100;
-let posY = 100;
-let velX = 0;
-let velY = 0;
-const gravidade = 0.8;
-const forcaPulo = 15;
-const atrito = 0.85; // Faz o personagem parar suavemente
-let noChao = false;
+function iniciarJogo() {
+    // Esconde o menu
+    document.getElementById('tela-inicial').style.display = 'none';
 
-// Estado das Teclas
-let teclas = {};
+    // 1. Configuração Básica da Cena
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Céu
+    scene.fog = new THREE.Fog(0x87CEEB, 0, 50); // Neblina para parecer infinito
 
-// Iniciar o Jogo
-function iniciar() {
-    menu.style.display = 'none';
-    mundo.style.display = 'block';
-    console.log("Mundo carregado...");
-    loop();
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 2. Iluminação
+    const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 1);
+    scene.add(light);
+
+    // 3. O Chão (Grama)
+    const floorGeo = new THREE.PlaneGeometry(200, 200);
+    const floorMat = new THREE.MeshLambertMaterial({ color: 0x44aa44 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // 4. Criando Árvores (Troncos e Folhas)
+    for (let i = 0; i < 20; i++) {
+        criarArvore(
+            Math.random() * 80 - 40, 
+            Math.random() * 80 - 40
+        );
+    }
+
+    // 5. Controles de Teclado
+    document.addEventListener('keydown', (e) => toggleKey(e.code, true));
+    document.addEventListener('keyup', (e) => toggleKey(e.code, false));
+
+    // 6. Controle de Mouse (Olhar)
+    document.addEventListener('click', () => {
+        document.body.requestPointerLock();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === document.body) {
+            camera.rotation.y -= e.movementX * 0.002;
+            // Limitar olhar para cima e baixo
+            let newRotationX = camera.rotation.x - e.movementY * 0.002;
+            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, newRotationX));
+        }
+    });
+
+    animate();
 }
 
-// Ouvintes de Teclado
-document.addEventListener('keydown', (e) => teclas[e.key.toLowerCase()] = true);
-document.addEventListener('keyup', (e) => teclas[e.key.toLowerCase()] = false);
-
-function loop() {
-    // 1. Determinar Velocidade (Andar vs Correr)
-    let aceleracao = teclas['shift'] ? 2.5 : 1.2;
-
-    // 2. Movimentação Horizontal (A e D)
-    if (teclas['a'] || teclas['arrowleft']) {
-        velX -= aceleracao;
-        steve.style.transform = "scaleX(-1)"; // Vira o personagem para a esquerda
-    }
-    if (teclas['d'] || teclas['arrowright']) {
-        velX += aceleracao;
-        steve.style.transform = "scaleX(1)"; // Vira o personagem para a direita
-    }
-
-    // Aplica Atrito
-    velX *= atrito;
-    posX += velX;
-
-    // 3. Pulo (Espaço ou W)
-    if ((teclas[' '] || teclas['w'] || teclas['arrowup']) && noChao) {
-        velY = forcaPulo;
-        noChao = false;
-    }
-
-    // 4. Aplicar Gravidade
-    velY -= gravidade;
-    posY += velY;
-
-    // 5. Colisão com o Chão (Limite de 100px)
-    if (posY <= 100) {
-        posY = 100;
-        velY = 0;
-        noChao = true;
-    }
-
-    // 6. Limites da Tela (Não sair pelas laterais)
-    if (posX < 0) posX = 0;
-    if (posX > window.innerWidth - 40) posX = window.innerWidth - 40;
-
-    // 7. Atualizar Elemento na Tela
-    steve.style.left = posX + 'px';
-    steve.style.bottom = posY + 'px';
-
-    // Roda o próximo frame
-    requestAnimationFrame(loop);
-}
-
-// 8. Sistema de Quebrar Árvore
-function quebrar(elemento) {
-    // Balança a árvore antes de sumir
-    elemento.style.transition = "transform 0.1s";
-    elemento.style.transform = "rotate(5deg)";
+function criarArvore(x, z) {
+    const trunk = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 3, 0.8),
+        new THREE.MeshLambertMaterial({ color: 0x5d4037 })
+    );
+    trunk.position.set(x, 1.5, z);
     
-    setTimeout(() => {
-        elemento.style.transform = "rotate(-5deg)";
-        setTimeout(() => {
-            elemento.style.display = "none";
-            // Cria um aviso flutuante
-            const aviso = document.createElement("div");
-            aviso.innerHTML = "+1 Madeira 🪵";
-            aviso.style.position = "absolute";
-            aviso.style.left = posX + "px";
-            aviso.style.bottom = (posY + 80) + "px";
-            aviso.style.color = "white";
-            aviso.style.fontWeight = "bold";
-            mundo.appendChild(aviso);
-            
-            // Remove o aviso depois de 1 segundo
-            setTimeout(() => aviso.remove(), 1000);
-        }, 100);
-    }, 100);
+    const leaves = new THREE.Mesh(
+        new THREE.BoxGeometry(3, 3, 3),
+        new THREE.MeshLambertMaterial({ color: 0x228822 })
+    );
+    leaves.position.set(x, 4, z);
+    
+    scene.add(trunk);
+    scene.add(leaves);
 }
+
+function toggleKey(code, isPressed) {
+    if (code === 'KeyW') moveForward = isPressed;
+    if (code === 'KeyS') moveBackward = isPressed;
+    if (code === 'KeyA') moveLeft = isPressed;
+    if (code === 'KeyD') moveRight = isPressed;
+    if (code === 'Space' && isPressed && canJump) {
+        velocity.y += 10;
+        canJump = false;
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = 0.1; // Velocidade do tempo
+    const sprint = (keys['ShiftLeft'] || keys['ShiftRight']) ? 1.5 : 1.0;
+
+    // Física de Movimento
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
+    velocity.y -= 9.8 * 2.0 * delta; // Gravidade
+
+    direction.z = Number(moveForward) - Number(moveBackward);
+    direction.x = Number(moveRight) - Number(moveLeft);
+    direction.normalize();
+
+    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta * sprint;
+    if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta * sprint;
+
+    // Aplicar Velocidade à Câmera
+    camera.translateX(-velocity.x * delta);
+    camera.translateZ(velocity.z * delta);
+    camera.position.y += (velocity.y * delta);
+
+    // Chão Físico
+    if (camera.position.y < 1.6) {
+        velocity.y = 0;
+        camera.position.y = 1.6;
+        canJump = true;
+    }
+
+    renderer.render(scene, camera);
+}
+
+// Objeto auxiliar para capturar Shift
+const keys = {};
+document.addEventListener('keydown', e => keys[e.code] = true);
+document.addEventListener('keyup', e => keys[e.code] = false);
