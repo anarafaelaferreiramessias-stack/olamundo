@@ -2,25 +2,23 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Blocks 3D - Estável e Otimizado</title>
+    <title>Blocks 3D - Edição Visual Pro</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87CEEB; font-family: 'Courier New', Courier, monospace; }
         #tela-inicial {
             position: absolute; width: 100%; height: 100%;
-            background: radial-gradient(circle, #555, #111); display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; z-index: 100; color: white;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.alphacoders.com/133/1331001.png');
+            background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
         }
-        .btn { padding: 15px 40px; background: #5fa03d; color: white; border: 4px solid #000; cursor: pointer; font-size: 20px; font-weight: bold; box-shadow: inset -4px -4px #2e501d; }
-        .btn:hover { background: #76c04e; }
+        .btn { padding: 15px 40px; background: #5fa03d; color: white; border: 4px solid #1e3511; cursor: pointer; font-size: 20px; font-weight: bold; image-rendering: pixelated; }
         #crosshair { position: fixed; top: 50%; left: 50%; color: white; font-size: 24px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; mix-blend-mode: difference; }
     </style>
 </head>
 <body>
 
     <div id="tela-inicial">
-        <h1 style="text-shadow: 4px 4px #000; font-size: 60px;">BLOCKS 3D</h1>
-        <button class="btn" onclick="iniciar()">JOGAR</button>
-        <p style="margin-top: 20px;">W, A, S, D para andar | Espaço para pular</p>
+        <h1 style="color: white; font-size: 60px; text-shadow: 4px 4px #000;">BLOCKS 3D</h1>
+        <button class="btn" onclick="iniciar()">JOGAR MUNDO</button>
     </div>
     <div id="crosshair">+</div>
 
@@ -32,18 +30,38 @@
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
         let hand;
 
-        // Gerador de textura pixelada interna (para evitar erro de imagem)
-        function criarTexturaPixel(corBase, corDetalhe) {
+        // --- GERADOR DE TEXTURAS MELHORADO ---
+        function criarTexturaMinecraft(tipo) {
             const size = 16;
             const canvas = document.createElement('canvas');
             canvas.width = size; canvas.height = size;
             const ctx = canvas.getContext('2d');
-            ctx.fillStyle = corBase;
-            ctx.fillRect(0, 0, size, size);
-            for (let i = 0; i < 40; i++) {
-                ctx.fillStyle = corDetalhe;
-                ctx.fillRect(Math.floor(Math.random()*size), Math.floor(Math.random()*size), 1, 1);
+
+            if (tipo === 'grama_topo') {
+                ctx.fillStyle = '#598a32'; // Verde base
+                ctx.fillRect(0, 0, size, size);
+                for(let i=0; i<60; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#6ba33f' : '#4a752a';
+                    ctx.fillRect(Math.floor(Math.random()*size), Math.floor(Math.random()*size), 1, 1);
+                }
+            } 
+            else if (tipo === 'terra') {
+                ctx.fillStyle = '#79553a'; // Marrom base
+                ctx.fillRect(0, 0, size, size);
+                for(let i=0; i<50; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#8d654a' : '#5d3f2a';
+                    ctx.fillRect(Math.floor(Math.random()*size), Math.floor(Math.random()*size), 1, 1);
+                }
             }
+            else if (tipo === 'folhas') {
+                ctx.fillStyle = '#2d4c1e'; // Verde escuro
+                ctx.fillRect(0, 0, size, size);
+                for(let i=0; i<80; i++) {
+                    ctx.fillStyle = Math.random() > 0.5 ? '#3b6327' : '#1e3314';
+                    ctx.fillRect(Math.floor(Math.random()*size), Math.floor(Math.random()*size), 1, 1);
+                }
+            }
+
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
             tex.minFilter = THREE.NearestFilter;
@@ -58,8 +76,8 @@
 
         function init() {
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x91b5ff);
-            scene.fog = new THREE.Fog(0x91b5ff, 20, 60);
+            scene.background = new THREE.Color(0x72a0ff);
+            scene.fog = new THREE.Fog(0x72a0ff, 15, 55);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.rotation.order = 'YXZ';
@@ -68,11 +86,15 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+            const light = new THREE.DirectionalLight(0xffffff, 1.0);
+            light.position.set(5, 10, 7.5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040, 1.5));
 
-            const texGrama = criarTexturaPixel('#55aa44', '#3d7a31');
-            const texTerra = criarTexturaPixel('#8b4513', '#5d2e0d');
-            const texFolha = criarTexturaPixel('#2d8a2d', '#1e5a1e');
+            // Aplicando as novas texturas
+            const texGrama = criarTexturaMinecraft('grama_topo');
+            const texTerra = criarTexturaMinecraft('terra');
+            const texFolhas = criarTexturaMinecraft('folhas');
 
             const matGrama = [
                 new THREE.MeshLambertMaterial({ map: texTerra }),
@@ -83,21 +105,23 @@
                 new THREE.MeshLambertMaterial({ map: texTerra })
             ];
 
-            // Gerar chão grande (50x50)
             const geo = new THREE.BoxGeometry(1, 1, 1);
-            for (let x = -25; x < 25; x++) {
-                for (let z = -25; z < 25; z++) {
+            // Chão vasto (60x60)
+            for (let x = -30; x < 30; x++) {
+                for (let z = -30; z < 30; z++) {
                     const bloco = new THREE.Mesh(geo, matGrama);
                     bloco.position.set(x, 0, z);
                     scene.add(bloco);
                     objects.push(bloco);
 
-                    if(Math.random() > 0.98 && (x > 3 || x < -3)) criarArvore(x, 1, z, texTerra, texFolha);
+                    if(Math.random() > 0.98 && (Math.abs(x) > 4 || Math.abs(z) > 4)) {
+                        criarArvore(x, 1, z, texTerra, texFolhas);
+                    }
                 }
             }
 
-            // MÃO DO MINECRAFT
-            const handGeo = new THREE.BoxGeometry(0.4, 0.4, 1);
+            // Mão estilo Steve
+            const handGeo = new THREE.BoxGeometry(0.4, 0.4, 1.2);
             hand = new THREE.Mesh(handGeo, new THREE.MeshLambertMaterial({ map: texTerra }));
             scene.add(hand);
 
@@ -108,16 +132,18 @@
             const geo = new THREE.BoxGeometry(1,1,1);
             const matM = new THREE.MeshLambertMaterial({ map: texM });
             const matF = new THREE.MeshLambertMaterial({ map: texF });
+            // Tronco
             for(let i=0; i<4; i++) {
                 const t = new THREE.Mesh(geo, matM);
                 t.position.set(x, y+i, z);
                 scene.add(t);
                 objects.push(t);
             }
+            // Copa
             for(let fx=-2; fx<=2; fx++) {
                 for(let fy=4; fy<=6; fy++) {
                     for(let fz=-2; fz<=2; fz++) {
-                        if(Math.abs(fx) + Math.abs(fz) > 3) continue;
+                        if(Math.abs(fx) === 2 && Math.abs(fz) === 2) continue; // Arredondar cantos
                         const f = new THREE.Mesh(geo, matF);
                         f.position.set(x+fx, y+fy, z+fz);
                         scene.add(f);
@@ -149,17 +175,15 @@
 
         function animate() {
             requestAnimationFrame(animate);
-
-            // VELOCIDADE REDUZIDA (0.05 para movimento mais lento e suave)
             velocity.x -= velocity.x * 0.1;
             velocity.z -= velocity.z * 0.1;
-            velocity.y -= 0.008; // Gravidade
+            velocity.y -= 0.008;
 
             direction.z = Number(moveF) - Number(moveB);
             direction.x = Number(moveR) - Number(moveL);
             direction.normalize();
 
-            const speed = 0.06; // Ajuste aqui para mais lento ou mais rápido
+            const speed = 0.05; // Velocidade suave pedida
             if (moveF || moveB) velocity.z -= direction.z * speed;
             if (moveL || moveR) velocity.x -= direction.x * speed;
 
@@ -171,20 +195,13 @@
                 velocity.y = 0; camera.position.y = 1.6; canJump = true;
             }
 
-            // MOVIMENTO DA MÃO (Bobbing)
             if(hand) {
                 hand.position.copy(camera.position);
                 hand.rotation.copy(camera.rotation);
-                hand.translateZ(-0.7);
-                hand.translateX(0.5);
-                // O balanço acontece se você estiver se movendo
-                let bob = 0;
-                if(moveF || moveB || moveL || moveR) {
-                    bob = Math.sin(Date.now() * 0.01) * 0.03;
-                }
-                hand.translateY(-0.4 + bob);
+                hand.translateZ(-0.8); hand.translateX(0.6);
+                let bob = (moveF || moveB || moveL || moveR) ? Math.sin(Date.now() * 0.008) * 0.04 : 0;
+                hand.translateY(-0.5 + bob);
             }
-
             renderer.render(scene, camera);
         }
 
