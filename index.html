@@ -2,63 +2,60 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Blocks 3D - Crafting & Collision</title>
+    <title>Blocks 3D - Collision & Mining</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #87CEEB; font-family: 'Courier New', monospace; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #4a90e2; font-family: sans-serif; }
+        #tela-inicial {
+            position: absolute; width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.alphacoders.com/133/1331001.png');
+            background-size: cover; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;
+        }
+        .btn { padding: 15px 50px; background: #5fa03d; color: white; border: 4px solid #1a2b11; cursor: pointer; font-size: 22px; font-weight: bold; text-transform: uppercase; }
         #crosshair { position: fixed; top: 50%; left: 50%; color: white; font-size: 24px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; mix-blend-mode: difference; }
-        
-        /* Inventário / Hotbar */
-        #hotbar {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 10px; border: 4px solid #333;
-        }
-        .slot {
-            width: 50px; height: 50px; border: 4px solid #888; display: flex; 
-            align-items: center; justify-content: center; color: white; font-weight: bold;
-        }
-        .slot.selected { border-color: #fff; background: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
-    <div id="crosshair">+</div>
-    <div id="hotbar">
-        <div id="slot1" class="slot selected">1</div>
-        <div id="slot2" class="slot">2</div>
-        <div id="slot3" class="slot">3</div>
+    <div id="tela-inicial">
+        <h1 style="color: white; font-size: 60px; text-shadow: 4px 4px #000;">BLOCKS 3D</h1>
+        <button class="btn" onclick="iniciar()">JOGAR AGORA</button>
     </div>
+    <div id="crosshair">+</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        let scene, camera, renderer, raycaster;
+        let scene, camera, renderer, objects = [], raycaster;
         let moveF = false, moveB = false, moveL = false, moveR = false, canJump = false;
         let velocity = new THREE.Vector3(), direction = new THREE.Vector3();
-        let objects = [], hand;
-        let selectedBlock = 1;
+        let hand;
 
-        // Materiais Global
-        let matGrama, matMadeira, matFolha;
-
-        function criarTextura(corBase, corRuidosa) {
+        function criarTextura(corBase, corRuidosa, densidade = 120) {
             const canvas = document.createElement('canvas');
-            canvas.width = 16; canvas.height = 16;
+            canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = corBase;
-            ctx.fillRect(0, 0, 16, 16);
-            for (let i = 0; i < 40; i++) {
+            ctx.fillRect(0, 0, 64, 64);
+            for (let i = 0; i < densidade; i++) {
                 ctx.fillStyle = corRuidosa;
-                ctx.fillRect(Math.floor(Math.random()*16), Math.floor(Math.random()*16), 1, 1);
+                let size = Math.random() * 4 + 2;
+                ctx.fillRect(Math.floor(Math.random()*64), Math.floor(Math.random()*64), size, size);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter;
             return tex;
         }
 
+        function iniciar() {
+            document.getElementById('tela-inicial').style.display = 'none';
+            init();
+            animate();
+        }
+
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.Fog(0x87CEEB, 20, 100);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             camera.rotation.order = 'YXZ';
@@ -67,43 +64,53 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            raycaster = new THREE.Raycaster();
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            raycaster = new THREE.Raycaster(); // Inicializa o detector de cliques
 
-            // Preparar materiais
-            const texG = criarTextura('#598a32', '#4a752a');
-            const texT = criarTextura('#79553a', '#5d3f2a');
-            const texM = criarTextura('#5d3f2a', '#3d291b');
-            const texF = criarTextura('#2d4c1e', '#1e3314');
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            const sol = new THREE.DirectionalLight(0xffffff, 0.8);
+            sol.position.set(50, 100, 50);
+            scene.add(sol);
 
-            matGrama = [new THREE.MeshLambertMaterial({map:texT}), new THREE.MeshLambertMaterial({map:texT}), new THREE.MeshLambertMaterial({map:texG}), new THREE.MeshLambertMaterial({map:texT}), new THREE.MeshLambertMaterial({map:texT}), new THREE.MeshLambertMaterial({map:texT})];
-            matMadeira = new THREE.MeshLambertMaterial({map:texM});
-            matFolha = new THREE.MeshLambertMaterial({map:texF});
+            const texGrama = criarTextura('#598a32', '#4a752a');
+            const texTerra = criarTextura('#79553a', '#5d3f2a');
+            const texMadeira = criarTextura('#5d3f2a', '#3d291b');
+            const texFolha = criarTextura('#2d4c1e', '#1e3314');
+            const texPele = criarTextura('#d8bb9d', '#c2a385');
 
-            // Chão inicial
+            const matGrama = [
+                new THREE.MeshStandardMaterial({ map: texTerra }),
+                new THREE.MeshStandardMaterial({ map: texTerra }),
+                new THREE.MeshStandardMaterial({ map: texGrama }),
+                new THREE.MeshStandardMaterial({ map: texTerra }),
+                new THREE.MeshStandardMaterial({ map: texTerra }),
+                new THREE.MeshStandardMaterial({ map: texTerra })
+            ];
+
             const geo = new THREE.BoxGeometry(1, 1, 1);
-            for (let x = -15; x < 15; x++) {
-                for (let z = -15; z < 15; z++) {
-                    const b = new THREE.Mesh(geo, matGrama);
-                    b.position.set(x, 0, z);
-                    scene.add(b);
-                    objects.push(b);
-                    if(Math.random() > 0.98) criarArvore(x, 1, z);
+            for (let x = -20; x < 20; x++) {
+                for (let z = -20; z < 20; z++) {
+                    let h = Math.floor(Math.sin(x/10) * Math.cos(z/10) * 2.5);
+                    const bloco = new THREE.Mesh(geo, matGrama);
+                    bloco.position.set(x, h, z);
+                    scene.add(bloco);
+                    objects.push(bloco);
+
+                    if(Math.random() > 0.98 && (x > 3 || x < -3)) criarArvore(x, h+1, z, texMadeira, texFolha);
                 }
             }
 
-            // Mão
-            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.6), matMadeira);
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.6), new THREE.MeshStandardMaterial({ map: texPele }));
             scene.add(hand);
 
             setupControls();
-            animate();
         }
 
-        function criarArvore(x, y, z) {
+        function criarArvore(x, y, z, texM, texF) {
+            const matM = new THREE.MeshStandardMaterial({ map: texM });
+            const matF = new THREE.MeshStandardMaterial({ map: texF });
             const geo = new THREE.BoxGeometry(1,1,1);
-            for(let i=0; i<3; i++) {
-                const t = new THREE.Mesh(geo, matMadeira);
+            for(let i=0; i<4; i++) {
+                const t = new THREE.Mesh(geo, matM);
                 t.position.set(x, y+i, z);
                 scene.add(t);
                 objects.push(t);
@@ -115,35 +122,27 @@
                 if(e.code=='KeyW') moveF=true; if(e.code=='KeyS') moveB=true;
                 if(e.code=='KeyA') moveL=true; if(e.code=='KeyD') moveR=true;
                 if(e.code=='Space' && canJump) { velocity.y += 0.2; canJump = false; }
-                if(e.key=='1') selectSlot(1); if(e.key=='2') selectSlot(2); if(e.key=='3') selectSlot(3);
             });
             document.addEventListener('keyup', e => {
                 if(e.code=='KeyW') moveF=false; if(e.code=='KeyS') moveB=false;
                 if(e.code=='KeyA') moveL=false; if(e.code=='KeyD') moveR=false;
             });
 
-            document.addEventListener('mousedown', e => {
-                if(!document.pointerLockElement) {
+            // QUEBRAR BLOCO AO CLICAR
+            document.addEventListener('mousedown', (e) => {
+                if (!document.pointerLockElement) {
                     document.body.requestPointerLock();
-                    return;
-                }
-                
-                raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
-                const intersects = raycaster.intersectObjects(objects);
+                } else {
+                    // Raycast do centro da tela
+                    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+                    const intersects = raycaster.intersectObjects(objects);
 
-                if (intersects.length > 0 && intersects[0].distance < 5) {
-                    const intersect = intersects[0];
-                    
-                    if (e.button === 0) { // QUEBRAR (Click Esquerdo)
-                        scene.remove(intersect.object);
-                        objects = objects.filter(o => o !== intersect.object);
-                    } else if (e.button === 2) { // COLOCAR (Click Direito)
-                        const pos = intersect.point.add(intersect.face.normal.clone().multiplyScalar(0.5));
-                        const m = selectedBlock == 1 ? matGrama : (selectedBlock == 2 ? matMadeira : matFolha);
-                        const b = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), m);
-                        b.position.set(Math.round(pos.x), Math.round(pos.y), Math.round(pos.z));
-                        scene.add(b);
-                        objects.push(b);
+                    if (intersects.length > 0) {
+                        const obj = intersects[0].object;
+                        if (intersects[0].distance < 4) { // Alcance do braço
+                            scene.remove(obj);
+                            objects = objects.filter(item => item !== obj);
+                        }
                     }
                 }
             });
@@ -155,23 +154,17 @@
                     camera.rotation.x = Math.max(-1.5, Math.min(1.5, camera.rotation.x));
                 }
             });
-            window.addEventListener('contextmenu', e => e.preventDefault());
-        }
-
-        function selectSlot(n) {
-            selectedBlock = n;
-            document.querySelectorAll('.slot').forEach(s => s.classList.remove('selected'));
-            document.getElementById('slot'+n).classList.add('selected');
         }
 
         function animate() {
             requestAnimationFrame(animate);
-            
-            const prevPos = camera.position.clone();
+
+            // Guardar posição antiga para colisão
+            const oldPos = camera.position.clone();
 
             velocity.x -= velocity.x * 0.1;
             velocity.z -= velocity.z * 0.1;
-            velocity.y -= 0.01;
+            velocity.y -= 0.008;
 
             direction.z = Number(moveF) - Number(moveB);
             direction.x = Number(moveR) - Number(moveL);
@@ -182,29 +175,36 @@
 
             camera.translateX(-velocity.x);
             camera.translateZ(velocity.z);
-            
-            // COLISÃO SIMPLES (Não atravessar troncos/blocos)
-            for(let o of objects) {
-                if(camera.position.distanceTo(o.position) < 0.8 && Math.abs(camera.position.y - o.position.y) < 1) {
-                    camera.position.x = prevPos.x;
-                    camera.position.z = prevPos.z;
+
+            // --- SISTEMA DE COLISÃO ---
+            for (let obj of objects) {
+                // Se a distância horizontal for menor que o tamanho do bloco + margem
+                if (Math.abs(camera.position.x - obj.position.x) < 0.7 && 
+                    Math.abs(camera.position.z - obj.position.z) < 0.7 &&
+                    Math.abs(camera.position.y - obj.position.y) < 1.0) {
+                    camera.position.x = oldPos.x;
+                    camera.position.z = oldPos.z;
                 }
             }
 
             camera.position.y += velocity.y;
-            if (camera.position.y < 1.6) {
-                velocity.y = 0; camera.position.y = 1.6; canJump = true;
+
+            // Chão dinâmico
+            let gridX = Math.round(camera.position.x);
+            let gridZ = Math.round(camera.position.z);
+            let groundY = Math.sin(gridX/10) * Math.cos(gridZ/10) * 2.5;
+
+            if (camera.position.y < groundY + 1.8) {
+                velocity.y = 0; camera.position.y = groundY + 1.8; canJump = true;
             }
 
             if(hand) {
                 hand.position.copy(camera.position);
                 hand.rotation.copy(camera.rotation);
-                hand.translateZ(-0.6); hand.translateX(0.4); hand.translateY(-0.3);
+                hand.translateZ(-0.6); hand.translateX(0.5); hand.translateY(-0.4);
             }
             renderer.render(scene, camera);
         }
-
-        init();
     </script>
 </body>
 </html>
