@@ -4,95 +4,178 @@
     <meta charset="UTF-8">
     <title>Blocks 3D - Aria Math Edition</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+        /* Importando uma fonte pixelada para mais autenticidade */
+        @import url('https://fonts.cdnfonts.com/css/minecraftia');
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: #000; font-family: 'Minecraftia', sans-serif;
+        }
         
         #tela-inicial {
             position: absolute;
             width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%), 
-                        url('https://images.alphacoders.com/133/1331001.png');
+            /* Camada de fundo com movimento */
+            background: 
+                linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.5)),
+                url('https://images.alphacoders.com/133/1331001.png');
             background-size: cover;
             background-position: center;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; transition: 1.5s ease-in-out;
+            z-index: 100; transition: transform 1.5s cubic-bezier(0.65, 0, 0.35, 1), opacity 1s;
+            perspective: 1000px;
+        }
+
+        /* Efeito de vinheta para foco central */
+        #tela-inicial::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0 0 200px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        .logo-container {
+            position: relative;
+            margin-bottom: 60px;
+            z-index: 2;
         }
 
         .logo {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: clamp(40px, 8vw, 100px);
+            font-size: clamp(40px, 10vw, 120px);
             color: #fff;
-            text-shadow: 8px 8px 0px #373737;
-            margin-bottom: 50px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            /* Sombra projetada clássica */
+            filter: drop-shadow(8px 8px 0px #373737);
             animation: flutuar 4s infinite ease-in-out;
         }
 
+        .subtitle {
+            color: #ffff55; /* Cor amarela clássica do splash text */
+            font-size: 20px;
+            position: absolute;
+            right: -30px; bottom: -10px;
+            transform: rotate(-20deg);
+            text-shadow: 2px 2px #3f3f00;
+            animation: splash 0.5s infinite alternate;
+        }
+
         @keyframes flutuar {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-15px) scale(1.02); }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(1deg); }
+        }
+
+        @keyframes splash {
+            from { transform: rotate(-20deg) scale(1); }
+            to { transform: rotate(-20deg) scale(1.1); }
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2;
         }
 
         .btn-minecraft {
-            width: 380px; padding: 18px; margin: 10px;
-            background: #4e4e4e; border: 4px solid #000;
-            color: white; font-size: 22px; font-weight: bold;
-            cursor: pointer; text-shadow: 2px 2px #000;
-            box-shadow: inset -4px -4px #222, inset 4px 4px #aaa;
-            transition: 0.2s;
+            width: 400px;
+            padding: 14px;
+            background: #6c6c6c;
+            border: 3px solid #000;
+            color: #e0e0e0;
+            font-size: 20px;
+            font-family: 'Minecraftia', sans-serif;
+            cursor: pointer;
+            position: relative;
+            /* Efeito de borda interna (Bezel) */
+            box-shadow: inset -4px -4px 0px #373737, inset 4px 4px 0px #afafaf;
+            transition: all 0.1s;
+            outline: none;
         }
 
         .btn-minecraft:hover { 
-            background: #5fa03d; 
-            border-color: #fff; 
-            transform: scale(1.05); 
+            background: #8bb454; 
+            color: #fff;
+            box-shadow: inset -4px -4px 0px #5b8227, inset 4px 4px 0px #bee485;
+            border-color: #fff;
+        }
+
+        .btn-minecraft:active {
+            transform: translateY(2px);
+            box-shadow: inset 4px 4px 0px #373737, inset -4px -4px 0px #afafaf;
         }
 
         #crosshair {
-            position: fixed; top: 50%; left: 50%; color: rgba(255,255,255,0.8);
-            font-size: 30px; transform: translate(-50%, -50%);
+            position: fixed; top: 50%; left: 50%; color: #fff;
+            font-size: 24px; transform: translate(-50%, -50%);
             pointer-events: none; z-index: 10; display: none;
+            mix-blend-mode: difference; /* Faz o crosshair ser visível em qualquer fundo */
         }
 
-        /* Texto de música tocando */
         #music-info {
-            position: fixed; top: 20px; right: 20px;
-            color: white; font-family: monospace;
-            background: rgba(0,0,0,0.5); padding: 10px;
-            border-radius: 5px; display: none; z-index: 20;
+            position: fixed; bottom: 20px; left: 20px;
+            color: #aaa; font-family: monospace; font-size: 14px;
+            background: rgba(0,0,0,0.7); padding: 8px 15px;
+            border-left: 4px solid #5fa03d;
+            display: none; z-index: 20;
+            animation: slideIn 1s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
     <audio id="musica" loop>
-        <source src="aria_math.mp3" type="audio/mpeg">
         <source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/C418/Minecraft_Volume_Alpha/C418_-_08_-_Aria_Math.mp3" type="audio/mpeg">
     </audio>
 
     <div id="tela-inicial">
-        <div class="logo">BLOCKS 3D</div>
-        <button class="btn-minecraft" onclick="iniciarTudo()">JOGAR MUNDO</button>
-        <button class="btn-minecraft">OPÇÕES</button>
+        <div class="logo-container">
+            <div class="logo">BLOCKS 3D</div>
+            <div class="subtitle">Aria Math!</div>
+        </div>
+
+        <div class="menu-container">
+            <button class="btn-minecraft" onclick="iniciarTudo()">JOGAR MUNDO</button>
+            <button class="btn-minecraft">OPÇÕES</button>
+            <button class="btn-minecraft" style="width: 194px; display: inline-block;">MODS</button>
+            <button class="btn-minecraft" style="width: 194px; display: inline-block;">SAIR</button>
+        </div>
     </div>
 
     <div id="music-info">♪ Tocando: C418 - Aria Math</div>
     <div id="crosshair">+</div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="logicajogo.js"></script>
 
     <script>
+        // Efeito de movimento do fundo com o mouse (Parallax)
+        const tela = document.getElementById('tela-inicial');
+        document.addEventListener('mousemove', (e) => {
+            if(tela.style.display !== 'none') {
+                const x = (window.innerWidth / 2 - e.pageX) / 50;
+                const y = (window.innerHeight / 2 - e.pageY) / 50;
+                tela.style.backgroundPosition = `calc(50% + ${x}px) calc(50% + ${y}px)`;
+            }
+        });
+
         function iniciarTudo() {
             const musica = document.getElementById('musica');
-            musica.volume = 0.4;
-            
-            // Inicia a música (Aria Math)
-            musica.play().catch(e => console.log("Erro ao tocar: ", e));
+            musica.volume = 0.3;
+            musica.play().catch(e => console.log("Interação necessária para áudio."));
 
-            document.getElementById('tela-inicial').style.opacity = '0';
-            document.getElementById('music-info').style.display = 'block';
+            // Animação de saída
+            tela.style.opacity = '0';
+            tela.style.transform = 'scale(1.1)';
             
             setTimeout(() => {
-                document.getElementById('tela-inicial').style.display = 'none';
+                tela.style.display = 'none';
+                document.getElementById('music-info').style.display = 'block';
                 document.getElementById('crosshair').style.display = 'block';
                 if(typeof inicializar3D === "function") inicializar3D();
             }, 1000);
