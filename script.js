@@ -1,5 +1,6 @@
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+// === VARIÁVEIS DO JOGO ===
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
 let score = 0;
 let combo = 0;
@@ -9,88 +10,82 @@ let notes = [];
 let lastSpawn = 0;
 
 const lanes = [200, 300, 400, 500];
-const keyMap = ['ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight'];
+const keys = ["ArrowLeft", "ArrowDown", "ArrowUp", "ArrowRight"];
 
-// Função para spawnar nota
+// Criar uma nota
 function spawnNote() {
   const lane = Math.floor(Math.random() * 4);
-  notes.push({
-    x: lanes[lane],
-    y: -50,
-    lane: lane,
-    hit: false
-  });
+  notes.push({ x: lanes[lane], y: -50, lane: lane, hit: false });
 }
 
-// Desenhar tudo
+// Desenhar na tela
 function draw() {
-  ctx.fillStyle = '#1a0033';
+  ctx.fillStyle = "#1a0033";
   ctx.fillRect(0, 0, 800, 600);
 
   // Linha de acerto
-  ctx.strokeStyle = '#00ffff';
-  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#00ffff";
+  ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.moveTo(100, 450);
   ctx.lineTo(700, 450);
   ctx.stroke();
 
-  // Notas
-  for (let note of notes) {
-    if (!note.hit) {
-      ctx.fillStyle = '#ff00ff';
-      ctx.fillRect(note.x - 35, note.y, 70, 40);
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(note.x - 35, note.y, 70, 40);
+  // Desenhar notas
+  for (let i = 0; i < notes.length; i++) {
+    let n = notes[i];
+    if (!n.hit) {
+      ctx.fillStyle = "#ff00ff";
+      ctx.fillRect(n.x - 35, n.y, 70, 45);
     }
   }
 
-  // Receptores
+  // Receptores (setas fixas)
+  ctx.fillStyle = "#00ffff";
   for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = '#00ffff';
-    ctx.fillRect(lanes[i] - 35, 440, 70, 25);
+    ctx.fillRect(lanes[i] - 35, 440, 70, 30);
   }
 
-  // HUD
-  ctx.fillStyle = 'white';
-  ctx.font = 'bold 28px Arial';
-  ctx.fillText(`Score: ${score}`, 30, 50);
-  ctx.fillText(`Combo: ${combo}x`, 30, 90);
+  // Texto
+  ctx.fillStyle = "white";
+  ctx.font = "28px Arial";
+  ctx.fillText("Score: " + score, 40, 60);
+  ctx.fillText("Combo: " + combo + "x", 40, 100);
 
-  ctx.fillStyle = health > 35 ? '#00ff88' : '#ff3333';
-  ctx.fillRect(30, 120, health * 5, 25);
+  // Vida
+  ctx.fillStyle = health > 40 ? "#00ff88" : "#ff0000";
+  ctx.fillRect(40, 130, health * 5, 30);
 }
 
-// Atualizar jogo
+// Atualizar posição das notas
 function update() {
   for (let i = notes.length - 1; i >= 0; i--) {
-    notes[i].y += 7;
+    notes[i].y += 8;
 
-    if (notes[i].y > 520 && !notes[i].hit) {
-      health -= 18;
+    if (notes[i].y > 530 && !notes[i].hit) {
+      health -= 20;
       combo = 0;
       notes.splice(i, 1);
     }
   }
 }
 
+// Loop do jogo
 function gameLoop() {
   if (!gameRunning) return;
 
   update();
   draw();
 
-  if (Date.now() - lastSpawn > 220) {
+  if (Date.now() - lastSpawn > 200) {
     spawnNote();
-    if (Math.random() > 0.5) spawnNote();
     lastSpawn = Date.now();
   }
 
   if (health <= 0) {
     gameRunning = false;
-    alert(`GAME OVER!\nPontuação: ${score}\nCombo máximo: ${combo}`);
-    document.getElementById('menu').style.display = 'block';
+    alert("GAME OVER!\nSua pontuação: " + score);
+    document.getElementById("menu").style.display = "block";
     return;
   }
 
@@ -98,28 +93,28 @@ function gameLoop() {
 }
 
 // Controles do teclado
-document.addEventListener('keydown', (e) => {
+document.addEventListener("keydown", function(e) {
   if (!gameRunning) return;
 
-  const index = keyMap.indexOf(e.key);
+  let index = keys.indexOf(e.key);
   if (index === -1) return;
 
   for (let i = notes.length - 1; i >= 0; i--) {
-    const note = notes[i];
-    if (!note.hit && note.lane === index && Math.abs(note.y - 450) < 50) {
+    let note = notes[i];
+    if (!note.hit && note.lane === index && Math.abs(note.y - 450) < 55) {
       note.hit = true;
-      score += 100 + combo * 15;
+      score += 100 + combo * 10;
       combo++;
-      health = Math.min(100, health + 4);
+      health = Math.min(100, health + 5);
       notes.splice(i, 1);
-      return;
+      break;
     }
   }
 });
 
-// === INICIAR O JOGO ===
+// Função para iniciar o jogo
 function startGame() {
-  document.getElementById('menu').style.display = 'none';
+  document.getElementById("menu").style.display = "none";
 
   score = 0;
   combo = 0;
@@ -131,11 +126,10 @@ function startGame() {
   gameLoop();
 }
 
-// Configurar o botão de forma segura
-document.getElementById('playBtn').addEventListener('click', startGame);
+// Conectar o botão ao iniciar o jogo
+document.getElementById("playButton").addEventListener("click", startGame);
 
-// Iniciar
-window.onload = () => {
-  document.getElementById('menu').style.display = 'block';
-  canvas.style.display = 'block';
+// Início
+window.onload = function() {
+  document.getElementById("menu").style.display = "block";
 };

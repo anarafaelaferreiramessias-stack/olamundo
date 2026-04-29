@@ -2,20 +2,34 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rhythm Beat</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body { margin:0; background:#000; font-family:Arial; text-align:center; }
+    #menu { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); z-index:100; }
+    h1 { color:#ff00aa; font-size:70px; margin-bottom:30px; }
+    button { 
+      padding:20px 60px; 
+      font-size:32px; 
+      background:#ff00aa; 
+      color:white; 
+      border:none; 
+      border-radius:10px; 
+      cursor:pointer;
+    }
+    canvas { display:block; margin:0 auto; background:#1a0033; }
+  </style>
 </head>
 <body>
-  <!-- Menu -->
+
   <div id="menu">
     <h1>RHYTHM BEAT</h1>
-    <button id="playBtn" type="button">JOGAR</button>
+    <button id="playButton">JOGAR</button>
   </div>
 
-  <!-- Jogo -->
   <canvas id="canvas" width="800" height="600"></canvas>
 
   <script src="game.js"></script>
+
 </body>
 </html>
