@@ -1,148 +1,115 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MiniCraft</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{
-      background: linear-gradient(#87CEEB,#dff6ff);
-      overflow:hidden;
-      font-family: Arial, sans-serif;
-    }
-    canvas{display:block;}
-    #menu{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      background:rgba(0,0,0,.7);
-      color:white;
-      z-index:10;
-    }
-    h1{
-      font-size:60px;
-      text-shadow:4px 4px 0 #333;
-      margin-bottom:20px;
-    }
-    button{
-      padding:15px 30px;
-      font-size:24px;
-      border:none;
-      border-radius:10px;
-      cursor:pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Meu Projeto Minecraft JS</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #instrucoes {
+            position: absolute; top: 10px; left: 10px;
+            color: white; background: rgba(0,0,0,0.5);
+            padding: 10px; font-family: sans-serif;
+        }
+    </style>
 </head>
 <body>
+    <div id="instrucoes">Clique na tela para jogar | WASD para mover | Espaço para pular</div>
 
-<div id="menu">
-  <h1>MiniCraft</h1>
-  <button onclick="startGame()">Jogar</button>
-</div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
-<canvas id="game"></canvas>
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
-<script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+        // 1. Configuração Básica
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Cor do céu
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-const tileSize = 40;
-const worldWidth = 30;
-const worldHeight = 20;
+        // 2. Luz
+        const light = new THREE.AmbientLight(0x404040); // Luz suave
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 0.5).normalize();
+        scene.add(directionalLight);
 
-let gameStarted = false;
+        // 3. Criando o Chão (Mundo de Blocos)
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshLambertMaterial({ color: 0x32CD32 }); // Verde grama
 
-const textures = {
-  grass: '#4CAF50',
-  dirt: '#8B5A2B',
-  stone: '#888',
-  wood: '#A0522D'
-};
+        for (let x = -10; x < 10; x++) {
+            for (let z = -10; z < 10; z++) {
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, 0, z);
+                scene.add(cube);
+            }
+        }
 
-const world = [];
-for(let y=0;y<worldHeight;y++){
-  world[y]=[];
-  for(let x=0;x<worldWidth;x++){
-    world[y][x]='grass';
-  }
-}
+        // 4. Controles de Movimento
+        const controls = new PointerLockControls(camera, document.body);
+        document.addEventListener('click', () => controls.lock());
 
-const player = {
-  x: 5,
-  y: 5,
-  size: 30,
-  speed: 4
-};
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
 
-const keys = {};
-document.addEventListener('keydown',e=>keys[e.key]=true);
-document.addEventListener('keyup',e=>keys[e.key]=false);
+        const onKeyDown = (event) => {
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyD': moveRight = true; break;
+            }
+        };
 
-canvas.addEventListener('click', (e)=>{
-  if(!gameStarted) return;
-  const mx = Math.floor(e.clientX / tileSize);
-  const my = Math.floor(e.clientY / tileSize);
-  if(mx>=0 && my>=0 && mx<worldWidth && my<worldHeight){
-    world[my][mx] = world[my][mx] === 'grass' ? 'wood' : 'grass';
-  }
-});
+        const onKeyUp = (event) => {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyD': moveRight = false; break;
+            }
+        };
 
-function drawWorld(){
-  for(let y=0;y<worldHeight;y++){
-    for(let x=0;x<worldWidth;x++){
-      ctx.fillStyle = textures[world[y][x]];
-      ctx.fillRect(x*tileSize,y*tileSize,tileSize,tileSize);
-      
-      ctx.strokeStyle='rgba(0,0,0,0.2)';
-      ctx.strokeRect(x*tileSize,y*tileSize,tileSize,tileSize);
-    }
-  }
-}
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
 
-function drawPlayer(){
-  // Corpo estilo Steve
-  ctx.fillStyle='#2196F3';
-  ctx.fillRect(player.x,player.y,player.size,player.size);
+        camera.position.y = 2; // Altura dos olhos
 
-  // Cabeça
-  ctx.fillStyle='#f1c27d';
-  ctx.fillRect(player.x+5,player.y-15,20,20);
+        // 5. Loop de Animação
+        function animate() {
+            requestAnimationFrame(animate);
 
-  // Mão
-  ctx.fillStyle='#f1c27d';
-  ctx.fillRect(player.x+25,player.y+10,10,8);
-}
+            if (controls.isLocked) {
+                const delta = 0.1; // Velocidade
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
 
-function update(){
-  if(keys['w']) player.y -= player.speed;
-  if(keys['s']) player.y += player.speed;
-  if(keys['a']) player.x -= player.speed;
-  if(keys['d']) player.x += player.speed;
-}
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
 
-function gameLoop(){
-  if(!gameStarted) return;
+                if (moveForward || moveBackward) velocity.z -= direction.z * 40.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
 
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawWorld();
-  update();
-  drawPlayer();
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+            }
 
-  requestAnimationFrame(gameLoop);
-}
+            renderer.render(scene, camera);
+        }
 
-function startGame(){
-  document.getElementById('menu').style.display='none';
-  gameStarted=true;
-  gameLoop();
-}
-</script>
-
+        animate();
+    </script>
 </body>
 </html>
