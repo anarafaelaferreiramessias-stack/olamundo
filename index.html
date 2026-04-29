@@ -1,27 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minecraft 2D - Mini</title>
-  
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Minecraft</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- Tela de Início -->
-  <div id="start-screen">
-    <h1>MINECRAFT 2D</h1>
-    <button onclick="startGame()">JOGAR</button>
-  </div>
-
-  <!-- Jogo -->
-  <div id="game">
-    <canvas id="canvas" width="800" height="600"></canvas>
-    <div id="crosshair">+</div>
-    <div id="hud">Bloco: <span id="selected-block">Grama</span></div>
-  </div>
-
-  <script src="script.js"></script>
+    <div id="instructions">Clique para jogar. Use WASD para mover e mouse para olhar. Clique em blocos para coletar.</div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/PointerLockControls.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
