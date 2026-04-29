@@ -1,121 +1,132 @@
-const canvas = document.getElementById('gameCanvas');
+const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+let score = 0;
+let combo = 0;
+let health = 100;
+let gameRunning = false;
+let notes = [];
+let lastSpawn = 0;
 
-const TILE = 48;
-const worldWidth = 40;
-const worldHeight = 20;
+const lanes = [180, 280, 380, 480]; // posições X
+const keyMap = ['ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight'];
 
-let world = [];
-let camera = { x: 0, y: 0 };
-let player = {
-  x: 5 * TILE,
-  y: 5 * TILE,
-  speed: 6,
-  size: 32,
-  selectedBlock: 'grass'
-};
-
-function generateWorld() {
-  world = [];
-  for (let y = 0; y < worldHeight; y++) {
-    let row = [];
-    for (let x = 0; x < worldWidth; x++) {
-      if (y > 8) row.push('dirt');
-      else if (y === 8) row.push('grass');
-      else row.push('air');
-    }
-    world.push(row);
-  }
+function spawnNote() {
+  const lane = Math.floor(Math.random() * 4);
+  notes.push({
+    x: lanes[lane],
+    y: -40,
+    lane: lane,
+    hit: false
+  });
 }
 
-function getBlockColor(type) {
-  if (type === 'grass') return '#4CAF50';
-  if (type === 'dirt') return '#8B5A2B';
-  if (type === 'stone') return '#777';
-  return null;
-}
+function draw() {
+  ctx.fillStyle = '#0a001f';
+  ctx.fillRect(0, 0, 800, 600);
 
-function drawWorld() {
-  for (let y = 0; y < worldHeight; y++) {
-    for (let x = 0; x < worldWidth; x++) {
-      const block = world[y][x];
-      if (block !== 'air') {
-        ctx.fillStyle = getBlockColor(block);
-        ctx.fillRect(
-          x * TILE - camera.x,
-          y * TILE - camera.y,
-          TILE,
-          TILE
-        );
-        ctx.strokeRect(
-          x * TILE - camera.x,
-          y * TILE - camera.y,
-          TILE,
-          TILE
-        );
-      }
+  // Linha de acerto
+  ctx.strokeStyle = '#00ffff';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(100, 480);
+  ctx.lineTo(700, 480);
+  ctx.stroke();
+
+  // Desenhar notas
+  ctx.fillStyle = '#ff00ff';
+  for (let note of notes) {
+    if (!note.hit) {
+      ctx.fillRect(note.x - 30, note.y, 60, 35);
     }
   }
-}
 
-function drawPlayerHand() {
-  ctx.fillStyle = '#c68642';
-  ctx.fillRect(canvas.width - 180, canvas.height - 140, 100, 100);
-}
+  // Desenhar receptores
+  for (let i = 0; i < 4; i++) {
+    ctx.fillStyle = '#00ffff';
+    ctx.fillRect(lanes[i] - 30, 470, 60, 20);
+  }
 
-function drawCrosshair() {
+  // HUD
   ctx.fillStyle = 'white';
-  ctx.fillRect(canvas.width / 2 - 2, canvas.height / 2 - 10, 4, 20);
-  ctx.fillRect(canvas.width / 2 - 10, canvas.height / 2 - 2, 20, 4);
+  ctx.font = 'bold 28px Arial';
+  ctx.fillText(`Score: ${score}`, 40, 60);
+  ctx.fillText(`Combo: ${combo}x`, 40, 100);
+
+  // Vida
+  ctx.fillStyle = health > 40 ? '#00ff88' : '#ff4444';
+  ctx.fillRect(40, 140, health * 4, 25);
 }
 
-function drawHotbar() {
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(canvas.width / 2 - 120, canvas.height - 70, 240, 50);
-}
+function update() {
+  for (let i = notes.length - 1; i >= 0; i--) {
+    notes[i].y += 6;   // velocidade das notas
 
-function updateCamera() {
-  camera.x = player.x - canvas.width / 2;
-  camera.y = player.y - canvas.height / 2;
+    if (notes[i].y > 550 && !notes[i].hit) {
+      health -= 15;
+      combo = 0;
+      notes.splice(i, 1);
+    }
+  }
 }
 
 function gameLoop() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!gameRunning) return;
 
-  ctx.fillStyle = '#87CEEB';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  update();
+  draw();
 
-  updateCamera();
-  drawWorld();
-  drawCrosshair();
-  drawHotbar();
-  drawPlayerHand();
+  // Spawn de notas
+  if (Date.now() - lastSpawn > 280) {
+    if (Math.random() > 0.25) spawnNote();
+    lastSpawn = Date.now();
+  }
+
+  if (health <= 0) {
+    gameRunning = false;
+    alert(`Game Over!\n\nPontuação final: ${score}\nMaior Combo: ${combo}`);
+    document.getElementById('menu').style.display = 'block';
+    return;
+  }
 
   requestAnimationFrame(gameLoop);
 }
 
+// Controles
+document.addEventListener('keydown', (e) => {
+  if (!gameRunning) return;
+
+  const index = keyMap.indexOf(e.key);
+  if (index === -1) return;
+
+  // Efeito visual (opcional)
+  for (let i = notes.length - 1; i >= 0; i--) {
+    const note = notes[i];
+    if (!note.hit && note.lane === index && Math.abs(note.y - 480) < 45) {
+      note.hit = true;
+      score += 100 + Math.floor(combo * 8);
+      combo++;
+      health = Math.min(100, health + 3);
+      notes.splice(i, 1);
+      return;
+    }
+  }
+});
+
 function startGame() {
   document.getElementById('menu').style.display = 'none';
-  canvas.style.display = 'block';
-  generateWorld();
+  
+  score = 0;
+  combo = 0;
+  health = 100;
+  notes = [];
+  gameRunning = true;
+  lastSpawn = Date.now();
+
   gameLoop();
 }
 
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'w') player.y -= player.speed;
-  if (e.key === 's') player.y += player.speed;
-  if (e.key === 'a') player.x -= player.speed;
-  if (e.key === 'd') player.x += player.speed;
-});
-
-canvas.addEventListener('click', () => {
-  let gridX = Math.floor((player.x + TILE) / TILE);
-  let gridY = Math.floor(player.y / TILE);
-
-  if (world[gridY] && world[gridY][gridX]) {
-    world[gridY][gridX] = world[gridY][gridX] === 'air' ? 'grass' : 'air';
-  }
-});
+// Inicia escondendo o canvas até clicar em Jogar
+window.onload = () => {
+  canvas.style.display = 'block';
+};
