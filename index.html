@@ -1,123 +1,121 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MiniCraft</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;overflow:hidden;background:#87CEEB;}
-#menu{
-  position:absolute;
-  width:100%;height:100%;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  background:linear-gradient(#6ab04c,#badc58);
-}
-h1{font-size:64px;color:white;text-shadow:4px 4px #000;}
-button{
-  margin-top:20px;
-  padding:20px 50px;
-  font-size:24px;
-  cursor:pointer;
-}
-#gameCanvas{display:none;background:#87CEEB;}
-#hand{
-  position:absolute;
-  bottom:20px;
-  right:40px;
-  width:180px;
-  height:180px;
-  background:linear-gradient(#d2a679,#8b5a2b);
-  border:4px solid #000;
-  transform:rotate(-20deg);
-  display:none;
-}
-</style>
-</head>
-<body>
-<div id="menu">
-  <h1>MiniCraft</h1>
-  <button onclick="startGame()">Jogar</button>
-</div>
-
-<canvas id="gameCanvas"></canvas>
-<div id="hand"></div>
-
-<script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-let blocks = [];
+const TILE = 48;
+const worldWidth = 40;
+const worldHeight = 20;
+
+let world = [];
+let camera = { x: 0, y: 0 };
 let player = {
-  x: canvas.width/2,
-  y: canvas.height/2,
-  speed: 5
+  x: 5 * TILE,
+  y: 5 * TILE,
+  speed: 6,
+  size: 32,
+  selectedBlock: 'grass'
 };
 
-function generateWorld(){
-  for(let x=0;x<canvas.width;x+=50){
-    for(let y=canvas.height/2;y<canvas.height;y+=50){
-      blocks.push({x,y,size:50,type:Math.random()>0.5?'grass':'dirt'});
+function generateWorld() {
+  world = [];
+  for (let y = 0; y < worldHeight; y++) {
+    let row = [];
+    for (let x = 0; x < worldWidth; x++) {
+      if (y > 8) row.push('dirt');
+      else if (y === 8) row.push('grass');
+      else row.push('air');
+    }
+    world.push(row);
+  }
+}
+
+function getBlockColor(type) {
+  if (type === 'grass') return '#4CAF50';
+  if (type === 'dirt') return '#8B5A2B';
+  if (type === 'stone') return '#777';
+  return null;
+}
+
+function drawWorld() {
+  for (let y = 0; y < worldHeight; y++) {
+    for (let x = 0; x < worldWidth; x++) {
+      const block = world[y][x];
+      if (block !== 'air') {
+        ctx.fillStyle = getBlockColor(block);
+        ctx.fillRect(
+          x * TILE - camera.x,
+          y * TILE - camera.y,
+          TILE,
+          TILE
+        );
+        ctx.strokeRect(
+          x * TILE - camera.x,
+          y * TILE - camera.y,
+          TILE,
+          TILE
+        );
+      }
     }
   }
 }
 
-function drawBlock(block){
-  if(block.type==='grass'){
-    ctx.fillStyle='#2ecc71';
-  } else {
-    ctx.fillStyle='#8e5a2b';
-  }
-  ctx.fillRect(block.x,block.y,block.size,block.size);
-  ctx.strokeStyle='#000';
-  ctx.strokeRect(block.x,block.y,block.size,block.size);
+function drawPlayerHand() {
+  ctx.fillStyle = '#c68642';
+  ctx.fillRect(canvas.width - 180, canvas.height - 140, 100, 100);
 }
 
-function drawPlayer(){
-  ctx.fillStyle='red';
-  ctx.fillRect(player.x-10,player.y-20,20,40);
+function drawCrosshair() {
+  ctx.fillStyle = 'white';
+  ctx.fillRect(canvas.width / 2 - 2, canvas.height / 2 - 10, 4, 20);
+  ctx.fillRect(canvas.width / 2 - 10, canvas.height / 2 - 2, 20, 4);
 }
 
-function gameLoop(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function drawHotbar() {
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(canvas.width / 2 - 120, canvas.height - 70, 240, 50);
+}
 
-  ctx.fillStyle='#87CEEB';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+function updateCamera() {
+  camera.x = player.x - canvas.width / 2;
+  camera.y = player.y - canvas.height / 2;
+}
 
-  blocks.forEach(drawBlock);
-  drawPlayer();
+function gameLoop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#87CEEB';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  updateCamera();
+  drawWorld();
+  drawCrosshair();
+  drawHotbar();
+  drawPlayerHand();
 
   requestAnimationFrame(gameLoop);
 }
 
-function startGame(){
-  document.getElementById('menu').style.display='none';
-  canvas.style.display='block';
-  document.getElementById('hand').style.display='block';
+function startGame() {
+  document.getElementById('menu').style.display = 'none';
+  canvas.style.display = 'block';
   generateWorld();
   gameLoop();
 }
 
-window.addEventListener('keydown',(e)=>{
-  if(e.key==='w') player.y-=player.speed;
-  if(e.key==='s') player.y+=player.speed;
-  if(e.key==='a') player.x-=player.speed;
-  if(e.key==='d') player.x+=player.speed;
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'w') player.y -= player.speed;
+  if (e.key === 's') player.y += player.speed;
+  if (e.key === 'a') player.x -= player.speed;
+  if (e.key === 'd') player.x += player.speed;
 });
 
-canvas.addEventListener('click',(e)=>{
-  blocks.push({
-    x:e.clientX-25,
-    y:e.clientY-25,
-    size:50,
-    type:'grass'
-  });
+canvas.addEventListener('click', () => {
+  let gridX = Math.floor((player.x + TILE) / TILE);
+  let gridY = Math.floor(player.y / TILE);
+
+  if (world[gridY] && world[gridY][gridX]) {
+    world[gridY][gridX] = world[gridY][gridX] === 'air' ? 'grass' : 'air';
+  }
 });
-</script>
-</body>
-</html>
