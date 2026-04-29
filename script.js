@@ -1,65 +1,91 @@
-// Setup da cena
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-// Câmera
-const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-);
-camera.position.set(5, 5, 5);
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// Renderizador
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.getElementById('game-container').appendChild(renderer.domElement);
+let blocks = [];
+let player = {
+  x: canvas.width / 2,
+  y: canvas.height / 2,
+  speed: 5,
+  width: 20,
+  height: 40
+};
 
-// Luz
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(10, 20, 10);
-scene.add(light);
-
-// Controle de blocos
-const blocks = [];
-const blockSize = 1;
-
-// Função para criar blocos
-function createBlock(x, y, z, color = 0x00ff00) {
-    const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-    const material = new THREE.MeshStandardMaterial({ color });
-    const cube = new THREE.Mesh(geometry, material);
-    cube.position.set(x, y, z);
-    scene.add(cube);
-    blocks.push(cube);
-}
-
-// Criando um chão inicial
-for (let x = 0; x < 10; x++) {
-    for (let z = 0; z < 10; z++) {
-        createBlock(x, 0, z, 0x8B4513); // bloco de terra
+function generateWorld() {
+  for (let x = 0; x < canvas.width; x += 50) {
+    for (let y = canvas.height / 2; y < canvas.height; y += 50) {
+      blocks.push({
+        x,
+        y,
+        size: 50,
+        type: Math.random() > 0.5 ? 'grass' : 'dirt'
+      });
     }
+  }
 }
 
-// Controle de câmera com teclado
-const keys = {};
-document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+function drawBlock(block) {
+  if (block.type === 'grass') {
+    ctx.fillStyle = '#2ecc71';
+  } else {
+    ctx.fillStyle = '#8e5a2b';
+  }
 
-function moveCamera() {
-    const speed = 0.2;
-    if (keys['w']) camera.position.z -= speed;
-    if (keys['s']) camera.position.z += speed;
-    if (keys['a']) camera.position.x -= speed;
-    if (keys['d']) camera.position.x += speed;
+  ctx.fillRect(block.x, block.y, block.size, block.size);
+  ctx.strokeStyle = '#000';
+  ctx.strokeRect(block.x, block.y, block.size, block.size);
 }
 
-// Loop de animação
-function animate() {
-    requestAnimationFrame(animate);
-    moveCamera();
-    renderer.render(scene, camera);
+function drawPlayer() {
+  ctx.fillStyle = 'red';
+  ctx.fillRect(player.x, player.y, player.width, player.height);
 }
 
-animate();
+function updateGame() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#87CEEB';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  blocks.forEach(drawBlock);
+  drawPlayer();
+
+  requestAnimationFrame(updateGame);
+}
+
+function startGame() {
+  document.getElementById('menu').style.display = 'none';
+  canvas.style.display = 'block';
+  document.getElementById('hand').style.display = 'block';
+
+  generateWorld();
+  updateGame();
+}
+
+window.addEventListener('keydown', (e) => {
+  switch (e.key.toLowerCase()) {
+    case 'w':
+      player.y -= player.speed;
+      break;
+    case 's':
+      player.y += player.speed;
+      break;
+    case 'a':
+      player.x -= player.speed;
+      break;
+    case 'd':
+      player.x += player.speed;
+      break;
+  }
+});
+
+canvas.addEventListener('click', (e) => {
+  blocks.push({
+    x: e.clientX - 25,
+    y: e.clientY - 25,
+    size: 50,
+    type: 'grass'
+  });
+});
