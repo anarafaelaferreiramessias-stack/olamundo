@@ -1,59 +1,85 @@
 body {
-    background-color: #222;
-    color: white;
-    font-family: sans-serif;
+    background: #000;
+    margin: 0;
     overflow: hidden;
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+}
+
+.stage {
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, #1a1a2e, #16213e);
+    position: relative;
+}
+
+/* Personagens */
+.char {
+    position: absolute;
+    bottom: 100px;
+    font-size: 120px;
+    transition: transform 0.1s;
+}
+#opponent { left: 15%; }
+#player { right: 15%; }
+
+/* Interface de Setas */
+.gui {
+    position: absolute;
+    top: 50px;
+    width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
 }
 
-#game-container {
-    position: relative;
-    width: 400px;
-    height: 600px;
-    background: #333;
-    border: 4px solid #555;
-}
-
-.character {
-    position: absolute;
-    bottom: 20px;
-    font-size: 80px;
-}
-
-#opponent { left: 40px; }
-#player { right: 40px; }
-
-.strum-line {
+.lane-group {
     display: flex;
-    justify-content: space-around;
-    padding-top: 20px;
+    gap: 15px;
 }
 
 .receptor {
-    font-size: 40px;
-    opacity: 0.5;
-    transition: transform 0.1s;
+    width: 80px;
+    height: 80px;
+    border: 6px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
 }
 
-.active {
-    opacity: 1;
-    transform: scale(1.2);
+/* Cores das Notas */
+.left { --color: #c24b99; }
+.down { --color: #00ffff; }
+.up { --color: #12fa05; }
+.right { --color: #f9393f; }
+
+.receptor.active {
+    background-color: var(--color);
+    box-shadow: 0 0 30px var(--color);
+    border-color: white;
 }
 
+/* Estilo das notas que sobem */
 .note {
     position: absolute;
-    font-size: 40px;
-    bottom: -50px; /* Começa fora da tela embaixo */
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    background-color: var(--color);
+    box-shadow: 0 0 15px var(--color);
 }
 
-#score {
+/* Barra de Vida */
+.health-container {
     position: absolute;
-    top: 80px;
-    width: 100%;
-    text-align: center;
-    font-size: 24px;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    height: 20px;
+    background: #ff0000;
+    border: 4px solid white;
+}
+#health-bar {
+    width: 50%;
+    height: 100%;
+    background: #66ff33;
+    float: right; /* FNF: Verde é o lado do player */
 }

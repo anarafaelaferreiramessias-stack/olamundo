@@ -2,23 +2,29 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Meu Jogo de Ritmo</title>
+    <title>FNF JavaScript Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="opponent" class="character">🤖</div>
-        <div id="player" class="character">🎤</div>
+    <div class="stage">
+        <div id="opponent" class="char">🤖</div>
+        <div id="player" class="char">🎤</div>
 
-        <div class="strum-line">
-            <div class="receptor" id="key-0" data-key="ArrowLeft">⬅️</div>
-            <div class="receptor" id="key-1" data-key="ArrowDown">⬇️</div>
-            <div class="receptor" id="key-2" data-key="ArrowUp">⬆️</div>
-            <div class="receptor" id="key-3" data-key="ArrowRight">➡️</div>
+        <div class="health-container">
+            <div id="health-bar"></div>
+            <div class="icons"><span>🤖</span><span>🎤</span></div>
         </div>
 
-        <div id="score">Pontos: 0</div>
+        <div class="gui">
+            <div class="lane-group" id="player-lanes">
+                <div class="receptor left" id="r-0"></div>
+                <div class="receptor down" id="r-1"></div>
+                <div class="receptor up" id="r-2"></div>
+                <div class="receptor right" id="r-3"></div>
+            </div>
+        </div>
     </div>
+    <h1 id="score">Score: 0 | Accuracy: 0%</h1>
     <script src="script.js"></script>
 </body>
 </html>
