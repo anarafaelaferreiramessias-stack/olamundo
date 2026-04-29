@@ -1,56 +1,27 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>FNAF Engine - No Images</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Minecraft 2D - Mini</title>
+  
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-screen">
-        <div class="static-overlay"></div>
 
-        <div id="office">
-            <div id="light-effect-L" class="light"></div>
-            <div id="light-effect-R" class="light"></div>
-            
-            <div class="wall-left"></div>
-            <div class="desk">
-                <div class="fan-base">
-                    <div class="fan-blades"></div>
-                </div>
-                <div class="cup"></div>
-            </div>
-            <div class="wall-right"></div>
+  <!-- Tela de Início -->
+  <div id="start-screen">
+    <h1>MINECRAFT 2D</h1>
+    <button onclick="startGame()">JOGAR</button>
+  </div>
 
-            <div id="door-L" class="door-object"></div>
-            <div id="door-R" class="door-object"></div>
+  <!-- Jogo -->
+  <div id="game">
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <div id="crosshair">+</div>
+    <div id="hud">Bloco: <span id="selected-block">Grama</span></div>
+  </div>
 
-            <div class="controls-L">
-                <button onmousedown="light('L', true)" onmouseup="light('L', false)">LUZ</button>
-                <button onclick="toggleDoor('L')">PORTA</button>
-            </div>
-            <div class="controls-R">
-                <button onmousedown="light('R', true)" onmouseup="light('R', false)">LUZ</button>
-                <button onclick="toggleDoor('R')">PORTA</button>
-            </div>
-        </div>
-
-        <div id="monitor" class="monitor-off">
-            <div id="cam-display">
-                <div class="cam-header">CAM <span id="cam-num">1A</span> - <span id="cam-name">STAGE</span></div>
-                <div id="animatronic" class="enemy"></div>
-            </div>
-
-            <div class="map">
-                <p>MAPA DA PIZZARIA</p>
-                <button class="cam-btn" onclick="changeCam('1A', 'STAGE')">1A</button>
-                <button class="cam-btn" onclick="changeCam('1B', 'DINING')">1B</button>
-                <button class="cam-btn" onclick="changeCam('2A', 'HALL')">2A</button>
-            </div>
-        </div>
-
-        <div id="toggle-monitor-btn" onclick="toggleMonitor()">MONITOR</div>
-    </div>
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

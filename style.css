@@ -1,42 +1,80 @@
-body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
-
-#game-screen { width: 100vw; height: 100vh; position: relative; }
-
-/* Escritório Visual */
-#office {
-    width: 150%; height: 100%; background: #1a1a1a;
-    position: absolute; left: -25%; display: flex; align-items: center; justify-content: center;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.desk { width: 500px; height: 150px; background: #333; position: absolute; bottom: 0; border-top: 5px solid #444; }
+body {
+  font-family: Arial, sans-serif;
+  background: #000;
+  overflow: hidden;
+  color: white;
+}
 
-.fan-base { width: 40px; height: 60px; background: #111; position: absolute; top: -60px; left: 50%; transform: translateX(-50%); }
+/* Tela de Início */
+#start-screen {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(#0b3d91, #1e90ff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
 
-/* Portas e Luzes */
-.door-object { position: absolute; bottom: 0; width: 15%; height: 0%; background: #0a0a0a; border: 4px solid #222; transition: 0.5s; z-index: 10; }
-#door-L { left: 0; }
-#door-R { right: 0; }
+#start-screen h1 {
+  font-size: 90px;
+  margin-bottom: 30px;
+  text-shadow: 6px 6px 0 #000;
+  letter-spacing: 4px;
+}
 
-.light { position: absolute; width: 25%; height: 100%; opacity: 0; pointer-events: none; z-index: 5; }
-#light-effect-L { left: 0; background: radial-gradient(circle at left, rgba(255,255,255,0.2), transparent); }
-#light-effect-R { right: 0; background: radial-gradient(circle at right, rgba(255,255,255,0.2), transparent); }
+#start-screen button {
+  padding: 18px 60px;
+  font-size: 32px;
+  background: #5c3311;
+  color: white;
+  border: 5px solid #8b4513;
+  cursor: pointer;
+  transition: 0.3s;
+}
 
-/* Monitor */
-#monitor { position: absolute; width: 100%; height: 100%; background: #050505; z-index: 100; display: flex; transition: 0.3s; }
-.monitor-off { transform: translateY(100%); }
+#start-screen button:hover {
+  background: #8b4513;
+  transform: scale(1.08);
+}
 
-#cam-display { flex: 1; border: 15px solid #222; background: #111; position: relative; }
-.enemy { width: 50px; height: 80px; background: red; position: absolute; display: none; border-radius: 50% 50% 0 0; }
+/* Jogo */
+#game {
+  display: none;
+  position: relative;
+}
 
-.map { width: 300px; background: #000; border-left: 2px solid white; padding: 20px; }
-.cam-btn { display: block; margin: 10px; padding: 10px; width: 100%; background: #222; color: white; border: 1px solid white; cursor: pointer; }
+canvas {
+  image-rendering: pixelated;
+  border: 4px solid #333;
+  display: block;
+}
 
-/* Controles */
-.controls-L, .controls-R { position: absolute; bottom: 10%; z-index: 20; }
-.controls-L { left: 16%; } .controls-R { right: 16%; }
-button { display: block; padding: 10px; margin: 5px; background: #444; color: white; cursor: pointer; }
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 40px;
+  color: rgba(255, 255, 255, 0.7);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+}
 
-#toggle-monitor-btn {
-    position: absolute; bottom: 0; left: 30%; width: 40%; height: 40px;
-    background: #555; color: white; text-align: center; line-height: 40px; z-index: 200; cursor: pointer;
+#hud {
+  position: absolute;
+  bottom: 15px;
+  left: 15px;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 12px 18px;
+  border: 3px solid #666;
+  font-size: 18px;
 }
