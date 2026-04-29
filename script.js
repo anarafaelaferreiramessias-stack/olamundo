@@ -1,71 +1,52 @@
-let power = 100;
-let camOpen = false;
-let currentCam = '1A';
-let animatronicPos = '1A'; // Onde o inimigo está
-let hour = 0;
+let state = {
+    power: 100,
+    usage: 1,
+    isMonitorOpen: false,
+    currentCam: '1A',
+    animatronicPos: '1A',
+    leftDoorClosed: false,
+};
 
-// Atualização de Energia
-const powerInterval = setInterval(() => {
-    if (camOpen) {
-        power -= 2; // Gasta mais energia com câmera aberta
-    } else {
-        power -= 0.5;
+// Movimentação do Mouse (Efeito de olhar para os lados)
+document.addEventListener('mousemove', (e) => {
+    if (!state.isMonitorOpen) {
+        const move = (e.clientX - window.innerWidth / 2) / 20;
+        document.getElementById('office').style.transform = `translateX(${-move}px)`;
     }
+});
+
+function toggleMonitor() {
+    state.isMonitorOpen = !state.isMonitorOpen;
+    const mon = document.getElementById('monitor');
+    mon.classList.toggle('hidden');
+    state.usage = state.isMonitorOpen ? 2 : 1;
+}
+
+function switchCam(camID) {
+    state.currentCam = camID;
+    document.getElementById('cam-label').innerText = `CAM ${camID}`;
     
-    document.getElementById('power').innerText = `Energia: ${Math.floor(power)}%`;
+    // Simular "glitch" na troca de câmera
+    const overlay = document.querySelector('.static-overlay');
+    overlay.style.opacity = "0.3";
+    setTimeout(() => overlay.style.opacity = "0.05", 150);
+}
 
-    if (power <= 0) {
-        gameOver("A energia acabou!");
-    }
-}, 3000);
-
-// Ciclo da Noite (Tempo)
+// Consumo de Energia Realista
 setInterval(() => {
-    hour++;
-    if (hour > 6) alert("Você sobreviveu!");
-    document.getElementById('time').innerText = `${hour} AM`;
-}, 60000); // 1 minuto real = 1 hora no jogo
-
-// IA do Animatrônico
-setInterval(() => {
-    const locations = ['1A', '1B', '2A', 'OFFICE'];
-    let index = locations.indexOf(animatronicPos);
+    let consumption = state.usage;
+    if (state.leftDoorClosed) consumption++;
     
-    // Chance de mover para a próxima sala
-    if (Math.random() > 0.5 && index < locations.length - 1) {
-        animatronicPos = locations[index + 1];
-        console.log("Inimigo moveu para: " + animatronicPos);
+    state.power -= (consumption * 0.1);
+    document.getElementById('power-val').innerText = Math.max(0, Math.floor(state.power));
+    
+    if (state.power <= 0) {
+        document.body.innerHTML = "<h1 style='color:red; text-align:center; margin-top:20%'>TOO DARK...</h1>";
     }
+}, 1000);
 
-    // Se ele chegar no escritório e você não estiver olhando as câmeras (ou vice-versa)
-    if (animatronicPos === 'OFFICE') {
-        gameOver();
-    }
-}, 8000);
-
-function toggleCams() {
-    camOpen = !camOpen;
-    document.getElementById('camera-system').classList.toggle('hidden');
-    updateCamDisplay();
-}
-
-function changeCam(cam) {
-    currentCam = cam;
-    updateCamDisplay();
-}
-
-function updateCamDisplay() {
-    const display = document.getElementById('cam-display');
-    if (animatronicPos === currentCam) {
-        display.innerText = `VISUALIZANDO: ${currentCam} - [ALGO ESTÁ AQUI]`;
-        display.style.color = "red";
-    } else {
-        display.innerText = `VISUALIZANDO: ${currentCam} - Tudo limpo`;
-        display.style.color = "white";
-    }
-}
-
-function gameOver() {
-    clearInterval(powerInterval);
-    document.getElementById('jumpscare').classList.remove('hidden');
+function toggleDoor(side) {
+    state.leftDoorClosed = !state.leftDoorClosed;
+    const btn = document.querySelector('.btn-door');
+    btn.style.background = state.leftDoorClosed ? "red" : "#444";
 }

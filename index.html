@@ -2,35 +2,45 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>FNAF Web Clone</title>
+    <title>Security Monitor - Night 1</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <div id="office">
-            <div id="ui">
-                <div id="power">Energia: 100%</div>
-                <div id="time">12 AM</div>
+    <div class="static-overlay"></div>
+
+    <div id="game-viewport">
+        <div id="office" class="room-view">
+            <div class="fan"></div> <div id="ui-overlay">
+                <div class="stats">
+                    <h2 id="clock">12 AM</h2>
+                    <p>Power Left: <span id="power-val">100</span>%</p>
+                    <p>Usage: <span id="usage-bars">■□□</span></p>
+                </div>
             </div>
             
-            <button id="btn-camera" onclick="toggleCams()">ABRIR MONITOR</button>
-        </div>
-
-        <div id="camera-system" class="hidden">
-            <div id="cam-display">VISUALIZANDO: CAM 1A</div>
-            <div class="map">
-                <button onclick="changeCam('1A')">CAM 1A</button>
-                <button onclick="changeCam('1B')">CAM 1B</button>
-                <button onclick="changeCam('2A')">CAM 2A</button>
+            <div class="door-controls left">
+                <button class="btn-light" onmousedown="toggleLight('left')" onmouseup="toggleLight(null)">LIGHT</button>
+                <button class="btn-door" onclick="toggleDoor('left')">DOOR</button>
             </div>
-            <button id="btn-close-cam" onclick="toggleCams()">FECHAR MONITOR</button>
         </div>
 
-        <div id="jumpscare" class="hidden">
-            <h1>VOCÊ MORREU!</h1>
-            <button onclick="location.reload()">Tentar Novamente</button>
+        <div id="monitor" class="hidden">
+            <div class="cam-screen">
+                <div id="cam-label">CAM 1A - SHOW STAGE</div>
+                <div class="scanline"></div>
+            </div>
+            
+            <div class="map-container">
+                <button class="cam-btn" data-cam="1A" onclick="switchCam('1A')">1A</button>
+                <button class="cam-btn" data-cam="1B" onclick="switchCam('1B')">1B</button>
+                <button class="cam-btn" data-cam="2A" onclick="switchCam('2A')">2A</button>
+                <button class="cam-btn" data-cam="4A" onclick="switchCam('4A')">4A</button>
+            </div>
         </div>
+
+        <div id="monitor-trigger" onmouseenter="toggleMonitor()"></div>
     </div>
+
     <script src="script.js"></script>
 </body>
 </html>

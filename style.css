@@ -1,75 +1,72 @@
-body {
-    margin: 0;
-    background-color: #000;
-    color: white;
-    font-family: 'Courier New', Courier, monospace;
-    overflow: hidden;
+:root {
+    --fnaf-green: #2ecc71;
+    --fnaf-red: #e74c3c;
 }
 
-#game-container {
-    position: relative;
+body {
+    background: #000;
+    margin: 0;
+    overflow: hidden;
+    color: white;
+    font-family: 'OCR A Std', monospace;
+}
+
+/* Efeito de Estática/Ruído */
+.static-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: url('https://media.giphy.com/media/oEI9uWUqnS3S0/giphy.gif');
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#game-viewport {
     width: 100vw;
     height: 100vh;
+    border: 20px solid #111;
+    box-sizing: border-box;
 }
 
 #office {
-    width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, #222, #000);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    padding-bottom: 50px;
+    background: #1a1a1a url('https://img.freepik.com/free-photo/dark-empty-room-with-concrete-floor-walls_1232-1520.jpg') center/cover;
+    transition: transform 0.1s;
 }
 
-#ui {
+/* Monitor de Câmeras Estilo CRT */
+#monitor {
     position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 20, 0, 0.95);
+    z-index: 5;
 }
 
-#camera-system {
+.scanline {
+    width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+}
+
+.map-container {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    border: 5px solid #333;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    bottom: 20px; right: 20px;
+    width: 300px; height: 200px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid white;
 }
 
-.hidden { display: none !important; }
-
-.map {
-    display: grid;
-    grid-template-columns: 100px 100px;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-button {
-    padding: 15px;
-    background: #444;
-    color: white;
-    border: 2px solid #666;
+.cam-btn {
+    position: absolute;
+    padding: 10px; background: #222; border: 1px solid #fff; color: #fff;
     cursor: pointer;
 }
 
-button:hover { background: #666; }
-
-#jumpscare {
+#monitor-trigger {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: red;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
+    bottom: 0; width: 100%; height: 40px;
+    background: rgba(255,255,255,0.1);
+    z-index: 6;
 }
