@@ -1,29 +1,75 @@
- body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
-        
-        /* MENU INICIAL */
-        #ui-overlay {
-            position: absolute; width: 100%; height: 100%; z-index: 100;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://i.imgur.com/u7q13eH.jpg') center/cover;
-        }
-        .title-mc { font-size: 60px; color: white; font-weight: bold; text-shadow: 4px 4px #333; margin-bottom: 40px; letter-spacing: 5px; }
-        .btn-menu { 
-            padding: 15px 80px; background: #4e4e4e; border: 3px solid #000; color: #e0e0e0; 
-            cursor: pointer; font-size: 20px; font-weight: bold; transition: 0.2s;
-        }
-        .btn-menu:hover { background: #8dc63f; color: white; transform: scale(1.05); }
+body, html { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden; 
+    background: #87CEEB; 
+    font-family: sans-serif; 
+}
 
-        /* HUD */
-        #hotbar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: none; gap: 6px; padding: 6px; background: rgba(0,0,0,0.7); border: 2px solid #888;
-        }
-        .slot { width: 48px; height: 48px; border: 2px solid #555; display: flex; align-items: center; justify-content: center; position: relative; }
-        .slot.selected { border: 2px solid #fff; background: rgba(255,255,255,0.2); }
-        .count { position: absolute; bottom: 2px; right: 4px; color: #fff; font-size: 16px; font-weight: bold; text-shadow: 1px 1px #000; }
-        
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); display: none; pointer-events: none; mix-blend-mode: difference; }
-        #mining-progress { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 80px; height: 6px; background: #000; border: 1px solid #fff; display: none; }
-        #mining-bar { width: 0%; height: 100%; background: #ffff00; }
-        
-        #instructions { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; font-size: 12px; display: none; }
+#crosshair { 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    color: white; 
+    font-size: 24px; 
+    transform: translate(-50%, -50%); 
+    pointer-events: none; 
+    z-index: 10; 
+    mix-blend-mode: difference; 
+}
+
+#hotbar { 
+    position: fixed; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    display: flex; 
+    gap: 10px; 
+    background: rgba(0,0,0,0.8); 
+    padding: 10px; 
+    border: 4px solid #333; 
+}
+
+.slot { 
+    width: 60px; 
+    height: 60px; 
+    border: 4px solid #555; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: white; 
+    font-size: 10px; 
+    text-align: center; 
+    font-weight: bold; 
+}
+
+.slot.active { 
+    border-color: #fff; 
+    background: rgba(255,255,255,0.2); 
+}
+
+#overlay { 
+    position: fixed; 
+    width: 100%; 
+    height: 100%; 
+    background: rgba(0,0,0,0.8); 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    z-index: 200; 
+    color: white; 
+}
+
+.btn { 
+    padding: 15px 40px; 
+    background: #5fa03d; 
+    color: white; 
+    border: none; 
+    cursor: pointer; 
+    font-size: 20px; 
+    font-weight: bold; 
+    border-bottom: 4px solid #2d4d1c; 
+}
