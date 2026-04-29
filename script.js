@@ -3,170 +3,154 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Configuração do mundo
-const TILE = 32;
-const WORLD_WIDTH = 80;
-const WORLD_HEIGHT = 40;
-const GRAVITY = 0.5;
-const JUMP_FORCE = -10;
-
 let gameStarted = false;
-let cameraX = 0;
-let cameraY = 0;
 
-// Texturas (cores simulando Minecraft)
-const textures = {
-  grass: '#4CAF50',
-  dirt: '#8B5A2B',
-  stone: '#7f7f7f',
-  wood: '#9C6B30',
-  leaves: '#2E8B57'
-};
+const FOV = 500;
+const BLOCK = 64;
+const WORLD_SIZE = 20;
+const RENDER_DISTANCE = 8;
 
-// Mundo procedural
-const world = [];
-for (let y = 0; y < WORLD_HEIGHT; y++) {
-  world[y] = [];
-  for (let x = 0; x < WORLD_WIDTH; x++) {
-    if (y > 20) world[y][x] = 'stone';
-    else if (y > 15) world[y][x] = 'dirt';
-    else if (y === 15) world[y][x] = 'grass';
-    else world[y][x] = null;
-  }
-}
-
-// Árvores automáticas
-for (let i = 5; i < WORLD_WIDTH; i += 12) {
-  for (let h = 0; h < 4; h++) {
-    world[14 - h][i] = 'wood';
-  }
-  world[10][i] = 'leaves';
-  world[10][i-1] = 'leaves';
-  world[10][i+1] = 'leaves';
-}
-
-// Jogador estilo Steve
 const player = {
-  x: 200,
-  y: 100,
-  width: 28,
-  height: 48,
-  velX: 0,
-  velY: 0,
-  speed: 4,
-  jumping: false
+  x: 5,
+  y: 5,
+  angle: 0,
+  speed: 0.08,
+  crouching: false,
+  handOffset: 0
 };
 
 const keys = {};
+document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-document.addEventListener('keydown', (e) => {
-  keys[e.key.toLowerCase()] = true;
-});
-
-document.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-});
-
-// Colocar/quebrar bloco
-canvas.addEventListener('click', (e) => {
-  const x = Math.floor((e.clientX + cameraX) / TILE);
-  const y = Math.floor((e.clientY + cameraY) / TILE);
-
-  if (world[y] && world[y][x]) {
-    world[y][x] = null;
-  } else if (world[y]) {
-    world[y][x] = 'wood';
+const world = [];
+for(let y=0;y<WORLD_SIZE;y++){
+  world[y]=[];
+  for(let x=0;x<WORLD_SIZE;x++){
+    world[y][x] = Math.random() > 0.7 ? 1 : 0;
   }
-});
-
-function drawBlock(type, x, y) {
-  if (!type) return;
-  ctx.fillStyle = textures[type];
-  ctx.fillRect(x - cameraX, y - cameraY, TILE, TILE);
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-  ctx.strokeRect(x - cameraX, y - cameraY, TILE, TILE);
 }
 
-function drawWorld() {
-  for (let y = 0; y < WORLD_HEIGHT; y++) {
-    for (let x = 0; x < WORLD_WIDTH; x++) {
-      drawBlock(world[y][x], x * TILE, y * TILE);
+function drawSky(){
+  const sky = ctx.createLinearGradient(0,0,0,canvas.height/2);
+  sky.addColorStop(0,'#87CEEB');
+  sky.addColorStop(1,'#dff6ff');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0,0,canvas.width,canvas.height/2);
+}
+
+function drawGround(){
+  ctx.fillStyle = '#4CAF50';
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+}
+
+function castRays(){
+  for(let ray=0; ray<canvas.width; ray++){
+    const rayAngle = (player.angle - Math.PI/6) + (ray/canvas.width)*(Math.PI/3);
+    for(let depth=0; depth<RENDER_DISTANCE; depth+=0.05){
+      const tx = Math.floor(player.x + Math.cos(rayAngle)*depth);
+      const ty = Math.floor(player.y + Math.sin(rayAngle)*depth);
+
+      if(world[ty] && world[ty][tx] === 1){
+        let wallHeight = (BLOCK * FOV) / (depth * 50);
+        if(player.crouching) wallHeight *= 0.8;
+
+        ctx.fillStyle = `rgb(${150-depth*10},${100-depth*8},50)`;
+        ctx.fillRect(ray,(canvas.height/2)-wallHeight/2,2,wallHeight);
+        break;
+      }
     }
   }
 }
 
-function drawPlayer() {
-  // Corpo
+// Mão do Steve mais detalhada
+function drawHand(){
+  const baseY = player.crouching ? canvas.height - 140 : canvas.height - 180;
+
+  // braço azul (camisa Steve)
   ctx.fillStyle = '#2196F3';
-  ctx.fillRect(player.x - cameraX, player.y - cameraY, player.width, player.height);
+  ctx.fillRect(canvas.width-180, baseY, 90, 120);
 
-  // Cabeça
+  // mão/pele
   ctx.fillStyle = '#f1c27d';
-  ctx.fillRect(player.x - cameraX + 4, player.y - cameraY - 20, 20, 20);
+  ctx.fillRect(canvas.width-130 + player.handOffset, baseY+20, 60, 70);
 
-  // Braço
-  ctx.fillRect(player.x - cameraX + 24, player.y - cameraY + 12, 8, 16);
-
-  // Perna
-  ctx.fillStyle = '#3f51b5';
-  ctx.fillRect(player.x - cameraX + 5, player.y - cameraY + 35, 8, 15);
-  ctx.fillRect(player.x - cameraX + 15, player.y - cameraY + 35, 8, 15);
+  // dedos simples
+  ctx.fillStyle = '#d8a47f';
+  for(let i=0;i<4;i++){
+    ctx.fillRect(canvas.width-125 + (i*12) + player.handOffset, baseY+80, 8, 20);
+  }
 }
 
-function updatePlayer() {
-  player.velX = 0;
+function updatePlayer(){
+  let moving = false;
 
-  if (keys['a']) player.velX = -player.speed;
-  if (keys['d']) player.velX = player.speed;
-
-  if (keys[' '] && !player.jumping) {
-    player.velY = JUMP_FORCE;
-    player.jumping = true;
+  if(keys['w']){
+    player.x += Math.cos(player.angle)*player.speed;
+    player.y += Math.sin(player.angle)*player.speed;
+    moving = true;
   }
 
-  player.velY += GRAVITY;
-
-  player.x += player.velX;
-  player.y += player.velY;
-
-  // chão
-  if (player.y > 400) {
-    player.y = 400;
-    player.velY = 0;
-    player.jumping = false;
+  if(keys['s']){
+    player.x -= Math.cos(player.angle)*player.speed;
+    player.y -= Math.sin(player.angle)*player.speed;
+    moving = true;
   }
 
-  // câmera segue jogador
-  cameraX = player.x - canvas.width / 2;
-  cameraY = player.y - canvas.height / 2;
+  if(keys['a']) player.angle -= 0.05;
+  if(keys['d']) player.angle += 0.05;
+
+  // Agachar (Shift)
+  player.crouching = keys['shift'];
+
+  // animação da mão andando
+  if(moving){
+    player.handOffset = Math.sin(Date.now()*0.01)*10;
+  } else {
+    player.handOffset = 0;
+  }
 }
 
-function drawSky() {
-  const gradient = ctx.createLinearGradient(0,0,0,canvas.height);
-  gradient.addColorStop(0,'#87CEEB');
-  gradient.addColorStop(1,'#dff6ff');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0,0,canvas.width,canvas.height);
+canvas.addEventListener('click', ()=>{
+  const frontX = Math.floor(player.x + Math.cos(player.angle));
+  const frontY = Math.floor(player.y + Math.sin(player.angle));
+
+  if(world[frontY]){
+    world[frontY][frontX] = world[frontY][frontX] === 1 ? 0 : 1;
+  }
+});
+
+function drawCrosshair(){
+  ctx.strokeStyle='white';
+  ctx.beginPath();
+  ctx.moveTo(canvas.width/2-10,canvas.height/2);
+  ctx.lineTo(canvas.width/2+10,canvas.height/2);
+  ctx.moveTo(canvas.width/2,canvas.height/2-10);
+  ctx.lineTo(canvas.width/2,canvas.height/2+10);
+  ctx.stroke();
 }
 
-function gameLoop() {
-  if (!gameStarted) return;
+function gameLoop(){
+  if(!gameStarted) return;
 
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   drawSky();
-  drawWorld();
+  drawGround();
   updatePlayer();
-  drawPlayer();
+  castRays();
+  drawCrosshair();
+  drawHand();
 
   requestAnimationFrame(gameLoop);
 }
 
-function startGame() {
+function startGame(){
   gameStarted = true;
   document.getElementById('menu').style.display = 'none';
   gameLoop();
 }
 
-window.addEventListener('resize', () => {
+window.addEventListener('resize', ()=>{
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
