@@ -2,41 +2,42 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>FNAF: Pizzaria Security</title>
+    <title>FNAF Remake</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="noise"></div>
-
-    <div id="main-stage">
+    <div class="tv-effect"></div> <div id="game-container">
         <div id="office">
-            <div class="wall left-wall"></div>
-            <div class="wall right-wall"></div>
-            <div class="desk">
-                <div class="fan"></div>
+            <div class="door left-door" id="door-L"></div>
+            <div class="office-content">
+                <div class="window"></div>
+                <div class="desk">
+                    <div class="fan"></div>
+                </div>
             </div>
+            <div class="door right-door" id="door-R"></div>
             
-            <div class="door-system left" onclick="toggleDoor('L')">
-                <div id="door-L" class="door-visual"></div>
-                <button class="light-btn">LIGHT</button>
+            <button class="btn-door l-btn" onclick="toggleDoor('L')">DOOR</button>
+            <button class="btn-door r-btn" onclick="toggleDoor('R')">DOOR</button>
+        </div>
+
+        <div id="monitor" class="hidden">
+            <div id="cam-render">
+                <h1 id="cam-title">CAM 1A</h1>
+                <div class="static"></div>
+            </div>
+
+            <div class="map">
+                <div class="map-img">
+                    <button class="cam-node" style="top:10%; left:45%" onclick="setCam('1A', 'PALCO')">1A</button>
+                    <button class="cam-node" style="top:30%; left:45%" onclick="setCam('1B', 'REFEITÓRIO')">1B</button>
+                    <button class="cam-node" style="top:50%; left:10%" onclick="setCam('2A', 'CORREDOR OESTE')">2A</button>
+                    <button class="cam-node" style="top:50%; left:80%" onclick="setCam('2B', 'CORREDOR LESTE')">2B</button>
+                </div>
             </div>
         </div>
 
-        <div id="monitor" class="monitor-hidden">
-            <div id="camera-view">
-                <div class="cam-info">CAM <span id="cam-id">1A</span> - <span id="cam-name">SHOW STAGE</span></div>
-                <div class="static-effect"></div>
-            </div>
-
-            <div class="pizzaria-map">
-                <button class="map-point" onclick="changeRoom('1A', 'SHOW STAGE')">1A</button>
-                <button class="map-point" onclick="changeRoom('1B', 'DINING AREA')">1B</button>
-                <button class="map-point" onclick="changeRoom('2A', 'WEST HALL')">2A</button>
-                <button class="map-point" onclick="changeRoom('5', 'BACKSTAGE')">5</button>
-            </div>
-        </div>
-
-        <div id="monitor-toggle" onmouseenter="toggleMonitor()"></div>
+        <div id="monitor-pull-up" onmouseenter="toggleMonitor()"></div>
     </div>
 
     <script src="script.js"></script>
