@@ -8,62 +8,70 @@ let gameRunning = false;
 let notes = [];
 let lastSpawn = 0;
 
-const lanes = [180, 280, 380, 480]; // posições X
+const lanes = [200, 300, 400, 500];           // Posições X das setas
 const keyMap = ['ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight'];
 
 function spawnNote() {
   const lane = Math.floor(Math.random() * 4);
   notes.push({
     x: lanes[lane],
-    y: -40,
+    y: -50,
     lane: lane,
     hit: false
   });
 }
 
 function draw() {
-  ctx.fillStyle = '#0a001f';
+  // Fundo escuro
+  ctx.fillStyle = '#1a0033';
   ctx.fillRect(0, 0, 800, 600);
 
-  // Linha de acerto
+  // Linha de julgamento (igual FNF)
   ctx.strokeStyle = '#00ffff';
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.moveTo(100, 480);
-  ctx.lineTo(700, 480);
+  ctx.moveTo(100, 450);
+  ctx.lineTo(700, 450);
   ctx.stroke();
 
-  // Desenhar notas
-  ctx.fillStyle = '#ff00ff';
+  // Desenhar as notas caindo
   for (let note of notes) {
     if (!note.hit) {
-      ctx.fillRect(note.x - 30, note.y, 60, 35);
+      ctx.fillStyle = '#ff00ff';
+      ctx.fillRect(note.x - 35, note.y, 70, 40);
+      
+      // Borda branca para ficar mais bonito
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(note.x - 35, note.y, 70, 40);
     }
   }
 
-  // Desenhar receptores
+  // Desenhar as setas receptoras (embaixo)
   for (let i = 0; i < 4; i++) {
     ctx.fillStyle = '#00ffff';
-    ctx.fillRect(lanes[i] - 30, 470, 60, 20);
+    ctx.fillRect(lanes[i] - 35, 440, 70, 25);
   }
 
   // HUD
   ctx.fillStyle = 'white';
   ctx.font = 'bold 28px Arial';
-  ctx.fillText(`Score: ${score}`, 40, 60);
-  ctx.fillText(`Combo: ${combo}x`, 40, 100);
+  ctx.textAlign = 'left';
+  ctx.fillText(`Score: ${score}`, 30, 50);
+  ctx.fillText(`Combo: ${combo}x`, 30, 90);
 
-  // Vida
-  ctx.fillStyle = health > 40 ? '#00ff88' : '#ff4444';
-  ctx.fillRect(40, 140, health * 4, 25);
+  // Barra de vida
+  ctx.fillStyle = health > 35 ? '#00ff88' : '#ff3333';
+  ctx.fillRect(30, 120, health * 5, 25);
 }
 
 function update() {
   for (let i = notes.length - 1; i >= 0; i--) {
-    notes[i].y += 6;   // velocidade das notas
+    notes[i].y += 7;   // Velocidade das notas (ajuste se quiser)
 
-    if (notes[i].y > 550 && !notes[i].hit) {
-      health -= 15;
+    // Se passou da linha sem acertar = Miss
+    if (notes[i].y > 520 && !notes[i].hit) {
+      health -= 18;
       combo = 0;
       notes.splice(i, 1);
     }
@@ -76,15 +84,17 @@ function gameLoop() {
   update();
   draw();
 
-  // Spawn de notas
-  if (Date.now() - lastSpawn > 280) {
-    if (Math.random() > 0.25) spawnNote();
+  // Spawn automático de notas
+  if (Date.now() - lastSpawn > 220) {
+    spawnNote();
+    if (Math.random() > 0.4) spawnNote(); // às vezes spawna 2
     lastSpawn = Date.now();
   }
 
+  // Game Over
   if (health <= 0) {
     gameRunning = false;
-    alert(`Game Over!\n\nPontuação final: ${score}\nMaior Combo: ${combo}`);
+    alert(`GAME OVER!\n\nPontuação: ${score}\nCombo máximo: ${combo}`);
     document.getElementById('menu').style.display = 'block';
     return;
   }
@@ -92,30 +102,32 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Controles
+// === CONTROLES ===
 document.addEventListener('keydown', (e) => {
   if (!gameRunning) return;
 
   const index = keyMap.indexOf(e.key);
   if (index === -1) return;
 
-  // Efeito visual (opcional)
+  // Verifica se acertou alguma nota
   for (let i = notes.length - 1; i >= 0; i--) {
     const note = notes[i];
-    if (!note.hit && note.lane === index && Math.abs(note.y - 480) < 45) {
+    if (!note.hit && note.lane === index && Math.abs(note.y - 450) < 50) {
       note.hit = true;
-      score += 100 + Math.floor(combo * 8);
+      score += 100 + combo * 15;
       combo++;
-      health = Math.min(100, health + 3);
+      health = Math.min(100, health + 4);
       notes.splice(i, 1);
       return;
     }
   }
 });
 
+// Iniciar o jogo ao clicar em "JOGAR"
 function startGame() {
-  document.getElementById('menu').style.display = 'none';
-  
+  document.getElementById('menu').style.display = 'none';   // Esconde o menu
+
+  // Reset das variáveis
   score = 0;
   combo = 0;
   health = 100;
@@ -126,7 +138,7 @@ function startGame() {
   gameLoop();
 }
 
-// Inicia escondendo o canvas até clicar em Jogar
+// Esconde o menu no início
 window.onload = () => {
-  canvas.style.display = 'block';
+  document.getElementById('menu').style.display = 'block';
 };
