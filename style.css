@@ -1,56 +1,42 @@
-body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
+body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
 
-/* Efeito de TV Velha */
-.tv-effect {
-    position: fixed; width: 100%; height: 100%;
-    background: url('https://media.giphy.com/media/oEI9uWUqnS3S0/giphy.gif');
-    opacity: 0.05; z-index: 100; pointer-events: none;
-}
+#game-screen { width: 100vw; height: 100vh; position: relative; }
 
-#game-container { width: 100vw; height: 100vh; position: relative; }
-
-/* Escritório */
+/* Escritório Visual */
 #office {
-    width: 140%; height: 100%; position: absolute; left: -20%;
-    background: #222; display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s linear;
+    width: 150%; height: 100%; background: #1a1a1a;
+    position: absolute; left: -25%; display: flex; align-items: center; justify-content: center;
 }
 
-.office-content {
-    width: 60%; height: 80%; background: #111; border: 10px solid #333;
-    display: flex; flex-direction: column; align-items: center;
-}
+.desk { width: 500px; height: 150px; background: #333; position: absolute; bottom: 0; border-top: 5px solid #444; }
 
-.desk { width: 80%; height: 100px; background: #444; margin-top: auto; border-radius: 10px 10px 0 0; }
+.fan-base { width: 40px; height: 60px; background: #111; position: absolute; top: -60px; left: 50%; transform: translateX(-50%); }
 
-.door {
-    width: 15%; height: 100%; background: #050505; position: absolute;
-    transition: height 0.5s ease-in-out; bottom: 0; z-index: 10;
-}
-.left-door { left: 0; height: 0; border-right: 5px solid #555; }
-.right-door { right: 0; height: 0; border-left: 5px solid #555; }
+/* Portas e Luzes */
+.door-object { position: absolute; bottom: 0; width: 15%; height: 0%; background: #0a0a0a; border: 4px solid #222; transition: 0.5s; z-index: 10; }
+#door-L { left: 0; }
+#door-R { right: 0; }
+
+.light { position: absolute; width: 25%; height: 100%; opacity: 0; pointer-events: none; z-index: 5; }
+#light-effect-L { left: 0; background: radial-gradient(circle at left, rgba(255,255,255,0.2), transparent); }
+#light-effect-R { right: 0; background: radial-gradient(circle at right, rgba(255,255,255,0.2), transparent); }
 
 /* Monitor */
-#monitor {
-    position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-    background: #000; z-index: 50; display: flex;
-}
+#monitor { position: absolute; width: 100%; height: 100%; background: #050505; z-index: 100; display: flex; transition: 0.3s; }
+.monitor-off { transform: translateY(100%); }
 
-#cam-render {
-    flex: 1; height: 100%; border: 20px solid #333;
-    background-size: cover; background-position: center;
-    display: flex; align-items: flex-start; padding: 20px;
-}
+#cam-display { flex: 1; border: 15px solid #222; background: #111; position: relative; }
+.enemy { width: 50px; height: 80px; background: red; position: absolute; display: none; border-radius: 50% 50% 0 0; }
 
-.map { width: 350px; background: rgba(0,0,0,0.8); border-left: 2px solid #fff; padding: 10px; }
-.map-img { width: 100%; height: 100%; position: relative; background: #111; border: 1px solid #555; }
+.map { width: 300px; background: #000; border-left: 2px solid white; padding: 20px; }
+.cam-btn { display: block; margin: 10px; padding: 10px; width: 100%; background: #222; color: white; border: 1px solid white; cursor: pointer; }
 
-.cam-node { position: absolute; padding: 10px; background: #444; color: #fff; cursor: pointer; border: 1px solid #fff; }
-.cam-node:hover { background: #fff; color: #000; }
+/* Controles */
+.controls-L, .controls-R { position: absolute; bottom: 10%; z-index: 20; }
+.controls-L { left: 16%; } .controls-R { right: 16%; }
+button { display: block; padding: 10px; margin: 5px; background: #444; color: white; cursor: pointer; }
 
-.hidden { display: none !important; }
-
-#monitor-pull-up {
-    position: absolute; bottom: 0; width: 50%; left: 25%; height: 50px;
-    background: rgba(255,255,255,0.1); border: 2px solid #fff; z-index: 60;
+#toggle-monitor-btn {
+    position: absolute; bottom: 0; left: 30%; width: 40%; height: 40px;
+    background: #555; color: white; text-align: center; line-height: 40px; z-index: 200; cursor: pointer;
 }

@@ -2,44 +2,55 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>FNAF Remake</title>
+    <title>FNAF Engine - No Images</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="tv-effect"></div> <div id="game-container">
+    <div id="game-screen">
+        <div class="static-overlay"></div>
+
         <div id="office">
-            <div class="door left-door" id="door-L"></div>
-            <div class="office-content">
-                <div class="window"></div>
-                <div class="desk">
-                    <div class="fan"></div>
-                </div>
-            </div>
-            <div class="door right-door" id="door-R"></div>
+            <div id="light-effect-L" class="light"></div>
+            <div id="light-effect-R" class="light"></div>
             
-            <button class="btn-door l-btn" onclick="toggleDoor('L')">DOOR</button>
-            <button class="btn-door r-btn" onclick="toggleDoor('R')">DOOR</button>
+            <div class="wall-left"></div>
+            <div class="desk">
+                <div class="fan-base">
+                    <div class="fan-blades"></div>
+                </div>
+                <div class="cup"></div>
+            </div>
+            <div class="wall-right"></div>
+
+            <div id="door-L" class="door-object"></div>
+            <div id="door-R" class="door-object"></div>
+
+            <div class="controls-L">
+                <button onmousedown="light('L', true)" onmouseup="light('L', false)">LUZ</button>
+                <button onclick="toggleDoor('L')">PORTA</button>
+            </div>
+            <div class="controls-R">
+                <button onmousedown="light('R', true)" onmouseup="light('R', false)">LUZ</button>
+                <button onclick="toggleDoor('R')">PORTA</button>
+            </div>
         </div>
 
-        <div id="monitor" class="hidden">
-            <div id="cam-render">
-                <h1 id="cam-title">CAM 1A</h1>
-                <div class="static"></div>
+        <div id="monitor" class="monitor-off">
+            <div id="cam-display">
+                <div class="cam-header">CAM <span id="cam-num">1A</span> - <span id="cam-name">STAGE</span></div>
+                <div id="animatronic" class="enemy"></div>
             </div>
 
             <div class="map">
-                <div class="map-img">
-                    <button class="cam-node" style="top:10%; left:45%" onclick="setCam('1A', 'PALCO')">1A</button>
-                    <button class="cam-node" style="top:30%; left:45%" onclick="setCam('1B', 'REFEITÓRIO')">1B</button>
-                    <button class="cam-node" style="top:50%; left:10%" onclick="setCam('2A', 'CORREDOR OESTE')">2A</button>
-                    <button class="cam-node" style="top:50%; left:80%" onclick="setCam('2B', 'CORREDOR LESTE')">2B</button>
-                </div>
+                <p>MAPA DA PIZZARIA</p>
+                <button class="cam-btn" onclick="changeCam('1A', 'STAGE')">1A</button>
+                <button class="cam-btn" onclick="changeCam('1B', 'DINING')">1B</button>
+                <button class="cam-btn" onclick="changeCam('2A', 'HALL')">2A</button>
             </div>
         </div>
 
-        <div id="monitor-pull-up" onmouseenter="toggleMonitor()"></div>
+        <div id="toggle-monitor-btn" onclick="toggleMonitor()">MONITOR</div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>

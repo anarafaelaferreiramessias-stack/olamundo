@@ -1,15 +1,9 @@
 let monitorOpen = false;
 let doors = { L: false, R: false };
+let currentCam = '1A';
+let animatronicLocation = '1A';
 
-// Configurações das Câmeras (Cores diferentes para você ver a troca)
-const rooms = {
-    '1A': { name: 'PALCO', color: '#1a1a2e' },
-    '1B': { name: 'REFEITÓRIO', color: '#16213e' },
-    '2A': { name: 'CORREDOR OESTE', color: '#0f3460' },
-    '2B': { name: 'CORREDOR LESTE', color: '#1b1b1b' }
-};
-
-// 1. Movimento do Escritório
+// Movimentação do Escritório (Olhar ao redor)
 document.addEventListener('mousemove', (e) => {
     if (!monitorOpen) {
         let x = (e.clientX / window.innerWidth) - 0.5;
@@ -17,29 +11,54 @@ document.addEventListener('mousemove', (e) => {
     }
 });
 
-// 2. Abrir/Fechar Monitor
-function toggleMonitor() {
-    monitorOpen = !monitorOpen;
-    document.getElementById('monitor').classList.toggle('hidden');
-    if(monitorOpen) setCam('1A', 'PALCO');
-}
-
-// 3. Trocar Câmera
-function setCam(id, name) {
-    const render = document.getElementById('cam-render');
-    document.getElementById('cam-title').innerText = "CAM " + id + " - " + name;
-    
-    // Simula a troca de sinal mudando a cor de fundo (Enquanto não tem imagens)
-    render.style.backgroundColor = rooms[id].color;
-    
-    // Efeito de estática rápida
-    render.style.opacity = "0.5";
-    setTimeout(() => { render.style.opacity = "1"; }, 100);
-}
-
-// 4. Fechar Portas
+// Portas e Luzes
 function toggleDoor(side) {
     doors[side] = !doors[side];
-    const doorEl = document.getElementById(`door-${side}`);
-    doorEl.style.height = doors[side] ? "100%" : "0";
+    document.getElementById(`door-${side}`).style.height = doors[side] ? "100%" : "0%";
 }
+
+function light(side, isOn) {
+    document.getElementById(`light-effect-${side}`).style.opacity = isOn ? "1" : "0";
+}
+
+// Monitor e Câmeras
+function toggleMonitor() {
+    monitorOpen = !monitorOpen;
+    document.getElementById('monitor').classList.toggle('monitor-off');
+    updateCam();
+}
+
+function changeCam(id, name) {
+    currentCam = id;
+    document.getElementById('cam-num').innerText = id;
+    document.getElementById('cam-name').innerText = name;
+    updateCam();
+}
+
+function updateCam() {
+    const enemy = document.getElementById('animatronic');
+    // Se o inimigo estiver na mesma sala que a câmera está olhando
+    if (animatronicLocation === currentCam) {
+        enemy.style.display = 'block';
+        enemy.style.top = Math.random() * 50 + '%';
+        enemy.style.left = Math.random() * 70 + '%';
+    } else {
+        enemy.style.display = 'none';
+    }
+}
+
+// IA do Inimigo (Ele muda de sala a cada 10 segundos)
+setInterval(() => {
+    const locs = ['1A', '1B', '2A', 'OFFICE'];
+    let idx = locs.indexOf(animatronicLocation);
+    if (idx < locs.length - 1) {
+        animatronicLocation = locs[idx + 1];
+        console.log("Inimigo moveu para: " + animatronicLocation);
+        if(monitorOpen) updateCam();
+    }
+    
+    if (animatronicLocation === 'OFFICE' && !doors.L) {
+        alert("GAME OVER! O animatrônico entrou!");
+        location.reload();
+    }
+}, 10000);
