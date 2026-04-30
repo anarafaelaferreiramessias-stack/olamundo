@@ -1,159 +1,79 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minecraft Clone JS</title>
-    <style>
-        /* Reset básico */
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            background-color: #000;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+function initGame() {
+    // 1. LIMPEZA DO MENU
+    // Esconde o menu e mostra a área onde o jogo será renderizado
+    document.getElementById('menu').style.display = 'none';
+    const container = document.getElementById('game-container');
+    container.style.display = 'block';
 
-        /* Menu de Entrada */
-        #menu {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                        url('https://wallpapers.com/images/featured/minecraft-76077zd82l9m47u2.jpg');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
+    // 2. CONFIGURAÇÃO DA CENA
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87CEEB); // Cor do céu (Sky Blue)
 
-        #logo { 
-            width: 80%; 
-            max-width: 600px; 
-            margin-bottom: 40px; 
-            filter: drop-shadow(5px 5px 0px #000);
-        }
+    // 3. CÂMERA
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 10, 20); // Posição inicial da câmera
 
-        .mc-button {
-            width: 300px;
-            padding: 15px;
-            font-size: 20px;
-            color: white;
-            background-color: #484848;
-            border: 3px solid #000;
-            box-shadow: inset -4px -4px 0px #222, inset 4px 4px 0px #888;
-            cursor: pointer;
-            text-align: center;
-            text-transform: uppercase;
-            font-weight: bold;
-        }
+    // 4. RENDERIZADOR (O "Motor" que desenha na tela)
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
 
-        .mc-button:hover {
-            background-color: #618c32;
-            border-color: #fff;
-        }
+    // 5. ILUMINAÇÃO (Sem isso os blocos ficam pretos)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Luz suave em todo lugar
+    scene.add(ambientLight);
 
-        /* Container do Jogo */
-        #game-container {
-            width: 100%;
-            height: 100%;
-            display: none; /* Escondido até clicar em jogar */
-        }
-    </style>
-</head>
-<body>
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8); // Luz do "Sol"
+    sunLight.position.set(5, 15, 10);
+    scene.add(sunLight);
 
-    <!-- INTERFACE DO MENU -->
-    <div id="menu">
-        <img id="logo" src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft">
-        <div class="mc-button" onclick="initGame()">JOGAR</div>
-    </div>
+    // 6. CRIAÇÃO DOS BLOCOS
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    
+    function createBlock(x, y, z) {
+        // Material verde (grama)
+        const material = new THREE.MeshLambertMaterial({ color: 0x55902e });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(x, y, z);
+        
+        // Adiciona contorno preto nos blocos (estilo Minecraft)
+        const edges = new THREE.EdgesGeometry(geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
+        cube.add(line);
+        
+        scene.add(cube);
+    }
 
-    <!-- ÁREA DO JOGO -->
-    <div id="game-container"></div>
-
-    <!-- Importando Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script>
-        function initGame() {
-            // 1. Esconde o menu e mostra o jogo
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
-
-            // 2. Configuração do Three.js
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Céu azul
-
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('game-container').appendChild(renderer.domElement);
-
-            // 3. Iluminação (Fundamental para ver os cubos)
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
-
-            const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            sunLight.position.set(10, 20, 10);
-            scene.add(sunLight);
-
-            // 4. Criação dos Blocos (Grama)
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // Gerando um terreno de 20x20 blocos
+    for(let x = -10; x < 10; x++) {
+        for(let z = -10; z < 10; z++) {
+            // Cria um chão básico
+            createBlock(x, 0, z);
             
-            // Função para criar bloco com bordas pretas
-            function createBlock(x, y, z) {
-                const material = new THREE.MeshLambertMaterial({ color: 0x55902e });
-                const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(x, y, z);
-                
-                // Bordas para parecer blocos individuais
-                const geo = new THREE.EdgesGeometry(cube.geometry);
-                const mat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
-                const wireframe = new THREE.LineSegments(geo, mat);
-                cube.add(wireframe);
-                
-                scene.add(cube);
+            // Adiciona alguns blocos aleatórios para parecer relevo
+            if(Math.random() > 0.9) {
+                createBlock(x, 1, z);
             }
-
-            // Gerar um chão de 15x15 blocos
-            for(let x = -7; x < 8; x++) {
-                for(let z = -7; z < 8; z++) {
-                    // Faz uma variação de altura aleatória simples
-                    let h = Math.floor(Math.random() * 0.5); 
-                    createBlock(x, h, z);
-                }
-            }
-
-            // 5. Posicionamento da Câmera
-            camera.position.set(8, 8, 15);
-            camera.lookAt(0, 0, 0);
-
-            // 6. Loop de Animação
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                // Rotaciona o mundo devagar para efeito visual
-                scene.rotation.y += 0.002;
-                
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // Ajuste de janela
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
         }
-    </script>
-</body>
-</html>
+    }
+
+    camera.lookAt(0, 0, 0);
+
+    // 7. LOOP DE ANIMAÇÃO (Mantém o jogo rodando)
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        // Faz o mundo girar um pouquinho para você ver que é 3D
+        scene.rotation.y += 0.003;
+        
+        renderer.render(scene, camera);
+    }
+    
+    animate();
+
+    // Ajusta o tamanho se você redimensionar a janela do navegador
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+}
