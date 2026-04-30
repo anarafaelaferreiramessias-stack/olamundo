@@ -2,9 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Ultra JS - Texturas & Pixels</title>
+    <title>Minecraft JS - Física e Mão do Steve</title>
     <style>
-        /* CSS - ESTILIZAÇÃO E INTERFACE */
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background-color: #000;
@@ -24,30 +23,56 @@
             background-color: #484848; border: 4px solid #000;
             box-shadow: inset -4px -4px #222, inset 4px 4px #888;
             cursor: pointer; text-align: center; font-weight: bold;
-            text-shadow: 2px 2px #000; transition: transform 0.1s;
+            text-shadow: 2px 2px #000;
         }
 
-        .mc-button:active { transform: scale(0.95); }
         .mc-button:hover { background-color: #618c32; border-color: #FFF; }
 
         #crosshair {
             position: absolute; top: 50%; left: 50%;
             width: 24px; height: 24px; margin: -12px 0 0 -12px;
             display: none; pointer-events: none; z-index: 50;
-            color: rgba(255,255,255,0.8); font-size: 30px; text-align: center;
+            color: #FFF; font-size: 30px; text-align: center;
+        }
+
+        /* --- MÃO DO STEVE --- */
+        #hand {
+            position: absolute;
+            bottom: -20px;
+            right: 10%;
+            width: 160px;
+            height: 200px;
+            background: #aa7d55; /* Cor da pele */
+            border: 6px solid #8d6545;
+            border-bottom: none;
+            display: none;
+            z-index: 60;
+            transform: rotate(-5deg);
+            box-shadow: inset -20px 0 rgba(0,0,0,0.1);
+        }
+
+        /* Animação de Soco */
+        .punching {
+            animation: soco 0.2s ease-out;
+        }
+
+        @keyframes soco {
+            0% { transform: rotate(-5deg) translateY(0); }
+            50% { transform: rotate(-20deg) translateY(-40px) translateX(-20px); }
+            100% { transform: rotate(-5deg) translateY(0); }
         }
     </style>
 </head>
 <body>
 
     <div id="crosshair">+</div>
+    <div id="hand"></div>
 
     <div id="menu">
-        <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" style="width: 550px; margin-bottom: 50px;">
+        <img src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" style="width: 500px; margin-bottom: 50px;">
         <div class="mc-button" onclick="iniciarJogo()">INICIAR MUNDO</div>
     </div>
 
-    <!-- BIBLIOTECA THREE.JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
@@ -57,14 +82,11 @@
         let direction = new THREE.Vector3();
         let prevTime = performance.now();
 
-        // --- GERADOR DE TEXTURA PIXELADA ---
         function createPixelTexture(color1, color2) {
             const size = 16;
             const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
+            canvas.width = size; canvas.height = size;
             const context = canvas.getContext('2d');
-            
             for (let x = 0; x < size; x++) {
                 for (let y = 0; y < size; y++) {
                     context.fillStyle = Math.random() > 0.5 ? color1 : color2;
@@ -72,7 +94,7 @@
                 }
             }
             const texture = new THREE.CanvasTexture(canvas);
-            texture.magFilter = THREE.NearestFilter; // Mantém os pixels nítidos
+            texture.magFilter = THREE.NearestFilter;
             texture.minFilter = THREE.NearestFilter;
             return texture;
         }
@@ -80,64 +102,34 @@
         function iniciarJogo() {
             document.getElementById('menu').style.display = 'none';
             document.getElementById('crosshair').style.display = 'block';
+            document.getElementById('hand').style.display = 'block';
 
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
-            scene.fog = new THREE.FogExp2(0x87CEEB, 0.012);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.015);
 
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.y = 8;
+            camera.position.set(0, 15, 0); // Começa alto para cair
 
-            renderer = new THREE.WebGLRenderer({ antialias: false }); // Desativa antialias para ser mais pixelado
+            renderer = new THREE.WebGLRenderer({ antialias: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // Luzes
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            const sun = new THREE.DirectionalLight(0xffffff, 0.9);
-            sun.position.set(20, 50, 10);
+            const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+            sun.position.set(10, 50, 10);
             scene.add(sun);
 
-            // Materiais Pixelados
-            const texGrama = createPixelTexture('#55902e', '#4a7d28');
-            const texTerra = createPixelTexture('#8B4513', '#5D2906');
-            const texTronco = createPixelTexture('#614126', '#3d2818');
-            const texFolha = createPixelTexture('#2d5a27', '#1e3d1a');
-            const texPedra = createPixelTexture('#808080', '#696969');
-
-            const matGrama = new THREE.MeshLambertMaterial({ map: texGrama });
-            const matTerra = new THREE.MeshLambertMaterial({ map: texTerra });
-            const matTronco = new THREE.MeshLambertMaterial({ map: texTronco });
-            const matFolha = new THREE.MeshLambertMaterial({ map: texFolha });
-            const matPedra = new THREE.MeshLambertMaterial({ map: texPedra });
-
+            const matGrama = new THREE.MeshLambertMaterial({ map: createPixelTexture('#55902e', '#4a7d28') });
+            const matTerra = new THREE.MeshLambertMaterial({ map: createPixelTexture('#8B4513', '#5D2906') });
             const geometry = new THREE.BoxGeometry(1, 1, 1);
 
-            // Gerar Terreno com Camadas
+            // Gerar Terreno
             for (let x = -20; x < 20; x++) {
                 for (let z = -20; z < 20; z++) {
                     let h = Math.floor(Math.sin(x * 0.2) * 2 + Math.cos(z * 0.2) * 2);
-                    
-                    // Camada de Grama/Superfície
                     criarBloco(x, h, z, matGrama);
-                    
-                    // Camada de Terra abaixo
                     criarBloco(x, h - 1, z, matTerra);
-                    
-                    // Pedras profundas
-                    if (Math.random() > 0.95) criarBloco(x, h + 1, z, matPedra);
-
-                    // Gerar Árvores
-                    if (Math.random() > 0.985 && h >= 0) {
-                        for(let t=1; t<=4; t++) criarBloco(x, h+t, z, matTronco); // Tronco mais alto
-                        for(let fx=-2; fx<=2; fx++) {
-                            for(let fz=-2; fz<=2; fz++) {
-                                for(let fy=4; fy<=6; fy++) {
-                                    if(Math.abs(fx) + Math.abs(fz) < 3) criarBloco(x+fx, h+fy, z+fz, matFolha);
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
@@ -148,35 +140,36 @@
                 objects.push(b);
             }
 
-            // Interação
+            // --- ANIMAÇÃO DA MÃO AO CLICAR ---
+            const hand = document.getElementById('hand');
+            window.addEventListener('mousedown', () => {
+                if (document.pointerLockElement === document.body) {
+                    hand.classList.remove('punching');
+                    void hand.offsetWidth; // Truque para reiniciar animação
+                    hand.classList.add('punching');
+                }
+            });
+
+            // Clique para quebrar
             window.addEventListener('mousedown', (e) => {
                 if (document.pointerLockElement !== document.body) return;
                 const ray = new THREE.Raycaster();
                 ray.setFromCamera(new THREE.Vector2(0,0), camera);
                 const intersects = ray.intersectObjects(objects);
-
-                if (intersects.length > 0) {
-                    const intersected = intersects[0];
-                    if (e.button === 0) { // Quebrar
-                        scene.remove(intersected.object);
-                        objects.splice(objects.indexOf(intersected.object), 1);
-                    } else if (e.button === 2) { // Colocar Pedra
-                        const pos = intersected.object.position.clone().add(intersected.face.normal);
-                        criarBloco(pos.x, pos.y, pos.z, matPedra);
-                    }
+                if (intersects.length > 0 && e.button === 0) {
+                    scene.remove(intersects[0].object);
+                    objects.splice(objects.indexOf(intersects[0].object), 1);
                 }
             });
 
-            // Controles e Movimento
             document.body.addEventListener('click', () => document.body.requestPointerLock());
-            window.addEventListener('contextmenu', e => e.preventDefault());
             
             const onKey = (e, val) => {
                 if(e.code === 'KeyW') moveForward = val;
                 if(e.code === 'KeyS') moveBackward = val;
                 if(e.code === 'KeyA') moveLeft = val;
                 if(e.code === 'KeyD') moveRight = val;
-                if(e.code === 'Space' && val && canJump) { velocity.y += 5.5; canJump = false; }
+                if(e.code === 'Space' && val && canJump) { velocity.y += 12; canJump = false; }
             };
             document.addEventListener('keydown', (e) => onKey(e, true));
             document.addEventListener('keyup', (e) => onKey(e, false));
@@ -196,9 +189,10 @@
                 const time = performance.now();
                 const delta = (time - prevTime) / 1000;
 
+                // --- FÍSICA E GRAVIDADE ---
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 1.8 * delta;
+                velocity.y -= 30.0 * delta; // Gravidade forte
 
                 direction.z = Number(moveForward) - Number(moveBackward);
                 direction.x = Number(moveRight) - Number(moveLeft);
@@ -208,12 +202,30 @@
                 camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                 const camSide = new THREE.Vector3().crossVectors(camera.up, camDir).normalize();
 
-                if (moveForward || moveBackward) velocity.addScaledVector(camDir, 55 * delta * direction.z);
-                if (moveLeft || moveRight) velocity.addScaledVector(camSide, 55 * delta * direction.x);
+                if (moveForward || moveBackward) velocity.addScaledVector(camDir, 60 * delta * direction.z);
+                if (moveLeft || moveRight) velocity.addScaledVector(camSide, 60 * delta * direction.x);
 
                 camera.position.addScaledVector(velocity, delta);
 
-                if (camera.position.y < 4) { velocity.y = 0; camera.position.y = 4; canJump = true; }
+                // --- COLISÃO COM O TOPO DO BLOCO (PARAR DE VOAR) ---
+                let playerFeetY = camera.position.y - 1.6; // 1.6 é a altura dos olhos
+                let headRay = new THREE.Raycaster(camera.position, new THREE.Vector3(0, -1, 0), 0, 1.7);
+                let footHits = headRay.intersectObjects(objects);
+
+                if (footHits.length > 0) {
+                    let groundY = footHits[0].object.position.y + 0.5 + 1.6;
+                    if (camera.position.y <= groundY) {
+                        velocity.y = Math.max(0, velocity.y);
+                        camera.position.y = groundY;
+                        canJump = true;
+                    }
+                }
+
+                // Balanço da mão ao andar (View Bobbing)
+                if (moveForward || moveBackward || moveLeft || moveRight) {
+                    let bob = Math.sin(time * 0.01) * 5;
+                    hand.style.transform = `rotate(-5deg) translateY(${bob}px)`;
+                }
 
                 renderer.render(scene, camera);
                 prevTime = time;
