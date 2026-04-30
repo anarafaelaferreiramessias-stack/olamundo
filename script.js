@@ -1,32 +1,41 @@
-function startGame() {
-    // Esconde o menu
+function initGame() {
+    // 1. LIMPEZA DO MENU
+    // Esconde o menu e mostra a área onde o jogo será renderizado
     document.getElementById('menu').style.display = 'none';
+    const container = document.getElementById('game-container');
+    container.style.display = 'block';
 
-    // 1. Configuração Básica (Cena, Câmera, Renderizador)
+    // 2. CONFIGURAÇÃO DA CENA
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Cor do céu
-    
+    scene.background = new THREE.Color(0x87CEEB); // Cor do céu (Sky Blue)
+
+    // 3. CÂMERA
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
+    camera.position.set(10, 10, 20); // Posição inicial da câmera
+
+    // 4. RENDERIZADOR (O "Motor" que desenha na tela)
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('game-container').appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
 
-    // 2. Luz
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 7.5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
+    // 5. ILUMINAÇÃO (Sem isso os blocos ficam pretos)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Luz suave em todo lugar
+    scene.add(ambientLight);
 
-    // 3. Criando o Mundo (Vários blocos)
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.8); // Luz do "Sol"
+    sunLight.position.set(5, 15, 10);
+    scene.add(sunLight);
+
+    // 6. CRIAÇÃO DOS BLOCOS
     const geometry = new THREE.BoxGeometry(1, 1, 1);
     
-    // Função para criar bloco com cor de grama
     function createBlock(x, y, z) {
-        const material = new THREE.MeshLambertMaterial({ color: 0x4d9024 });
+        // Material verde (grama)
+        const material = new THREE.MeshLambertMaterial({ color: 0x55902e });
         const cube = new THREE.Mesh(geometry, material);
         cube.position.set(x, y, z);
         
-        // Adiciona uma borda preta para parecer mais com Minecraft
+        // Adiciona contorno preto nos blocos (estilo Minecraft)
         const edges = new THREE.EdgesGeometry(geometry);
         const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000 }));
         cube.add(line);
@@ -34,29 +43,34 @@ function startGame() {
         scene.add(cube);
     }
 
-    // Gerar um "chão" de 10x10
-    for(let x = -5; x < 5; x++) {
-        for(let z = -5; z < 5; z++) {
+    // Gerando um terreno de 20x20 blocos
+    for(let x = -10; x < 10; x++) {
+        for(let z = -10; z < 10; z++) {
+            // Cria um chão básico
             createBlock(x, 0, z);
+            
+            // Adiciona alguns blocos aleatórios para parecer relevo
+            if(Math.random() > 0.9) {
+                createBlock(x, 1, z);
+            }
         }
     }
 
-    camera.position.z = 8;
-    camera.position.y = 5;
     camera.lookAt(0, 0, 0);
 
-    // 4. Animação e Controles Simples
+    // 7. LOOP DE ANIMAÇÃO (Mantém o jogo rodando)
     function animate() {
         requestAnimationFrame(animate);
         
-        // Pequena rotação para dar efeito visual
-        scene.rotation.y += 0.005;
+        // Faz o mundo girar um pouquinho para você ver que é 3D
+        scene.rotation.y += 0.003;
         
         renderer.render(scene, camera);
     }
+    
     animate();
 
-    // Ajustar tela ao redimensionar
+    // Ajusta o tamanho se você redimensionar a janela do navegador
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
