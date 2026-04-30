@@ -2,114 +2,56 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Meu Projeto Minecraft JS</title>
+    <title>JS Minecraft Clone</title>
     <style>
-        body { margin: 0; overflow: hidden; }
-        #instrucoes {
-            position: absolute; top: 10px; left: 10px;
-            color: white; background: rgba(0,0,0,0.5);
-            padding: 10px; font-family: sans-serif;
+        body, html { margin: 0; padding: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        
+        /* Menu de Entrada */
+        #menu {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), 
+                        url('https://minecraft.net/static/theme/img/background/minecraft_bg.jpg');
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
         }
+
+        #logo { width: 600px; margin-bottom: 50px; image-rendering: pixelated; }
+
+        button {
+            padding: 15px 50px;
+            font-size: 24px;
+            background-color: #484848;
+            color: white;
+            border: 3px solid #000;
+            cursor: pointer;
+            box-shadow: inset -4px -4px 0px #222;
+        }
+
+        button:hover { background-color: #618c32; }
+        
+        canvas { display: block; }
     </style>
 </head>
 <body>
-    <div id="instrucoes">Clique na tela para jogar | WASD para mover | Espaço para pular</div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <div id="menu">
+        <img id="logo" src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft Logo">
+        <button onclick="startGame()">JOGAR</button>
+    </div>
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+    <!-- Onde o jogo vai rodar -->
+    <div id="game-container"></div>
 
-        // 1. Configuração Básica
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // Cor do céu
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // 2. Luz
-        const light = new THREE.AmbientLight(0x404040); // Luz suave
-        scene.add(light);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(1, 1, 0.5).normalize();
-        scene.add(directionalLight);
-
-        // 3. Criando o Chão (Mundo de Blocos)
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshLambertMaterial({ color: 0x32CD32 }); // Verde grama
-
-        for (let x = -10; x < 10; x++) {
-            for (let z = -10; z < 10; z++) {
-                const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(x, 0, z);
-                scene.add(cube);
-            }
-        }
-
-        // 4. Controles de Movimento
-        const controls = new PointerLockControls(camera, document.body);
-        document.addEventListener('click', () => controls.lock());
-
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
-        const velocity = new THREE.Vector3();
-        const direction = new THREE.Vector3();
-
-        const onKeyDown = (event) => {
-            switch (event.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyD': moveRight = true; break;
-            }
-        };
-
-        const onKeyUp = (event) => {
-            switch (event.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyD': moveRight = false; break;
-            }
-        };
-
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
-
-        camera.position.y = 2; // Altura dos olhos
-
-        // 5. Loop de Animação
-        function animate() {
-            requestAnimationFrame(animate);
-
-            if (controls.isLocked) {
-                const delta = 0.1; // Velocidade
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * 40.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 40.0 * delta;
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
+    <!-- Bibliotecas Necessárias -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // O código JavaScript (Motor do Jogo) virá aqui
     </script>
 </body>
 </html>
