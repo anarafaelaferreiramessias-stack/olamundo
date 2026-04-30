@@ -2,153 +2,184 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Clone Oficial JS</title>
+    <title>Minecraft Clone JS - Versão Pro</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Arial', sans-serif; }
-        
-        /* Menu de Entrada Estilo Minecraft */
+        /* CSS - O VISUAL DO JOGO */
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Courier New', Courier, monospace; 
+        }
+
+        /* Menu de Entrada */
         #menu {
             position: absolute;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                        url('https://wallpapers.com/images/featured/minecraft-76077zd82l9m47u2.jpg');
+            width: 100%; height: 100%;
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://minecraft.net/static/theme/img/background/minecraft_bg.jpg');
             background-size: cover;
-            background-position: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
             z-index: 100;
         }
 
-        #logo { width: 500px; max-width: 90%; margin-bottom: 40px; }
+        #logo { width: 500px; max-width: 90%; margin-bottom: 40px; image-rendering: pixelated; }
 
+        /* Botão estilo Minecraft */
         .mc-button {
-            width: 300px;
+            width: 350px;
             padding: 15px;
-            font-size: 22px;
-            color: white;
+            font-size: 20px;
+            color: #E0E0E0;
             background-color: #484848;
             border: 4px solid #000;
-            box-shadow: inset -4px -4px 0px #222, inset 4px 4px 0px #888;
+            box-shadow: inset -4px -4px #222, inset 4px 4px #888;
             cursor: pointer;
             text-align: center;
             font-weight: bold;
-            text-shadow: 2px 2px #000;
-            transition: 0.2s;
+            text-transform: uppercase;
         }
 
-        .mc-button:hover { background-color: #618c32; }
+        .mc-button:hover {
+            background-color: #618c32;
+            color: white;
+            border-color: white;
+        }
 
-        #instrucoes {
+        #controles-info {
             margin-top: 20px;
-            color: #ddd;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
+            color: #FFF;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border: 2px solid #555;
             text-align: center;
+            line-height: 1.6;
         }
 
-        /* Mira no centro da tela */
+        /* Mira central */
         #crosshair {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 20px;
-            height: 20px;
+            top: 50%; left: 50%;
+            width: 20px; height: 20px;
             margin: -10px 0 0 -10px;
-            color: white;
-            font-size: 24px;
             display: none;
             pointer-events: none;
             z-index: 50;
+            color: white;
+            font-size: 24px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
+    <!-- HTML - A ESTRUTURA -->
     <div id="crosshair">+</div>
 
     <div id="menu">
         <img id="logo" src="https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_logo.svg" alt="Minecraft">
         <div class="mc-button" onclick="iniciarJogo()">JOGAR</div>
-        <div id="instrucoes">
-            WASD: Andar | ESPAÇO: Pular | MOUSE: Olhar<br>
-            (Clique na tela após jogar para travar o mouse)
+        <div id="controles-info">
+            <b>WASD</b>: Caminhar | <b>ESPAÇO</b>: Pular<br>
+            <b>CLIQUE ESQUERDO</b>: Quebrar Bloco | <b>CLIQUE DIREITO</b>: Colocar Bloco<br>
+            <i>(Clique na tela para capturar o mouse)</i>
         </div>
     </div>
 
-    <!-- Importando a biblioteca 3D -->
+    <!-- JAVASCRIPT - A LÓGICA (O Cérebro) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
+        let camera, scene, renderer, objects = [];
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
+        let prevTime = performance.now();
+
         function iniciarJogo() {
-            // Esconde menu e mostra mira
             document.getElementById('menu').style.display = 'none';
             document.getElementById('crosshair').style.display = 'block';
 
-            // 1. CONFIGURAÇÃO DO MUNDO
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87CEEB); // Céu
-            scene.fog = new THREE.FogExp2(0x87CEEB, 0.01); // Neblina
+            // 1. Cena e Câmera
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB);
+            scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
 
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.y = 5;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(renderer.domElement);
 
-            // 2. LUZES
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambientLight);
+            // 2. Iluminação
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
             const sun = new THREE.DirectionalLight(0xffffff, 0.8);
             sun.position.set(10, 20, 10);
             scene.add(sun);
 
-            // 3. TERRENO (BLOCOS)
+            // 3. Materiais e Chão
             const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const materialGrama = new THREE.MeshLambertMaterial({ color: 0x55902e });
+            const matGrama = new THREE.MeshLambertMaterial({ color: 0x55902e });
+            const matTronco = new THREE.MeshLambertMaterial({ color: 0x614126 });
+            const matFolha = new THREE.MeshLambertMaterial({ color: 0x2d5a27 });
 
             for (let x = -15; x < 15; x++) {
                 for (let z = -15; z < 15; z++) {
-                    const block = new THREE.Mesh(geometry, materialGrama);
-                    block.position.set(x, 0, z);
+                    let h = Math.floor(Math.sin(x * 0.3) + Math.cos(z * 0.3)); // Relevo
+                    criarBloco(x, h, z, matGrama);
                     
-                    // Bordas dos blocos
-                    const edges = new THREE.EdgesGeometry(geometry);
-                    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.1 }));
-                    block.add(line);
-                    
-                    scene.add(block);
+                    // Chance de árvore
+                    if (Math.random() > 0.98) {
+                        for(let t=1; t<=3; t++) criarBloco(x, h+t, z, matTronco); // Tronco
+                        for(let fx=-1; fx<=1; fx++) 
+                            for(let fz=-1; fz<=1; fz++) 
+                                criarBloco(x+fx, h+4, z+fz, matFolha); // Folhas
+                    }
                 }
             }
 
-            // 4. CONTROLES E FÍSICA
-            let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
-            let velocity = new THREE.Vector3();
-            let direction = new THREE.Vector3();
+            function criarBloco(x, y, z, material) {
+                const b = new THREE.Mesh(geometry, material);
+                b.position.set(x, y, z);
+                scene.add(b);
+                objects.push(b);
+            }
+
+            // 4. Interação (Quebrar e Colocar)
+            window.addEventListener('mousedown', (e) => {
+                if (document.pointerLockElement !== document.body) return;
+                const ray = new THREE.Raycaster();
+                ray.setFromCamera(new THREE.Vector2(0,0), camera);
+                const intersects = ray.intersectObjects(objects);
+
+                if (intersects.length > 0) {
+                    const intersected = intersects[0];
+                    if (e.button === 0) { // Esquerdo: Quebrar
+                        scene.remove(intersected.object);
+                        objects.splice(objects.indexOf(intersected.object), 1);
+                    } else if (e.button === 2) { // Direito: Colocar
+                        const pos = intersected.object.position.clone().add(intersected.face.normal);
+                        criarBloco(pos.x, pos.y, pos.z, matGrama);
+                    }
+                }
+            });
+
+            // 5. Controles
+            document.body.addEventListener('click', () => document.body.requestPointerLock());
+            window.addEventListener('contextmenu', e => e.preventDefault());
+            
+            const onKey = (e, val) => {
+                if(e.code === 'KeyW') moveForward = val;
+                if(e.code === 'KeyS') moveBackward = val;
+                if(e.code === 'KeyA') moveLeft = val;
+                if(e.code === 'KeyD') moveRight = val;
+                if(e.code === 'Space' && val && canJump) { velocity.y += 5; canJump = false; }
+            };
+            document.addEventListener('keydown', (e) => onKey(e, true));
+            document.addEventListener('keyup', (e) => onKey(e, false));
+
             let yaw = 0, pitch = 0;
-
-            // Bloquear Mouse
-            document.body.addEventListener('click', () => {
-                document.body.requestPointerLock();
-            });
-
-            document.addEventListener('keydown', (e) => {
-                if(e.code === 'KeyW') moveForward = true;
-                if(e.code === 'KeyS') moveBackward = true;
-                if(e.code === 'KeyA') moveLeft = true;
-                if(e.code === 'KeyD') moveRight = true;
-                if(e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
-            });
-
-            document.addEventListener('keyup', (e) => {
-                if(e.code === 'KeyW') moveForward = false;
-                if(e.code === 'KeyS') moveBackward = false;
-                if(e.code === 'KeyA') moveLeft = false;
-                if(e.code === 'KeyD') moveRight = false;
-            });
-
             document.addEventListener('mousemove', (e) => {
                 if (document.pointerLockElement === document.body) {
                     yaw -= e.movementX * 0.002;
@@ -158,15 +189,12 @@
                 }
             });
 
-            // 5. LOOP DE RENDERIZAÇÃO
-            let prevTime = performance.now();
+            // 6. Loop
             function animate() {
                 requestAnimationFrame(animate);
-
                 const time = performance.now();
                 const delta = (time - prevTime) / 1000;
 
-                // Atrito e Gravidade
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
                 velocity.y -= 9.8 * 1.5 * delta;
@@ -176,35 +204,20 @@
                 direction.normalize();
 
                 const camDir = new THREE.Vector3();
-                camera.getWorldDirection(camDir);
-                camDir.y = 0; camDir.normalize();
+                camera.getWorldDirection(camDir); camDir.y = 0; camDir.normalize();
                 const camSide = new THREE.Vector3().crossVectors(camera.up, camDir).normalize();
 
-                if (moveForward || moveBackward) velocity.addScaledVector(camDir, 40 * delta * direction.z);
-                if (moveLeft || moveRight) velocity.addScaledVector(camSide, 40 * delta * direction.x);
+                if (moveForward || moveBackward) velocity.addScaledVector(camDir, 50 * delta * direction.z);
+                if (moveLeft || moveRight) velocity.addScaledVector(camSide, 50 * delta * direction.x);
 
-                camera.position.x += velocity.x * delta;
-                camera.position.y += velocity.y * delta;
-                camera.position.z += velocity.z * delta;
+                camera.position.addScaledVector(velocity, delta);
 
-                // Chão
-                if (camera.position.y < 2) {
-                    velocity.y = 0;
-                    camera.position.y = 2;
-                    canJump = true;
-                }
+                if (camera.position.y < 2.5) { velocity.y = 0; camera.position.y = 2.5; canJump = true; }
 
                 renderer.render(scene, camera);
                 prevTime = time;
             }
-
             animate();
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
         }
     </script>
 </body>
