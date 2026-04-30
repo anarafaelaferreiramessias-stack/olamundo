@@ -1,67 +1,112 @@
-/**
- * LÓGICA DO JOGO - MINECRAFT JS
- * Professor: Este script controla a cena 3D, física de gravidade e inputs de teclado.
- */
-
-// 1. Variáveis Globais (Estado do Jogo)
-let camera, scene, renderer;
+// --- CONFIGURAÇÕES TÉCNICAS ---
+let camera, scene, renderer, raycaster;
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
-let velocity = new THREE.Vector3(); // Vetor de força atual
-let direction = new THREE.Vector3(); // Vetor de direção do movimento
-let prevTime = performance.now(); // Marcação de tempo para o Delta Time
+let velocity = new THREE.Vector3();
+let direction = new THREE.Vector3();
+let prevTime = performance.now();
+const objects = []; // Lista de blocos que podem ser interagidos
 
 function iniciarJogo() {
-    // Esconde o menu e mostra a mira (UI)
     document.getElementById('menu').style.display = 'none';
-    if(document.getElementById('crosshair')) document.getElementById('crosshair').style.display = 'block';
+    document.getElementById('crosshair').style.display = 'block';
 
-    // 2. Setup da Cena e Câmera
+    // 1. CENA E CÂMERA
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Cor do céu (Sky Blue)
-    scene.fog = new THREE.FogExp2(0x87CEEB, 0.015); // Efeito de distância (Neblina)
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.01);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.y = 2; // Altura dos olhos do jogador (nível do bloco)
+    camera.position.y = 10; // Começa um pouco alto
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // 3. Iluminação do Mundo
-    const light = new THREE.AmbientLight(0xffffff, 0.7); // Luz global suave
-    scene.add(light);
-    const sun = new THREE.DirectionalLight(0xffffff, 0.8); // Luz direcional (Sol)
-    sun.position.set(10, 20, 10);
-    scene.add(sun);
+    raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 10);
 
-    // 4. Geração do Terreno (Grid de Cubos)
+    // 2. MATERIAIS
+    const loader = new THREE.TextureLoader();
+    const materialGrama = new THREE.MeshLambertMaterial({ color: 0x55902e });
+    const materialTronco = new THREE.MeshLambertMaterial({ color: 0x614126 });
+    const materialFolha = new THREE.MeshLambertMaterial({ color: 0x2d5a27 });
+
+    // 3. GERAR MUNDO (RELEVO E ÁRVORES)
     const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshLambertMaterial({ color: 0x55902e }); // Material verde
 
-    for (let x = -15; x < 15; x++) {
-        for (let z = -15; z < 15; z++) {
-            const block = new THREE.Mesh(geometry, material);
-            block.position.set(x, 0, z);
+    for (let x = -20; x < 20; x++) {
+        for (let z = -20; z < 20; z++) {
+            // Criar relevo usando Math.sin para fazer "ondas" de terra
+            let h = Math.floor(Math.sin(x * 0.2) * 2 + Math.cos(z * 0.2) * 2);
             
-            // Adição de contornos pretos para estética voxel
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.1, transparent: true }));
-            block.add(line);
-            
-            scene.add(block);
+            const bloco = new THREE.Mesh(geometry, materialGrama);
+            bloco.position.set(x, h, z);
+            scene.add(bloco);
+            objects.push(bloco);
+
+            // Chance de nascer uma árvore
+            if (Math.random() > 0.98 && x % 5 === 0) {
+                criarArvore(x, h + 1, z);
+            }
         }
     }
 
-    // 5. Handlers de Eventos (Teclado)
+    function criarArvore(x, y, z) {
+        // Tronco (3 blocos de altura)
+        for (let i = 0; i < 3; i++) {
+            const tronco = new THREE.Mesh(geometry, materialTronco);
+            tronco.position.set(x, y + i, z);
+            scene.add(tronco);
+            objects.push(tronco);
+        }
+        // Folhas
+        for (let ix = -1; ix <= 1; ix++) {
+            for (let iy = 3; iy <= 4; iy++) {
+                for (let iz = -1; iz <= 1; iz++) {
+                    const folha = new THREE.Mesh(geometry, materialFolha);
+                    folha.position.set(x + ix, y + iy, z + iz);
+                    scene.add(folha);
+                    objects.push(folha);
+                }
+            }
+        }
+    }
+
+    // 4. SISTEMA DE QUEBRAR/COLOCAR BLOCOS
+    window.addEventListener('mousedown', (event) => {
+        if (document.pointerLockElement !== document.body) return;
+
+        const mouseRaycaster = new THREE.Raycaster();
+        mouseRaycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const intersects = mouseRaycaster.intersectObjects(objects);
+
+        if (intersects.length > 0) {
+            const intersect = intersects[0];
+
+            if (event.button === 0) { // Botão Esquerdo: QUEBRAR
+                scene.remove(intersect.object);
+                objects.splice(objects.indexOf(intersect.object), 1);
+            } 
+            else if (event.button === 2) { // Botão Direito: COLOCAR
+                const newBlock = new THREE.Mesh(geometry, materialGrama);
+                newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
+                scene.add(newBlock);
+                objects.push(newBlock);
+            }
+        }
+    });
+
+    // Bloqueia o menu de contexto do botão direito
+    window.addEventListener('contextmenu', e => e.preventDefault());
+
+    // 5. CONTROLES (WASD + MOUSE)
+    document.body.addEventListener('click', () => document.body.requestPointerLock());
+    
     const onKeyDown = (e) => {
         if (e.code === 'KeyW') moveForward = true;
         if (e.code === 'KeyS') moveBackward = true;
         if (e.code === 'KeyA') moveLeft = true;
         if (e.code === 'KeyD') moveRight = true;
-        if (e.code === 'Space' && canJump) { 
-            velocity.y += 5; // Impulso do pulo
-            canJump = false; 
-        }
+        if (e.code === 'Space' && canJump) { velocity.y += 5; canJump = false; }
     };
     const onKeyUp = (e) => {
         if (e.code === 'KeyW') moveForward = false;
@@ -72,47 +117,57 @@ function iniciarJogo() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
 
-    // 6. Loop Principal (Motor de Física e Renderização)
+    let yaw = 0, pitch = 0;
+    document.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === document.body) {
+            yaw -= e.movementX * 0.002;
+            pitch -= e.movementY * 0.002;
+            pitch = Math.max(-Math.PI/2, Math.min(Math.PI/2, pitch));
+            camera.rotation.set(pitch, yaw, 0, 'YXZ');
+        }
+    });
+
+    // 6. LUZES
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun.position.set(10, 20, 10);
+    scene.add(sun);
+
+    // 7. LOOP DE ANIMAÇÃO
     function animate() {
         requestAnimationFrame(animate);
-
         const time = performance.now();
-        const delta = (time - prevTime) / 1000; // Cálculo do tempo real entre frames
+        const delta = (time - prevTime) / 1000;
 
-        // Fricção (Desaceleração gradual)
         velocity.x -= velocity.x * 10.0 * delta;
         velocity.z -= velocity.z * 10.0 * delta;
-        velocity.y -= 9.8 * 1.5 * delta; // Gravidade acelerada
+        velocity.y -= 9.8 * 1.5 * delta;
 
-        // Determinação da direção do movimento
         direction.z = Number(moveForward) - Number(moveBackward);
         direction.x = Number(moveRight) - Number(moveLeft);
-        direction.normalize(); // Evita velocidade dobrada na diagonal
+        direction.normalize();
 
-        // Movimentação baseada no ângulo da câmera
         const camDir = new THREE.Vector3();
         camera.getWorldDirection(camDir);
         camDir.y = 0; camDir.normalize();
         const camSide = new THREE.Vector3().crossVectors(camera.up, camDir).normalize();
 
-        if (moveForward || moveBackward) velocity.addScaledVector(camDir, 40 * delta * direction.z);
-        if (moveLeft || moveRight) velocity.addScaledVector(camSide, 40 * delta * direction.x);
+        if (moveForward || moveBackward) velocity.addScaledVector(camDir, 50 * delta * direction.z);
+        if (moveLeft || moveRight) velocity.addScaledVector(camSide, 50 * delta * direction.x);
 
-        // Aplicação de movimento no personagem
         camera.position.x += velocity.x * delta;
         camera.position.y += velocity.y * delta;
         camera.position.z += velocity.z * delta;
 
-        // Detecção de Colisão Simples (Chão fixo em Y=2)
-        if (camera.position.y < 2) {
+        // Colisão com o chão dinâmico
+        if (camera.position.y < 3) {
             velocity.y = 0;
-            camera.position.y = 2;
+            camera.position.y = 3;
             canJump = true;
         }
 
         renderer.render(scene, camera);
         prevTime = time;
     }
-
     animate();
 }
