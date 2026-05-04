@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Fixed - Controles e Colisão</title>
+    <title>Minecraft - Física Sólida</title>
     <style>
         body { margin: 0; overflow: hidden; background: #87CEEB; }
         canvas { display: block; }
@@ -22,8 +22,8 @@
 <body>
 
     <div id="menu">
-        <h1 style="font-size: 40px; text-shadow: 3px 3px #000;">CONTROLES <span style="color:#7cfc00">OK</span></h1>
-        <button class="btn" onclick="start()">JOGAR AGORA</button>
+        <h1 style="font-size: 40px; text-shadow: 3px 3px #000;">MODO <span style="color:#7cfc00">SÓLIDO</span></h1>
+        <button class="btn" onclick="start()">INICIAR</button>
     </div>
 
     <div id="crosshair"></div>
@@ -39,16 +39,16 @@
         let isPunching = false, punchTimer = 0;
 
         const blockSize = 16;
-        const playerRadius = 5; 
+        const pSize = 5; // "Grossura" do corpo do jogador
 
-        function createTex(base, noise, points = 50) {
+        function createTex(base, noise) {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = base; ctx.fillRect(0, 0, 64, 64);
-            for(let i=0; i<points; i++) {
+            for(let i=0; i<40; i++) {
                 ctx.fillStyle = noise[Math.floor(Math.random() * noise.length)];
-                ctx.fillRect(Math.random()*64, Math.random()*64, Math.random()*10+2, Math.random()*10+2);
+                ctx.fillRect(Math.random()*64, Math.random()*64, 8, 8);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.magFilter = THREE.NearestFilter; return tex;
@@ -59,41 +59,29 @@
             scene.background = new THREE.Color(0x87CEEB);
             scene.fog = new THREE.FogExp2(0x87CEEB, 0.002);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
             controls = new THREE.PointerLockControls(camera, document.body);
             scene.add(controls.getObject());
 
             scene.add(new THREE.AmbientLight(0xffffff, 0.8));
             const sun = new THREE.DirectionalLight(0xffffff, 0.5);
-            sun.position.set(500, 1000, 500);
+            sun.position.set(100, 200, 100);
             scene.add(sun);
 
-            const tGrassTop = createTex('#567d46', ['#4d703e', '#5e8a4d'], 120);
-            const tGrassSide = createTex('#8B4513', ['#7a3e11', '#567d46'], 80);
-            const tDirt = createTex('#8B4513', ['#7a3e11', '#5d2f0d'], 50);
-            const tStone = createTex('#808080', ['#707070', '#8c8c8c'], 60);
-            const tSkin = createTex('#ffdbac', ['#f1c27d'], 20);
+            const tGrass = createTex('#567d46', ['#4d703e', '#5e8a4d']);
+            const mat = new THREE.MeshLambertMaterial({ map: tGrass });
 
-            const grassMats = [
-                new THREE.MeshLambertMaterial({ map: tGrassSide }), new THREE.MeshLambertMaterial({ map: tGrassSide }),
-                new THREE.MeshLambertMaterial({ map: tGrassTop }), new THREE.MeshLambertMaterial({ map: tDirt }),
-                new THREE.MeshLambertMaterial({ map: tGrassSide }), new THREE.MeshLambertMaterial({ map: tGrassSide })
-            ];
-            const stoneMat = new THREE.MeshLambertMaterial({ map: tStone });
-
-            const handGeo = new THREE.BoxGeometry(0.5, 0.5, 1.5);
-            const handMat = new THREE.MeshLambertMaterial({ map: tSkin });
-            hand = new THREE.Mesh(handGeo, handMat);
-            hand.position.set(0.8, -0.8, -1.2); 
+            // Mão
+            hand = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 1.5), new THREE.MeshLambertMaterial({ color: 0xffdbac }));
+            hand.position.set(0.8, -0.8, -1.2);
             camera.add(hand);
 
+            // Geração de mundo (terreno simples para performance)
             const geo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
-            
-            for (let x = -35; x < 35; x++) {
-                for (let z = -35; z < 35; z++) {
-                    let h = Math.round((Math.sin(x/8) * Math.cos(z/8) * 4) + (Math.sin(x/15) * 6));
-                    const blockMat = h > 5 ? stoneMat : grassMats;
-                    const block = new THREE.Mesh(geo, blockMat);
+            for (let x = -30; x < 30; x++) {
+                for (let z = -30; z < 30; z++) {
+                    let h = Math.round(Math.sin(x/5) * Math.cos(z/5) * 2);
+                    const block = new THREE.Mesh(geo, mat);
                     block.position.set(x * blockSize, h * blockSize, z * blockSize);
                     scene.add(block);
                     objects.push(block);
@@ -106,12 +94,13 @@
             document.body.addEventListener('mousedown', breakBlock);
         }
 
-        function checkCollision(pos) {
+        // Função crucial de colisão AABB
+        function isColliding(pos) {
             for (let i = 0; i < objects.length; i++) {
                 const b = objects[i].position;
-                if (pos.x + playerRadius > b.x - 8 && pos.x - playerRadius < b.x + 8 &&
-                    pos.z + playerRadius > b.z - 8 && pos.z - playerRadius < b.z + 8 &&
-                    pos.y - 14 < b.y + 8 && pos.y + 2 > b.y - 8) {
+                if (pos.x + pSize > b.x - 8 && pos.x - pSize < b.x + 8 &&
+                    pos.z + pSize > b.z - 8 && pos.z - pSize < b.z + 8 &&
+                    pos.y - 12 < b.y + 8 && pos.y + 4 > b.y - 8) {
                     return true;
                 }
             }
@@ -133,21 +122,17 @@
         function start() { document.getElementById('menu').style.display = 'none'; controls.lock(); }
 
         document.addEventListener('keydown', (e) => {
-            switch(e.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space': if(canJump) { velocity.y += 220; canJump = false; } break;
-            }
+            if(e.code === 'KeyW') moveForward = true;
+            if(e.code === 'KeyS') moveBackward = true;
+            if(e.code === 'KeyA') moveLeft = true;
+            if(e.code === 'KeyD') moveRight = true;
+            if(e.code === 'Space' && canJump) { velocity.y += 200; canJump = false; }
         });
         document.addEventListener('keyup', (e) => {
-            switch(e.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyD': moveRight = false; break;
-            }
+            if(e.code === 'KeyW') moveForward = false;
+            if(e.code === 'KeyS') moveBackward = false;
+            if(e.code === 'KeyA') moveLeft = false;
+            if(e.code === 'KeyD') moveRight = false;
         });
 
         function animate() {
@@ -158,36 +143,34 @@
 
                 velocity.x -= velocity.x * 10.0 * delta;
                 velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 70.0 * delta; 
+                velocity.y -= 9.8 * 60.0 * delta; 
 
                 const player = controls.getObject();
 
-                // CORREÇÃO DOS EIXOS DE MOVIMENTO
-                if (moveForward) velocity.z -= 400.0 * delta;
-                if (moveBackward) velocity.z += 400.0 * delta;
-                if (moveLeft) velocity.x -= 400.0 * delta;
-                if (moveRight) velocity.x += 400.0 * delta;
+                // 1. Calcular movimento pretendido
+                let moveX = (Number(moveRight) - Number(moveLeft)) * 400 * delta;
+                let moveZ = (Number(moveForward) - Number(moveBackward)) * 400 * delta;
 
-                // Teste de Colisão Horizontal (X)
+                // 2. Colisão no Eixo X
                 const oldX = player.position.x;
-                controls.moveRight(velocity.x * delta);
-                if(checkCollision(player.position)) player.position.x = oldX;
+                controls.moveRight(moveX * delta); 
+                if (isColliding(player.position)) {
+                    player.position.x = oldX;
+                }
 
-                // Teste de Colisão Horizontal (Z)
+                // 3. Colisão no Eixo Z
                 const oldZ = player.position.z;
-                controls.moveForward(-velocity.z * delta);
-                if(checkCollision(player.position)) player.position.z = oldZ;
+                controls.moveForward(moveZ * delta);
+                if (isColliding(player.position)) {
+                    player.position.z = oldZ;
+                }
 
-                // Teste de Colisão Vertical (Y)
+                // 4. Colisão no Eixo Y (Gravidade/Pulo)
                 player.position.y += (velocity.y * delta);
-                if(checkCollision(player.position)) {
-                    if (velocity.y < 0) {
-                        canJump = true;
-                        player.position.y -= (velocity.y * delta);
-                        velocity.y = 0;
-                    } else {
-                        velocity.y = 0;
-                    }
+                if (isColliding(player.position)) {
+                    if (velocity.y < 0) canJump = true;
+                    player.position.y -= (velocity.y * delta);
+                    velocity.y = 0;
                 }
 
                 // Animação da mão
@@ -197,7 +180,6 @@
                     if (punchTimer > Math.PI) isPunching = false;
                 }
 
-                if (player.position.y < -500) player.position.set(0, 100, 0);
                 prevTime = time;
             }
             renderer.render(scene, camera);
