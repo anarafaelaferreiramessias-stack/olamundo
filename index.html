@@ -2,46 +2,47 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Java Edition - Engine v2.0</title>
+    <title>Minecraft Java - Melhorado</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #78A7FF; image-rendering: pixelated; }
-        canvas { display: block; }
+        body { margin: 0; overflow: hidden; background: #78A7FF; }
+        canvas { display: block; image-rendering: pixelated; }
         #blocker {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.4);
-            display: flex; justify-content: center; align-items: center;
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; font-family: 'Courier New', monospace; z-index: 100; cursor: pointer;
-            text-shadow: 2px 2px #000;
         }
         #crosshair { 
-            position: fixed; top: 50%; left: 50%; width: 20px; height: 20px; 
+            position: fixed; top: 50%; left: 50%; width: 18px; height: 18px; 
             transform: translate(-50%, -50%); pointer-events: none; z-index: 50; 
         }
         #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; mix-blend-mode: difference; }
-        #crosshair::before { top: 0; left: 9px; width: 2px; height: 20px; }
-        #crosshair::after { top: 9px; left: 0; width: 20px; height: 2px; }
+        #crosshair::before { top: 0; left: 8px; width: 2px; height: 18px; }
+        #crosshair::after { top: 8px; left: 0; width: 18px; height: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="blocker"><h1>JOGAR MINECRAFT JAVA</h1></div>
+    <div id="blocker">
+        <h1>MINECRAFT JAVA</h1>
+        <p>CLIQUE PARA NASCER NO MUNDO</p>
+    </div>
     <div id="crosshair"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        let scene, camera, renderer, controls, hand, raycaster;
+        let scene, camera, renderer, controls, raycaster, hand;
         let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
         let velocity = new THREE.Vector3(), prevTime = performance.now();
-        let objects = [];
+        let objects = []; 
 
-        // GERADOR DE TEXTURAS AVANÇADO
-        function createTexture(colors, size = 16) {
+        function createPixelTex(colors) {
             const canvas = document.createElement('canvas');
-            canvas.width = size; canvas.height = size;
+            canvas.width = 16; canvas.height = 16;
             const ctx = canvas.getContext('2d');
-            for(let x=0; x<size; x++) {
-                for(let y=0; y<size; y++) {
+            for(let x=0; x<16; x++){
+                for(let y=0; y<16; y++){
                     ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
                     ctx.fillRect(x, y, 1, 1);
                 }
@@ -55,12 +56,16 @@
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x78A7FF);
-            scene.fog = new THREE.Fog(0x78A7FF, 200, 1500);
+            scene.fog = new THREE.Fog(0x78A7FF, 100, 900);
 
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 3000);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 2000);
+            
+            // --- RESOLVENDO O NASCIMENTO ---
+            // Você começa no alto (y=100) para não bugar no chão
+            camera.position.set(0, 100, 0);
+
             renderer = new THREE.WebGLRenderer({ antialias: false });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
             document.body.appendChild(renderer.domElement);
 
             controls = new THREE.PointerLockControls(camera, document.body);
@@ -68,77 +73,85 @@
             controls.addEventListener('lock', () => document.getElementById('blocker').style.display = 'none');
             controls.addEventListener('unlock', () => document.getElementById('blocker').style.display = 'flex');
 
-            // MATERIAIS MULTI-FACE (Grama com lateral de terra)
-            const grassTop = createTexture(['#59a031', '#4e8a2c', '#61ad35']);
-            const grassSide = createTexture(['#866043', '#59a031', '#7a553a']); // Terra com topo verde
-            const dirt = createTexture(['#866043', '#60412b', '#7a553a']);
-            const logSide = createTexture(['#674a32', '#3e2d1c', '#553a26']);
+            // TEXTURAS JAVA EDITION
+            const texGrass = createPixelTex(['#5E9E35', '#4E8A2C', '#61AD35']);
+            const texDirt = createPixelTex(['#866043', '#60412B', '#7A553A', '#4D3221']);
+            const texLog = createPixelTex(['#674A32', '#553A26', '#3E2D1C']);
+            const texLeaves = createPixelTex(['#2D4D16', '#3A5F1B', '#243F10']);
 
-            const grassMaterials = [
-                new THREE.MeshLambertMaterial({map: grassSide}), new THREE.MeshLambertMaterial({map: grassSide}),
-                new THREE.MeshLambertMaterial({map: grassTop}), new THREE.MeshLambertMaterial({map: dirt}),
-                new THREE.MeshLambertMaterial({map: grassSide}), new THREE.MeshLambertMaterial({map: grassSide})
+            const grassMats = [
+                new THREE.MeshLambertMaterial({map: texDirt}), new THREE.MeshLambertMaterial({map: texDirt}),
+                new THREE.MeshLambertMaterial({map: texGrass}), new THREE.MeshLambertMaterial({map: texDirt}),
+                new THREE.MeshLambertMaterial({map: texDirt}), new THREE.MeshLambertMaterial({map: texDirt})
             ];
 
-            // GERAÇÃO DE TERRENO (BIOMAS)
+            // GERAR CHÃO SEM BURACOS
             const geo = new THREE.BoxGeometry(16, 16, 16);
-            for(let x = -60; x < 60; x++) {
-                for(let z = -60; z < 60; z++) {
-                    const h = Math.floor((Math.sin(x*0.08) + Math.cos(z*0.08)) * 3);
-                    const y = h * 16;
-                    
-                    const block = new THREE.Mesh(geo, grassMaterials);
-                    block.position.set(x*16, y, z*16);
+            for(let x = -40; x < 40; x++) {
+                for(let z = -40; z < 40; z++) {
+                    const block = new THREE.Mesh(geo, grassMats);
+                    block.position.set(x*16, 0, z*16);
                     scene.add(block);
                     objects.push(block);
 
-                    // Adicionar árvores em lugares aleatórios
-                    if(Math.random() < 0.01 && Math.abs(x) > 5) {
-                        spawnTree(x*16, y+16, z*16, logSide);
+                    // Árvores aleatórias
+                    if (Math.random() < 0.01 && Math.abs(x) > 3 && Math.abs(z) > 3) {
+                        spawnTree(x*16, 16, z*16, texLog, texLeaves);
                     }
                 }
             }
 
-            // ILUMINAÇÃO DE CINEMA
-            const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+            // ILUMINAÇÃO
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const light = new THREE.DirectionalLight(0xffffff, 0.5);
+            light.position.set(10, 20, 10);
             scene.add(light);
-            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
-            sun.position.set(100, 200, 100);
-            scene.add(sun);
 
-            // BRAÇO DO JOGADOR (Steve)
-            const handGeo = new THREE.BoxGeometry(6, 6, 20);
-            const handMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
-            hand = new THREE.Mesh(handGeo, handMat);
+            // BRAÇO DO JOGADOR
+            const armGeo = new THREE.BoxGeometry(4, 4, 18);
+            const armMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
+            hand = new THREE.Mesh(armGeo, armMat);
             hand.position.set(12, -10, -15);
+            hand.rotation.set(0.1, -0.3, 0);
             camera.add(hand);
             scene.add(controls.getObject());
 
-            raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 32);
+            raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 18);
 
-            // MOVIMENTAÇÃO
-            const handleKey = (v) => (e) => {
-                if(e.code==='KeyW') moveForward=v; if(e.code==='KeyS') moveBackward=v;
-                if(e.code==='KeyA') moveLeft=v; if(e.code==='KeyD') moveRight=v;
-                if(e.code==='Space' && v && canJump) { velocity.y += 200; canJump = false; }
+            // TECLAS
+            const onKeyDown = (e) => {
+                if(e.code==='KeyW') moveForward=true; if(e.code==='KeyS') moveBackward=true;
+                if(e.code==='KeyA') moveLeft=true; if(e.code==='KeyD') moveRight=true;
+                if(e.code==='Space' && canJump) { velocity.y += 200; canJump = false; }
             };
-            document.addEventListener('keydown', handleKey(true));
-            document.addEventListener('keyup', handleKey(false));
+            const onKeyUp = (e) => {
+                if(e.code==='KeyW') moveForward=false; if(e.code==='KeyS') moveBackward=false;
+                if(e.code==='KeyA') moveLeft=false; if(e.code==='KeyD') moveRight=false;
+            };
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
         }
 
-        function spawnTree(x, y, z, mat) {
-            const logGeo = new THREE.BoxGeometry(16, 16, 16);
-            const leafGeo = new THREE.BoxGeometry(48, 48, 48);
-            const leafMat = new THREE.MeshLambertMaterial({ color: 0x2d4514, transparent: true, opacity: 0.9 });
-            
+        function spawnTree(x, y, z, logTex, leafTex) {
+            const geo = new THREE.BoxGeometry(16, 16, 16);
+            // Tronco
             for(let i=0; i<4; i++) {
-                const trunk = new THREE.Mesh(logGeo, new THREE.MeshLambertMaterial({map: mat}));
-                trunk.position.set(x, y + (i*16), z);
-                scene.add(trunk);
+                const log = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: logTex}));
+                log.position.set(x, y + (i*16), z);
+                scene.add(log);
+                objects.push(log);
             }
-            const leaves = new THREE.Mesh(leafGeo, leafMat);
-            leaves.position.set(x, y + 64, z);
-            scene.add(leaves);
+            // Folhas
+            for(let i=-2; i<=2; i++) {
+                for(let j=0; j<=2; j++) {
+                    for(let k=-2; k<=2; k++) {
+                        if(Math.abs(i) + Math.abs(j) + Math.abs(k) > 4) continue;
+                        const leaf = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: leafTex}));
+                        leaf.position.set(x + (i*16), y + (4*16) + (j*16), z + (k*16));
+                        scene.add(leaf);
+                    }
+                }
+            }
         }
 
         function animate() {
@@ -156,23 +169,23 @@
                 if(moveLeft) velocity.x -= 600 * delta;
                 if(moveRight) velocity.x += 600 * delta;
 
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                controls.getObject().position.y += velocity.y * delta;
+                raycaster.ray.origin.copy(controls.getObject().position);
+                raycaster.ray.origin.y -= 10;
+                const intersections = raycaster.intersectObjects(objects);
+                const onObject = intersections.length > 0;
 
-                // BOBBING (Passos realistas)
-                const speed = 0.008;
-                if(moveForward || moveBackward || moveLeft || moveRight) {
-                    hand.position.y = -10 + Math.sin(time * speed * 2) * 1.5;
-                    hand.position.x = 12 + Math.cos(time * speed) * 1;
-                    camera.position.y += Math.sin(time * speed * 2) * 0.1;
+                if (onObject) {
+                    velocity.y = Math.max(0, velocity.y);
+                    canJump = true;
                 }
 
-                // COLISÃO SIMPLES
-                if(controls.getObject().position.y < 50) {
-                    velocity.y = 0;
-                    controls.getObject().position.y = 50;
-                    canJump = true;
+                controls.moveRight(-velocity.x * delta);
+                controls.moveForward(-velocity.z * delta);
+                controls.getObject().position.y += (velocity.y * delta);
+
+                // Animação da mão ao andar
+                if(moveForward || moveBackward || moveLeft || moveRight) {
+                    hand.position.y = -10 + Math.sin(time * 0.01) * 0.5;
                 }
             }
             prevTime = time;
@@ -180,11 +193,6 @@
         }
 
         init(); animate();
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
