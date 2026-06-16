@@ -1,198 +1,119 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Minecraft Java - Melhorado</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Olá, Mundo! </title>
     <style>
-        body { margin: 0; overflow: hidden; background: #78A7FF; }
-        canvas { display: block; image-rendering: pixelated; }
-        #blocker {
-            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; font-family: 'Courier New', monospace; z-index: 100; cursor: pointer;
+        /* Reset básico para limpar as margens do navegador */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        #crosshair { 
-            position: fixed; top: 50%; left: 50%; width: 18px; height: 18px; 
-            transform: translate(-50%, -50%); pointer-events: none; z-index: 50; 
+
+        /* Fundo animado com gradiente */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradientBg 15s ease infinite;
+            overflow: hidden;
         }
-        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: white; mix-blend-mode: difference; }
-        #crosshair::before { top: 0; left: 8px; width: 2px; height: 18px; }
-        #crosshair::after { top: 8px; left: 0; width: 18px; height: 2px; }
+
+        /* Animação do fundo mexendo */
+        @keyframes gradientBg {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Cartão principal com efeito Glassmorphism (efeito de vidro) */
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            text-align: center;
+            transform: translateY(50px);
+            opacity: 0;
+            animation: fadeInUp 1s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+        }
+
+        /* Animação para o cartão surgir suavemente */
+        @keyframes fadeInUp {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Título principal decorado */
+        h1 {
+            color: #ffffff;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        /* Subtítulo ou texto de apoio */
+        p {
+            color: #f0f0f0;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        /* Botão interativo e decorado */
+        .btn-decorado {
+            background: #ffffff;
+            color: #e73c7e;
+            border: none;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        /* Efeito de passar o mouse no botão (Hover) */
+        .btn-decorado:hover {
+            background: #e73c7e;
+            color: #ffffff;
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(231, 60, 126, 0.4);
+        }
+
+        /* Efeito de clique no botão */
+        .btn-decorado:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
 
-    <div id="blocker">
-        <h1>MINECRAFT JAVA</h1>
-        <p>CLIQUE PARA NASCER NO MUNDO</p>
+    <div class="card">
+        <h1>✨ Olá, Mundo! ✨</h1>
+        <p>Seja bem-vindo ao desenvolvimento web levado a outro nível.</p>
+        <button class="btn-decorado" onclick="celebrar()">Clique Aqui</button>
     </div>
-    <div id="crosshair"></div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        let scene, camera, renderer, controls, raycaster, hand;
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
-        let velocity = new THREE.Vector3(), prevTime = performance.now();
-        let objects = []; 
-
-        function createPixelTex(colors) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 16; canvas.height = 16;
-            const ctx = canvas.getContext('2d');
-            for(let x=0; x<16; x++){
-                for(let y=0; y<16; y++){
-                    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
-                    ctx.fillRect(x, y, 1, 1);
-                }
-            }
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.magFilter = THREE.NearestFilter;
-            tex.minFilter = THREE.NearestFilter;
-            return tex;
+        function celebrar() {
+            // Um alerta simpático, mas você pode mudar para o que quiser!
+            alert("🎉 Parabéns! Você acabou de executar um Olá, Mundo com muito estilo!");
         }
-
-        function init() {
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x78A7FF);
-            scene.fog = new THREE.Fog(0x78A7FF, 100, 900);
-
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1, 2000);
-            
-            // --- RESOLVENDO O NASCIMENTO ---
-            // Você começa no alto (y=100) para não bugar no chão
-            camera.position.set(0, 100, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: false });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-
-            controls = new THREE.PointerLockControls(camera, document.body);
-            document.getElementById('blocker').addEventListener('click', () => controls.lock());
-            controls.addEventListener('lock', () => document.getElementById('blocker').style.display = 'none');
-            controls.addEventListener('unlock', () => document.getElementById('blocker').style.display = 'flex');
-
-            // TEXTURAS JAVA EDITION
-            const texGrass = createPixelTex(['#5E9E35', '#4E8A2C', '#61AD35']);
-            const texDirt = createPixelTex(['#866043', '#60412B', '#7A553A', '#4D3221']);
-            const texLog = createPixelTex(['#674A32', '#553A26', '#3E2D1C']);
-            const texLeaves = createPixelTex(['#2D4D16', '#3A5F1B', '#243F10']);
-
-            const grassMats = [
-                new THREE.MeshLambertMaterial({map: texDirt}), new THREE.MeshLambertMaterial({map: texDirt}),
-                new THREE.MeshLambertMaterial({map: texGrass}), new THREE.MeshLambertMaterial({map: texDirt}),
-                new THREE.MeshLambertMaterial({map: texDirt}), new THREE.MeshLambertMaterial({map: texDirt})
-            ];
-
-            // GERAR CHÃO SEM BURACOS
-            const geo = new THREE.BoxGeometry(16, 16, 16);
-            for(let x = -40; x < 40; x++) {
-                for(let z = -40; z < 40; z++) {
-                    const block = new THREE.Mesh(geo, grassMats);
-                    block.position.set(x*16, 0, z*16);
-                    scene.add(block);
-                    objects.push(block);
-
-                    // Árvores aleatórias
-                    if (Math.random() < 0.01 && Math.abs(x) > 3 && Math.abs(z) > 3) {
-                        spawnTree(x*16, 16, z*16, texLog, texLeaves);
-                    }
-                }
-            }
-
-            // ILUMINAÇÃO
-            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-            const light = new THREE.DirectionalLight(0xffffff, 0.5);
-            light.position.set(10, 20, 10);
-            scene.add(light);
-
-            // BRAÇO DO JOGADOR
-            const armGeo = new THREE.BoxGeometry(4, 4, 18);
-            const armMat = new THREE.MeshLambertMaterial({ color: 0xffdbac });
-            hand = new THREE.Mesh(armGeo, armMat);
-            hand.position.set(12, -10, -15);
-            hand.rotation.set(0.1, -0.3, 0);
-            camera.add(hand);
-            scene.add(controls.getObject());
-
-            raycaster = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0), 0, 18);
-
-            // TECLAS
-            const onKeyDown = (e) => {
-                if(e.code==='KeyW') moveForward=true; if(e.code==='KeyS') moveBackward=true;
-                if(e.code==='KeyA') moveLeft=true; if(e.code==='KeyD') moveRight=true;
-                if(e.code==='Space' && canJump) { velocity.y += 200; canJump = false; }
-            };
-            const onKeyUp = (e) => {
-                if(e.code==='KeyW') moveForward=false; if(e.code==='KeyS') moveBackward=false;
-                if(e.code==='KeyA') moveLeft=false; if(e.code==='KeyD') moveRight=false;
-            };
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
-        }
-
-        function spawnTree(x, y, z, logTex, leafTex) {
-            const geo = new THREE.BoxGeometry(16, 16, 16);
-            // Tronco
-            for(let i=0; i<4; i++) {
-                const log = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: logTex}));
-                log.position.set(x, y + (i*16), z);
-                scene.add(log);
-                objects.push(log);
-            }
-            // Folhas
-            for(let i=-2; i<=2; i++) {
-                for(let j=0; j<=2; j++) {
-                    for(let k=-2; k<=2; k++) {
-                        if(Math.abs(i) + Math.abs(j) + Math.abs(k) > 4) continue;
-                        const leaf = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({map: leafTex}));
-                        leaf.position.set(x + (i*16), y + (4*16) + (j*16), z + (k*16));
-                        scene.add(leaf);
-                    }
-                }
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const time = performance.now();
-            const delta = (time - prevTime) / 1000;
-
-            if (controls.isLocked) {
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-                velocity.y -= 9.8 * 60.0 * delta; 
-
-                if(moveForward) velocity.z -= 600 * delta;
-                if(moveBackward) velocity.z += 600 * delta;
-                if(moveLeft) velocity.x -= 600 * delta;
-                if(moveRight) velocity.x += 600 * delta;
-
-                raycaster.ray.origin.copy(controls.getObject().position);
-                raycaster.ray.origin.y -= 10;
-                const intersections = raycaster.intersectObjects(objects);
-                const onObject = intersections.length > 0;
-
-                if (onObject) {
-                    velocity.y = Math.max(0, velocity.y);
-                    canJump = true;
-                }
-
-                controls.moveRight(-velocity.x * delta);
-                controls.moveForward(-velocity.z * delta);
-                controls.getObject().position.y += (velocity.y * delta);
-
-                // Animação da mão ao andar
-                if(moveForward || moveBackward || moveLeft || moveRight) {
-                    hand.position.y = -10 + Math.sin(time * 0.01) * 0.5;
-                }
-            }
-            prevTime = time;
-            renderer.render(scene, camera);
-        }
-
-        init(); animate();
     </script>
+
 </body>
 </html>
