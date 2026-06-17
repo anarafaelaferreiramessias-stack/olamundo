@@ -1,119 +1,839 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Olá, Mundo! </title>
-    <style>
-        /* Reset básico para limpar as margens do navegador */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olá Mundo Turbo — Garagem &amp; Corrida</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-night:#150B2E;
+    --bg-night2:#1F1240;
+    --asphalt:#2B2740;
+    --accent-pink:#FF3D7F;
+    --accent-yellow:#FFD23F;
+    --accent-cyan:#3FD6FF;
+    --accent-green:#2FBE6E;
+    --text-light:#FDF6EC;
+    --text-dim:#B9AEDC;
+    --card-bg:rgba(255,255,255,0.05);
+    --card-border:rgba(255,255,255,0.12);
+    --font-pixel:'Press Start 2P', monospace;
+    --font-body:'Rubik', system-ui, sans-serif;
+  }
 
-        /* Fundo animado com gradiente */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradientBg 15s ease infinite;
-            overflow: hidden;
-        }
+  *{box-sizing:border-box;}
 
-        /* Animação do fundo mexendo */
-        @keyframes gradientBg {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
+  html,body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg-night);
+    color:var(--text-light);
+    font-family:var(--font-body);
+    overflow-x:hidden;
+  }
 
-        /* Cartão principal com efeito Glassmorphism (efeito de vidro) */
-        .card {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 3rem;
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            text-align: center;
-            transform: translateY(50px);
-            opacity: 0;
-            animation: fadeInUp 1s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
-        }
+  .screen{
+    display:none;
+    min-height:100vh;
+    width:100%;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+    position:relative;
+  }
+  .screen.active{ display:flex; }
 
-        /* Animação para o cartão surgir suavemente */
-        @keyframes fadeInUp {
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
+  /* decorative checker strips */
+  .checker-strip{
+    height:14px;
+    width:100%;
+    background-image:
+      linear-gradient(45deg, #0a0a0a 25%, transparent 25%, transparent 75%, #0a0a0a 75%),
+      linear-gradient(45deg, #0a0a0a 25%, #fff 25%, #fff 75%, #0a0a0a 75%);
+    background-size:28px 28px;
+    background-position:0 0, 14px 14px;
+    background-color:#fff;
+    position:absolute;
+    left:0;
+  }
+  .checker-strip.top{ top:0; }
+  .checker-strip.bottom{ bottom:0; }
 
-        /* Título principal decorado */
-        h1 {
-            color: #ffffff;
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 2px;
-        }
+  /* ============ HERO / HELLO WORLD ============ */
+  #screen-hello{
+    background:radial-gradient(ellipse at 50% 30%, var(--bg-night2), var(--bg-night) 70%);
+    text-align:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .hero-stars{
+    position:absolute; inset:0; overflow:hidden; pointer-events:none;
+  }
+  .hero-stars span{
+    position:absolute; width:3px; height:3px; background:#fff; border-radius:50%; opacity:.6;
+  }
+  .hero-title{
+    font-family:var(--font-pixel);
+    font-size:clamp(28px, 7vw, 58px);
+    color:var(--accent-yellow);
+    text-shadow:
+      3px 3px 0 var(--accent-pink),
+      6px 6px 0 var(--accent-cyan);
+    margin:0 0 18px;
+    letter-spacing:2px;
+    animation: floaty 3s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0px); }
+    50%{ transform:translateY(-8px); }
+  }
+  .hero-sub{
+    font-size:16px;
+    color:var(--text-dim);
+    margin-bottom:36px;
+    max-width:480px;
+  }
+  .hero-prompt{
+    font-family:var(--font-pixel);
+    font-size:13px;
+    color:var(--accent-cyan);
+    animation: blink 1.4s steps(2) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
 
-        /* Subtítulo ou texto de apoio */
-        p {
-            color: #f0f0f0;
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            font-weight: 300;
-        }
+  .kart-track-strip{
+    position:relative;
+    width:100%;
+    max-width:560px;
+    height:46px;
+    margin:18px auto 28px;
+    border-top:3px dashed rgba(255,255,255,.25);
+    overflow:hidden;
+  }
+  .mini-kart{
+    position:absolute;
+    bottom:2px;
+    left:-60px;
+    width:46px;
+    animation: drive 4.5s linear infinite;
+  }
+  @keyframes drive{
+    from{ left:-60px; }
+    to{ left:110%; }
+  }
 
-        /* Botão interativo e decorado */
-        .btn-decorado {
-            background: #ffffff;
-            color: #e73c7e;
-            border: none;
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-        }
+  .btn{
+    font-family:var(--font-pixel);
+    font-size:13px;
+    color:var(--bg-night);
+    background:var(--accent-yellow);
+    border:none;
+    padding:14px 22px;
+    border-radius:10px;
+    cursor:pointer;
+    box-shadow:0 6px 0 #b8860b, 0 8px 14px rgba(0,0,0,.4);
+    transition:transform .08s ease;
+  }
+  .btn:hover{ filter:brightness(1.05); }
+  .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 #b8860b; }
+  .btn.secondary{
+    background:transparent;
+    color:var(--text-light);
+    border:2px solid var(--accent-cyan);
+    box-shadow:none;
+  }
+  .btn.secondary:active{ transform:translateY(2px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; }
 
-        /* Efeito de passar o mouse no botão (Hover) */
-        .btn-decorado:hover {
-            background: #e73c7e;
-            color: #ffffff;
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(231, 60, 126, 0.4);
-        }
+  /* ============ GARAGE ============ */
+  #screen-garage{ background:var(--bg-night); align-items:stretch; }
+  .top-nav{
+    width:100%; max-width:980px; margin:0 auto 18px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .top-nav .link{
+    font-family:var(--font-pixel); font-size:11px; color:var(--accent-cyan);
+    background:none; border:none; cursor:pointer; padding:8px;
+  }
+  .garage-title{
+    font-family:var(--font-pixel); font-size:clamp(18px,4vw,28px);
+    color:var(--accent-pink); text-align:center; margin:6px 0 28px;
+  }
+  .garage-wrap{
+    width:100%; max-width:980px; margin:0 auto;
+    display:grid; grid-template-columns: 1.1fr 1fr; gap:28px;
+  }
+  @media (max-width: 760px){ .garage-wrap{ grid-template-columns:1fr; } }
 
-        /* Efeito de clique no botão */
-        .btn-decorado:active {
-            transform: scale(0.98);
-        }
-    </style>
+  .panel{
+    background:var(--card-bg); border:1px solid var(--card-border);
+    border-radius:18px; padding:20px;
+  }
+  .panel h3{
+    font-family:var(--font-pixel); font-size:13px; color:var(--accent-yellow);
+    margin:0 0 14px; letter-spacing:1px;
+  }
+
+  .char-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .char-card{
+    background:rgba(255,255,255,.04);
+    border:2px solid transparent;
+    border-radius:14px; padding:8px; cursor:pointer; text-align:center;
+    transition:border-color .15s, transform .1s;
+  }
+  .char-card:hover{ transform:translateY(-2px); }
+  .char-card.selected{ border-color:var(--accent-cyan); background:rgba(63,214,255,.1); }
+  .char-card svg{ width:100%; height:auto; display:block; }
+  .char-card span{ display:block; font-size:11px; margin-top:6px; color:var(--text-dim); }
+
+  .color-grid{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .color-swatch{
+    width:34px; height:34px; border-radius:50%; cursor:pointer;
+    border:3px solid transparent; box-shadow:inset 0 0 0 2px rgba(0,0,0,.25);
+  }
+  .color-swatch.selected{ border-color:#fff; transform:scale(1.1); }
+
+  .type-grid{ display:flex; flex-direction:column; gap:10px; }
+  .type-card{
+    border:2px solid var(--card-border); border-radius:12px;
+    padding:10px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;
+  }
+  .type-card.selected{ border-color:var(--accent-green); background:rgba(47,190,110,.1); }
+  .type-card .tname{ font-weight:700; font-size:14px; }
+  .type-card .tdesc{ font-size:11px; color:var(--text-dim); }
+
+  .preview-row{ display:flex; align-items:center; gap:16px; margin-top:18px; }
+  #previewCanvas{ background:rgba(0,0,0,.25); border-radius:10px; }
+
+  .garage-cta{ text-align:center; margin-top:26px; }
+
+  /* ============ RACE ============ */
+  #screen-race{ background:var(--bg-night); }
+  .race-shell{ width:100%; max-width:920px; }
+  .race-canvas-wrap{ position:relative; width:100%; }
+  #raceCanvas{ width:100%; max-width:920px; display:block; margin:0 auto; border-radius:18px; box-shadow:0 0 0 4px rgba(255,255,255,.06); }
+
+  .hud{
+    position:absolute; top:14px; left:18px; right:18px;
+    display:flex; justify-content:space-between;
+    font-family:var(--font-pixel); font-size:12px; color:var(--text-light);
+    pointer-events:none; text-shadow:2px 2px 0 rgba(0,0,0,.6);
+  }
+  .hud span.hl{ color:var(--accent-yellow); }
+
+  .race-overlay{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(10,5,25,.35);
+    font-family:var(--font-pixel); font-size:clamp(36px,8vw,70px); color:var(--accent-yellow);
+    text-shadow:4px 4px 0 var(--accent-pink);
+  }
+
+  .controls-hint{ text-align:center; font-size:13px; color:var(--text-dim); margin-top:12px; }
+
+  .result-card{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(10,5,25,.85); border-radius:18px; flex-direction:column; gap:14px; padding:20px;
+  }
+  .result-card.show{ display:flex; }
+  .result-card h2{ font-family:var(--font-pixel); font-size:18px; color:var(--accent-pink); margin:0; text-align:center; }
+  .standings{ list-style:none; padding:0; margin:0; width:100%; max-width:340px; }
+  .standings li{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 12px; border-radius:10px; margin-bottom:6px;
+    background:rgba(255,255,255,.05); font-size:14px;
+  }
+  .standings li.me{ background:rgba(255,210,63,.15); border:1px solid var(--accent-yellow); }
+  .standings .rank{ font-family:var(--font-pixel); font-size:12px; width:22px; }
+  .dot{ width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .result-actions{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+</style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>✨ Olá, Mundo! ✨</h1>
-        <p>Seja bem-vindo ao desenvolvimento web levado a outro nível.</p>
-        <button class="btn-decorado" onclick="celebrar()">Clique Aqui</button>
+<!-- ===================== SCREEN 1: HELLO WORLD ===================== -->
+<section id="screen-hello" class="screen active">
+  <div class="checker-strip top"></div>
+  <div class="hero-stars" id="heroStars"></div>
+
+  <h1 class="hero-title">OLÁ MUNDO!</h1>
+  <p class="hero-sub">Clique no carrinho ou no botão abaixo para entrar na garagem, escolher seu piloto e disputar uma corrida rápida contra os bots.</p>
+
+  <div class="kart-track-strip">
+    <svg class="mini-kart" viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+      <rect x="6" y="10" width="8" height="6" fill="#111"/>
+      <rect x="6" y="32" width="8" height="6" fill="#111"/>
+      <rect x="78" y="10" width="8" height="6" fill="#111"/>
+      <rect x="78" y="32" width="8" height="6" fill="#111"/>
+      <rect x="12" y="14" width="76" height="26" rx="10" fill="#FF3D7F"/>
+      <rect x="58" y="18" width="22" height="18" rx="5" fill="#fff" opacity="0.85"/>
+      <circle cx="34" cy="27" r="9" fill="#FFD23F"/>
+    </svg>
+  </div>
+
+  <button class="btn" id="startBtn">🏁 COMEÇAR</button>
+  <p class="hero-prompt" style="margin-top:18px;">clique em qualquer lugar para continuar</p>
+
+  <div class="checker-strip bottom"></div>
+</section>
+
+<!-- ===================== SCREEN 2: GARAGE ===================== -->
+<section id="screen-garage" class="screen">
+  <div class="top-nav">
+    <button class="link" id="backToHello">‹ Início</button>
+    <div></div>
+  </div>
+  <h2 class="garage-title">🔧 GARAGEM</h2>
+
+  <div class="garage-wrap">
+    <div class="panel">
+      <h3>ESCOLHA SEU PILOTO</h3>
+      <div class="char-grid" id="characterList"></div>
+
+      <h3 style="margin-top:22px;">COR DO CARRINHO</h3>
+      <div class="color-grid" id="colorList"></div>
+
+      <div class="preview-row">
+        <canvas id="previewCanvas" width="160" height="100"></canvas>
+        <div>
+          <div style="font-weight:700;" id="previewName">Escolha um piloto</div>
+          <div style="font-size:12px;color:var(--text-dim);" id="previewType">Tipo: Equilibrado</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        function celebrar() {
-            // Um alerta simpático, mas você pode mudar para o que quiser!
-            alert("🎉 Parabéns! Você acabou de executar um Olá, Mundo com muito estilo!");
-        }
-    </script>
+    <div class="panel">
+      <h3>TIPO DE CARRINHO</h3>
+      <div class="type-grid" id="kartTypeList"></div>
+    </div>
+  </div>
 
+  <div class="garage-cta">
+    <button class="btn" id="enterRaceBtn" disabled>🏎️ ENTRAR NA PISTA</button>
+  </div>
+</section>
+
+<!-- ===================== SCREEN 3: RACE ===================== -->
+<section id="screen-race" class="screen">
+  <div class="top-nav" style="max-width:920px;">
+    <button class="link" id="backToGarage">‹ Garagem</button>
+    <div></div>
+  </div>
+
+  <div class="race-shell">
+    <div class="race-canvas-wrap">
+      <canvas id="raceCanvas" width="900" height="560"></canvas>
+      <div class="hud">
+        <span>VOLTA <span class="hl" id="hudLap">1</span>/3</span>
+        <span>TEMPO <span class="hl" id="hudTime">00:00</span></span>
+        <span>POSIÇÃO <span class="hl" id="hudPos">1</span>/4</span>
+      </div>
+      <div class="race-overlay" id="raceOverlay">3</div>
+      <div class="result-card" id="resultCard">
+        <h2 id="resultTitle">RESULTADO</h2>
+        <ul class="standings" id="standingsList"></ul>
+        <div class="result-actions">
+          <button class="btn" id="raceAgainBtn">🔁 Correr de novo</button>
+          <button class="btn secondary" id="backGarageBtn2">🔧 Trocar carrinho</button>
+        </div>
+      </div>
+    </div>
+    <p class="controls-hint">↑ acelerar &nbsp; ↓ frear &nbsp; ← → mudar de pista</p>
+  </div>
+</section>
+
+<script>
+(function(){
+
+  /* ---------------------------------------------------------
+     DATA: characters, colors, kart types
+  --------------------------------------------------------- */
+  const CHARACTERS = [
+    { id:'pip',    name:'Pip',    color:'#2FBE6E', accent:'#16632F', feature:'ears'    },
+    { id:'roxie',  name:'Roxie',  color:'#9B5DE5', accent:'#5B2A99', feature:'antenna' },
+    { id:'zap',    name:'Zap',    color:'#FFD23F', accent:'#C98B00', feature:'visor'   },
+    { id:'coral',  name:'Coral',  color:'#FF6F91', accent:'#C23E63', feature:'bow'     }
+  ];
+
+  const KART_COLORS = ['#FF3D7F','#3FD6FF','#FFD23F','#2FBE6E','#9B5DE5','#FF8A3D','#FFFFFF','#0F0B22'];
+
+  const KART_TYPES = [
+    { id:'veloz',       name:'Veloz',       desc:'Mais velocidade, manobra mais lenta', maxSpeed:230, accel:150, laneSpeed:1.1 },
+    { id:'agil',        name:'Ágil',        desc:'Troca de pista instantânea, top speed menor', maxSpeed:188, accel:150, laneSpeed:1.9 },
+    { id:'equilibrado', name:'Equilibrado', desc:'Um pouco de tudo', maxSpeed:210, accel:150, laneSpeed:1.45 }
+  ];
+
+  const BOT_NAME_POOL = ['Raio','Trovão','Cometa','Faísca','Foguete','Tufão'];
+
+  const TOTAL_LAPS = 3;
+  const SPEED_FACTOR = 0.0030;
+  const START_ANGLE = -Math.PI/2;
+
+  // Track geometry (ellipse ring)
+  const TRACK = { cx:450, cy:280, outerA:380, outerB:230, innerA:205, innerB:115 };
+
+  /* ---------------------------------------------------------
+     SCREEN NAVIGATION
+  --------------------------------------------------------- */
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  document.getElementById('startBtn').addEventListener('click', e=>{ e.stopPropagation(); goToGarage(); });
+  document.getElementById('screen-hello').addEventListener('click', goToGarage);
+  document.getElementById('backToHello').addEventListener('click', ()=>showScreen('screen-hello'));
+  document.getElementById('backToGarage').addEventListener('click', ()=>showScreen('screen-garage'));
+  document.getElementById('backGarageBtn2').addEventListener('click', ()=>{
+    document.getElementById('resultCard').classList.remove('show');
+    showScreen('screen-garage');
+  });
+
+  function goToGarage(){ showScreen('screen-garage'); }
+
+  // decorative hero stars
+  (function(){
+    const box = document.getElementById('heroStars');
+    for(let i=0;i<40;i++){
+      const s = document.createElement('span');
+      s.style.left = Math.random()*100+'%';
+      s.style.top = Math.random()*100+'%';
+      s.style.opacity = (Math.random()*0.6+0.2).toFixed(2);
+      box.appendChild(s);
+    }
+  })();
+
+  /* ---------------------------------------------------------
+     AVATAR SVGs (original characters, no third-party IP)
+  --------------------------------------------------------- */
+  function avatarSVG(c){
+    let feature = '';
+    if(c.feature === 'ears'){
+      feature = `<ellipse cx="28" cy="22" rx="9" ry="14" fill="${c.accent}"/><ellipse cx="72" cy="22" rx="9" ry="14" fill="${c.accent}"/>`;
+    } else if(c.feature === 'antenna'){
+      feature = `<line x1="50" y1="18" x2="50" y2="2" stroke="${c.accent}" stroke-width="4"/><circle cx="50" cy="2" r="6" fill="${c.accent}"/>`;
+    } else if(c.feature === 'visor'){
+      feature = `<rect x="26" y="44" width="48" height="14" rx="7" fill="${c.accent}"/>`;
+    } else if(c.feature === 'bow'){
+      feature = `<polygon points="34,18 50,30 34,42" fill="${c.accent}"/><polygon points="66,18 50,30 66,42" fill="${c.accent}"/><circle cx="50" cy="30" r="5" fill="${c.accent}"/>`;
+    }
+    const eyes = c.feature === 'visor' ? '' : `<circle cx="40" cy="52" r="4.5" fill="#1a1a1a"/><circle cx="60" cy="52" r="4.5" fill="#1a1a1a"/>`;
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      ${c.feature==='ears' || c.feature==='antenna' || c.feature==='bow' ? feature : ''}
+      <circle cx="50" cy="55" r="36" fill="${c.color}"/>
+      ${c.feature==='visor' ? feature : ''}
+      ${eyes}
+      <path d="M40 68 Q50 76 60 68" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>`;
+  }
+
+  /* ---------------------------------------------------------
+     GARAGE STATE & RENDERING
+  --------------------------------------------------------- */
+  let selectedCharacter = null;
+  let selectedColor = null;
+  let selectedType = KART_TYPES[2]; // equilibrado default
+
+  function buildGarageUI(){
+    const charBox = document.getElementById('characterList');
+    charBox.innerHTML = '';
+    CHARACTERS.forEach(c=>{
+      const card = document.createElement('div');
+      card.className = 'char-card';
+      card.innerHTML = avatarSVG(c) + `<span>${c.name}</span>`;
+      card.addEventListener('click', ()=>{
+        selectedCharacter = c;
+        document.querySelectorAll('.char-card').forEach(el=>el.classList.remove('selected'));
+        card.classList.add('selected');
+        updatePreview();
+        checkReady();
+      });
+      charBox.appendChild(card);
+    });
+
+    const colorBox = document.getElementById('colorList');
+    colorBox.innerHTML = '';
+    KART_COLORS.forEach(col=>{
+      const sw = document.createElement('div');
+      sw.className = 'color-swatch';
+      sw.style.background = col;
+      sw.addEventListener('click', ()=>{
+        selectedColor = col;
+        document.querySelectorAll('.color-swatch').forEach(el=>el.classList.remove('selected'));
+        sw.classList.add('selected');
+        updatePreview();
+        checkReady();
+      });
+      colorBox.appendChild(sw);
+    });
+
+    const typeBox = document.getElementById('kartTypeList');
+    typeBox.innerHTML = '';
+    KART_TYPES.forEach(t=>{
+      const card = document.createElement('div');
+      card.className = 'type-card' + (t.id===selectedType.id ? ' selected' : '');
+      card.innerHTML = `<div><div class="tname">${t.name}</div><div class="tdesc">${t.desc}</div></div>`;
+      card.addEventListener('click', ()=>{
+        selectedType = t;
+        document.querySelectorAll('.type-card').forEach(el=>el.classList.remove('selected'));
+        card.classList.add('selected');
+        document.getElementById('previewType').textContent = 'Tipo: ' + t.name;
+      });
+      typeBox.appendChild(card);
+    });
+  }
+
+  function checkReady(){
+    document.getElementById('enterRaceBtn').disabled = !(selectedCharacter && selectedColor);
+  }
+
+  function updatePreview(){
+    const nameEl = document.getElementById('previewName');
+    nameEl.textContent = selectedCharacter ? selectedCharacter.name + ' está pronto!' : 'Escolha um piloto';
+    drawKartPreview();
+  }
+
+  function drawKartPreview(){
+    const canvas = document.getElementById('previewCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const body = selectedColor || '#555555';
+    const driver = selectedCharacter ? selectedCharacter.color : '#888888';
+    drawKart(ctx, 80, 50, 0, body, driver, 1.6);
+  }
+
+  /* ---------------------------------------------------------
+     SHARED KART DRAWING (used in preview + race)
+  --------------------------------------------------------- */
+  function roundRectPath(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function drawKart(ctx, x, y, angle, bodyColor, driverColor, scale){
+    scale = scale || 1;
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.rotate(angle);
+    ctx.scale(scale,scale);
+
+    ctx.fillStyle = '#111';
+    ctx.fillRect(-17,-13,8,6);
+    ctx.fillRect(-17,7,8,6);
+    ctx.fillRect(9,-13,8,6);
+    ctx.fillRect(9,7,8,6);
+
+    ctx.fillStyle = bodyColor;
+    roundRectPath(ctx,-20,-10,40,20,6);
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    roundRectPath(ctx,3,-7,9,14,3);
+    ctx.fill();
+
+    ctx.fillStyle = driverColor;
+    ctx.beginPath();
+    ctx.arc(-5,0,6.5,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  buildGarageUI();
+
+  /* ---------------------------------------------------------
+     RACE STATE
+  --------------------------------------------------------- */
+  let participants = [];
+  let raceState = 'idle'; // idle | countdown | racing | finished
+  let raceStartTime = 0;
+  let lastFrame = null;
+  let stars = [];
+
+  for(let i=0;i<90;i++){
+    stars.push({ x: Math.random()*900, y: Math.random()*560, r: Math.random()*1.4+0.3, a: Math.random()*0.5+0.25 });
+  }
+
+  const keys = { up:false, down:false, left:false, right:false };
+  window.addEventListener('keydown', e=>{
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+      e.preventDefault();
+      if(e.key==='ArrowUp') keys.up=true;
+      if(e.key==='ArrowDown') keys.down=true;
+      if(e.key==='ArrowLeft') keys.left=true;
+      if(e.key==='ArrowRight') keys.right=true;
+    }
+  });
+  window.addEventListener('keyup', e=>{
+    if(e.key==='ArrowUp') keys.up=false;
+    if(e.key==='ArrowDown') keys.down=false;
+    if(e.key==='ArrowLeft') keys.left=false;
+    if(e.key==='ArrowRight') keys.right=false;
+  });
+
+  document.getElementById('enterRaceBtn').addEventListener('click', ()=>{
+    showScreen('screen-race');
+    startRace();
+  });
+  document.getElementById('raceAgainBtn').addEventListener('click', ()=>{
+    document.getElementById('resultCard').classList.remove('show');
+    startRace();
+  });
+
+  function pickBotColors(excludeColor, count){
+    const pool = KART_COLORS.filter(c=>c!==excludeColor);
+    for(let i=pool.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pool[i],pool[j]] = [pool[j],pool[i]];
+    }
+    return pool.slice(0,count);
+  }
+
+  function pickBotNames(count){
+    const pool = [...BOT_NAME_POOL];
+    for(let i=pool.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [pool[i],pool[j]] = [pool[j],pool[i]];
+    }
+    return pool.slice(0,count);
+  }
+
+  function startRace(){
+    const botColors = pickBotColors(selectedColor, 3);
+    const botNames = pickBotNames(3);
+    const botCharPool = CHARACTERS;
+
+    participants = [
+      {
+        isPlayer:true, name:'Você', color:selectedColor, driverColor:selectedCharacter.color,
+        maxSpeed:selectedType.maxSpeed, accel:selectedType.accel, laneSpeed:selectedType.laneSpeed,
+        speed:0, t:0.5, progress:-0.04
+      },
+      mkBot(botNames[0], botColors[0], botCharPool[Math.floor(Math.random()*4)].color, -0.16, 0.18),
+      mkBot(botNames[1], botColors[1], botCharPool[Math.floor(Math.random()*4)].color, -0.10, 0.5),
+      mkBot(botNames[2], botColors[2], botCharPool[Math.floor(Math.random()*4)].color, -0.20, 0.82)
+    ];
+
+    raceState = 'countdown';
+    lastFrame = null;
+    document.getElementById('hudLap').textContent = '1';
+    document.getElementById('hudTime').textContent = '00:00';
+    document.getElementById('hudPos').textContent = '1';
+
+    runCountdown();
+    requestAnimationFrame(loop);
+  }
+
+  function mkBot(name, color, driverColor, startProgress, startT){
+    return {
+      isPlayer:false, name:name, color:color, driverColor:driverColor,
+      baseSpeed: 165 + Math.random()*45,
+      speed:0, t:startT, progress:startProgress,
+      freq: 0.5 + Math.random()*0.6,
+      phase: Math.random()*Math.PI*2
+    };
+  }
+
+  function runCountdown(){
+    const overlay = document.getElementById('raceOverlay');
+    const seq = ['3','2','1','VAI!'];
+    let i = 0;
+    overlay.textContent = seq[i];
+    overlay.style.display = 'flex';
+    const timer = setInterval(()=>{
+      i++;
+      if(i < seq.length){
+        overlay.textContent = seq[i];
+      } else {
+        clearInterval(timer);
+        overlay.style.display = 'none';
+        raceState = 'racing';
+        raceStartTime = performance.now();
+      }
+    }, 700);
+  }
+
+  function updatePhysics(dt, now){
+    const player = participants[0];
+
+    if(keys.up){ player.speed = Math.min(player.maxSpeed, player.speed + player.accel*dt); }
+    else if(keys.down){ player.speed = Math.max(0, player.speed - 220*dt); }
+    else { player.speed = Math.max(0, player.speed - 90*dt); }
+
+    if(keys.left) player.t = Math.max(0, player.t - player.laneSpeed*dt);
+    if(keys.right) player.t = Math.min(1, player.t + player.laneSpeed*dt);
+
+    player.progress += player.speed * dt * SPEED_FACTOR;
+
+    for(let i=1;i<participants.length;i++){
+      const bot = participants[i];
+      const diff = player.progress - bot.progress;
+      let target = bot.baseSpeed;
+      if(diff > 1.0) target += 30;
+      else if(diff < -1.0) target -= 25;
+      target = Math.max(0, Math.min(235, target));
+      bot.speed += (target - bot.speed) * Math.min(1, dt*1.5);
+      bot.progress += bot.speed * dt * SPEED_FACTOR;
+      bot.t = 0.5 + 0.3*Math.sin(now/1000*bot.freq + bot.phase);
+    }
+
+    if(player.progress >= TOTAL_LAPS * Math.PI * 2){
+      finishRace();
+    }
+  }
+
+  function trackPoint(theta, t){
+    const a = TRACK.innerA + t*(TRACK.outerA - TRACK.innerA);
+    const b = TRACK.innerB + t*(TRACK.outerB - TRACK.innerB);
+    return {
+      x: TRACK.cx + Math.cos(theta)*a,
+      y: TRACK.cy + Math.sin(theta)*b,
+      a:a, b:b
+    };
+  }
+
+  function headingAngle(theta, a, b){
+    const dx = -Math.sin(theta)*a;
+    const dy = Math.cos(theta)*b;
+    return Math.atan2(dy, dx);
+  }
+
+  function renderScene(){
+    const canvas = document.getElementById('raceCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    ctx.fillStyle = '#150B2E';
+    ctx.fillRect(0,0,W,H);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    stars.forEach(s=>{
+      ctx.globalAlpha = s.a;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // outer asphalt ellipse
+    ctx.fillStyle = '#2B2740';
+    ctx.beginPath();
+    ctx.ellipse(TRACK.cx, TRACK.cy, TRACK.outerA, TRACK.outerB, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // inner hole (back to background color)
+    ctx.fillStyle = '#150B2E';
+    ctx.beginPath();
+    ctx.ellipse(TRACK.cx, TRACK.cy, TRACK.innerA, TRACK.innerB, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // neon edges
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#3FD6FF';
+    ctx.beginPath();
+    ctx.ellipse(TRACK.cx, TRACK.cy, TRACK.outerA, TRACK.outerB, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#FF3D7F';
+    ctx.beginPath();
+    ctx.ellipse(TRACK.cx, TRACK.cy, TRACK.innerA, TRACK.innerB, 0, 0, Math.PI*2);
+    ctx.stroke();
+
+    // dashed center line
+    ctx.setLineDash([14,12]);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#FFD23F';
+    ctx.beginPath();
+    ctx.ellipse(TRACK.cx, TRACK.cy, (TRACK.outerA+TRACK.innerA)/2, (TRACK.outerB+TRACK.innerB)/2, 0, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // checkered finish line (vertical strip at top straight, x = cx)
+    const squares = 8;
+    const stripeH = (TRACK.outerB - TRACK.innerB) / squares;
+    for(let i=0;i<squares;i++){
+      ctx.fillStyle = (i%2===0) ? '#fff' : '#111';
+      ctx.fillRect(TRACK.cx - 9, TRACK.cy - TRACK.outerB + i*stripeH, 18, stripeH);
+    }
+
+    // draw karts
+    participants.forEach(p=>{
+      const theta = START_ANGLE + p.progress;
+      const pt = trackPoint(theta, p.t);
+      const angle = headingAngle(theta, pt.a, pt.b);
+      drawKart(ctx, pt.x, pt.y, angle, p.color, p.driverColor, 1);
+    });
+  }
+
+  function fmtTime(sec){
+    const m = Math.floor(sec/60);
+    const s = Math.floor(sec%60);
+    return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }
+
+  function updateHUD(){
+    const player = participants[0];
+    if(!player) return;
+    const lap = Math.min(TOTAL_LAPS, Math.max(1, Math.floor(player.progress/(Math.PI*2)) + 1));
+    document.getElementById('hudLap').textContent = lap;
+
+    const sorted = [...participants].sort((a,b)=>b.progress-a.progress);
+    const rank = sorted.indexOf(player) + 1;
+    document.getElementById('hudPos').textContent = rank;
+
+    if(raceState === 'racing' || raceState === 'finished'){
+      const elapsed = (performance.now() - raceStartTime)/1000;
+      document.getElementById('hudTime').textContent = fmtTime(elapsed);
+    }
+  }
+
+  function finishRace(){
+    raceState = 'finished';
+    const sorted = [...participants].sort((a,b)=>b.progress-a.progress);
+    const player = participants[0];
+    const playerRank = sorted.indexOf(player) + 1;
+
+    const title = document.getElementById('resultTitle');
+    if(playerRank === 1) title.textContent = '🏆 VOCÊ VENCEU A CORRIDA!';
+    else title.textContent = 'VOCÊ TERMINOU EM ' + playerRank + 'º LUGAR';
+
+    const list = document.getElementById('standingsList');
+    list.innerHTML = '';
+    sorted.forEach((p,idx)=>{
+      const li = document.createElement('li');
+      if(p.isPlayer) li.classList.add('me');
+      li.innerHTML = `<span class="rank">${idx+1}º</span><span class="dot" style="background:${p.color}"></span><span>${p.name}</span>`;
+      list.appendChild(li);
+    });
+
+    document.getElementById('resultCard').classList.add('show');
+  }
+
+  function loop(now){
+    if(lastFrame === null) lastFrame = now;
+    const dt = Math.min((now - lastFrame)/1000, 0.05);
+    lastFrame = now;
+
+    if(raceState === 'racing') updatePhysics(dt, now);
+    renderScene();
+    updateHUD();
+
+    if(raceState !== 'finished'){
+      requestAnimationFrame(loop);
+    }
+  }
+
+})();
+</script>
 </body>
 </html>
